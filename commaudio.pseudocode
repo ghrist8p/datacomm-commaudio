@@ -1,0 +1,128 @@
+CLIENT
+======
+
+Client::pauseStream()
+{
+    ReaderThreadController.pauseStream()
+}
+Client::resumeStream()
+{
+    ReaderThreadController.resumeStream()
+}
+Client::stopStream()
+{
+    ReaderThreadController.stopStream()
+}
+Client::seekStream(percent)
+{
+    ReaderThreadController.seekStream(percent)
+}
+
+Client::startTransmission()
+{
+    TransmitThreadController.startTransmission()
+}
+Client::stopTransmission()
+{
+    TransmitThreadController.stopTransmission()
+}
+Client::setTransmissionGroup(groupId)
+{
+    TransmitThreadController.setTransmissionGroup(groupId)
+}
+
+Client::startDownload(songId)
+{
+    ControlThreadController.startDownload(songId)
+}
+Client::stopDownload(songId)
+{
+    ControlThreadController.stopDownload(songId)
+}
+Client::changeStream(songId)
+{
+    ControlThreadController.changeStream(songId)
+}
+
+PlaybackThreadController
+
+ReceiveThreadController
+
+TransmitThreadController
+
+ControlThreadController
+
+WriterThreadController
+
+ReaderThreadController
+
+SERVER
+======
+
+Server::startServer()
+{
+    if not listening port exists/open
+    {
+        open listening port
+        start session manager thread controller (SMT)
+    }
+}
+Server::stopServer()
+{
+    if listening port exists/open
+    {
+        stop session manager thread controller (SMT)
+        close listening port
+    }
+}
+Server::setServerPort(port)
+Server::changeStream()
+{
+    send change stream message to stream thread
+}
+Server::onConnect()
+
+Server::onUpload(songID)
+{
+    create a new upload thread control block (UTCB)
+    put the UTCB into the STCB.UTCBSet
+    start the new upload thread, passing it the UTCB
+}
+Server::onDisconnect()
+{
+    for all UTCBs in the UTCBSet
+    {
+        UTCB.stop = true
+    }
+
+    wait for all of the UTCB.stopped events to become set
+}
+
+Server::STCB
+{
+    Event stop
+    Event stopped
+    MessageQueue msgQueue
+    UTCBSet
+}
+
+Server::UTCB
+{
+    bool stop
+    Event stopped
+    int songID
+}
+
+Server::UploadThread
+{
+    reset UTCB.stopped
+    figure out where the file is from the UTCB.songID
+    open the file
+    while(!UTCB.stop)
+    {
+        read file
+        enqueue song packet to STCB.msgQueue
+    }
+    close the file
+    set UTCB.stopped
+}
