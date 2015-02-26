@@ -53,42 +53,85 @@ TransmitThreadController
 ControlThreadController
 
 WriterThreadController
+======================
+WriterThreadController::startThread()
+{
+    reset alive event
+    reset dead event
+    reset stop event
+    do writer routine on new thread
+    wait until thread is alive
+}
+WriterThreadController::stopThread()
+{
+    set stop event
+    wait until thread is dead
+}
+WriterThreadController::insertData()
+{
+
+}
+WriterThreadController::purgeData()
+{
+    wait(WriterThreadControllerAccess)
+    stopThread
+    signal(WriterThreadControllerAccess)
+}
+WriterThread
+{
+    set alive event
+    set dead event
+}
 
 ReaderThreadController
 ======================
 
 ReaderThreadController::ReaderThreadController()
 {
+    wait(ReaderThreadControllerAccess)
     seek = 0
+    signal(ReaderThreadControllerAccess)
 }
 ReaderThreadController::~ReaderThreadController
 {
+    wait(ReaderThreadControllerAccess)
     stopThread()
+    signal(ReaderThreadControllerAccess)
 }
 ReaderThreadController::pauseStream()
 {
-    seek = getSeek()
+    wait(ReaderThreadControllerAccess)
     stopThread()
+    signal(ReaderThreadControllerAccess)
 }
 ReaderThreadController::resumeStream()
 {
+    wait(ReaderThreadControllerAccess)
     startThread()
+    signal(ReaderThreadControllerAccess)
 }
 ReaderThreadController::stopStream()
 {
+    wait(ReaderThreadControllerAccess)
     seek = 0
     stopThread()
+    signal(ReaderThreadControllerAccess)
 }
 ReaderThreadController::seekStream(time)
 {
+    wait(ReaderThreadControllerAccess)
     stopThread()
     seek = time
     startThread()
+    signal(ReaderThreadControllerAccess)
 }
 ReaderThreadController::startThread()
 {
+    reset alive event
+    reset dead event
+    reset stop event
     do reader routine on new thread
-    wait until thread is initialized
+    wait until thread is alive
 }
 ReaderThreadController::stopThread()
 {
@@ -96,38 +139,31 @@ ReaderThreadController::stopThread()
     wait until thread is dead
 }
 
+ReaderThread
+{
+    set alive event
+    open file
+    seek to position
+    while(!stop)
+    {
+        data = read(file)
+        update seek
+        PlaybackThreadController.appendToPlaybackBuffer(data)
+    }
+    close file
+    set dead event
+}
+
 SERVER
 ======
 
 Server::startServer()
-{
-    if not listening port exists/open
-    {
-        open listening port
-        start session manager thread controller (SMT)
-    }
-}
 Server::stopServer()
-{
-    if listening port exists/open
-    {
-        stop session manager thread controller (SMT)
-        close listening port
-    }
-}
 Server::setServerPort(port)
 Server::changeStream()
-{
-    send change stream message to stream thread
-}
 Server::onConnect()
 
 Server::onUpload(songID)
-{
-    create a new upload thread control block (UTCB)
-    put the UTCB into the STCB.UTCBSet
-    start the new upload thread, passing it the UTCB
-}
 Server::onDisconnect()
 {
     for all UTCBs in the UTCBSet
