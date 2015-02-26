@@ -55,6 +55,46 @@ ControlThreadController
 WriterThreadController
 
 ReaderThreadController
+======================
+
+ReaderThreadController::ReaderThreadController()
+{
+    seek = 0
+}
+ReaderThreadController::~ReaderThreadController
+{
+    stopThread()
+}
+ReaderThreadController::pauseStream()
+{
+    seek = getSeek()
+    stopThread()
+}
+ReaderThreadController::resumeStream()
+{
+    startThread()
+}
+ReaderThreadController::stopStream()
+{
+    seek = 0
+    stopThread()
+}
+ReaderThreadController::seekStream(time)
+{
+    stopThread()
+    seek = time
+    startThread()
+}
+ReaderThreadController::startThread()
+{
+    do reader routine on new thread
+    wait until thread is initialized
+}
+ReaderThreadController::stopThread()
+{
+    set stop event
+    wait until thread is dead
+}
 
 SERVER
 ======
