@@ -1,157 +1,66 @@
-CLIENT
-======
+////////////
+// client //
+////////////
+
+Client::startClient()
+{
+    TransmitThreadController.start();
+    OutputThreadController.start();
+    VoiceBuffererThreadController.start();
+    MusicBuffererThreadController.start();
+    ControlThreadController.start(); // will also start the receive thread
+}
+Client::stopClient()
+{
+    ControlThreadController.stop(); // will also stop the receive thread
+    MusicBuffererThreadController.stop();
+    VoiceBuffererThreadController.stop();
+    OutputThreadController.stop();
+    TransmitThreadController.stop();
+}
 
 Client::pauseStream()
 {
-    ReaderThreadController.pauseStream()
+    MusicReaderThreadController.stop();
 }
 Client::resumeStream()
 {
-    ReaderThreadController.resumeStream()
+    MusicReaderThreadController.play();
 }
 Client::stopStream()
 {
-    ReaderThreadController.stopStream()
+    MusicReaderThreadController.stop();
+    MusicReaderThreadController.seek(0);
 }
 Client::seekStream(percent)
 {
-    ReaderThreadController.seekStream(percent)
+    MusicReaderThreadController.seek(percent);
 }
 
 Client::startTransmission()
 {
-    TransmitThreadController.startTransmission()
+    RecorderThreadController.start();
 }
 Client::stopTransmission()
 {
-    TransmitThreadController.stopTransmission()
+    RecorderThreadController.stop();
 }
 Client::setTransmissionGroup(groupId)
 {
-    TransmitThreadController.setTransmissionGroup(groupId)
+    TransmitThreadController.setGroup(groupId);
 }
 
 Client::startDownload(songId)
 {
-    ControlThreadController.startDownload(songId)
+    ControlThreadController.requestDownload(songId);
 }
 Client::stopDownload(songId)
 {
-    ControlThreadController.stopDownload(songId)
+    ControlThreadController.cancelDownload(songId);
 }
 Client::changeStream(songId)
 {
-    ControlThreadController.changeStream(songId)
-}
-
-PlaybackThreadController
-
-ReceiveThreadController
-
-TransmitThreadController
-
-ControlThreadController
-
-WriterThreadController
-======================
-WriterThreadController::startThread()
-{
-    reset alive event
-    reset dead event
-    reset stop event
-    do writer routine on new thread
-    wait until thread is alive
-}
-WriterThreadController::stopThread()
-{
-    set stop event
-    wait until thread is dead
-}
-WriterThreadController::insertData()
-{
-
-}
-WriterThreadController::purgeData()
-{
-    wait(WriterThreadControllerAccess)
-    stopThread
-    signal(WriterThreadControllerAccess)
-}
-WriterThread
-{
-    set alive event
-    set dead event
-}
-
-ReaderThreadController
-======================
-
-ReaderThreadController::ReaderThreadController()
-{
-    wait(ReaderThreadControllerAccess)
-    seek = 0
-    signal(ReaderThreadControllerAccess)
-}
-ReaderThreadController::~ReaderThreadController
-{
-    wait(ReaderThreadControllerAccess)
-    stopThread()
-    signal(ReaderThreadControllerAccess)
-}
-ReaderThreadController::pauseStream()
-{
-    wait(ReaderThreadControllerAccess)
-    stopThread()
-    signal(ReaderThreadControllerAccess)
-}
-ReaderThreadController::resumeStream()
-{
-    wait(ReaderThreadControllerAccess)
-    startThread()
-    signal(ReaderThreadControllerAccess)
-}
-ReaderThreadController::stopStream()
-{
-    wait(ReaderThreadControllerAccess)
-    seek = 0
-    stopThread()
-    signal(ReaderThreadControllerAccess)
-}
-ReaderThreadController::seekStream(time)
-{
-    wait(ReaderThreadControllerAccess)
-    stopThread()
-    seek = time
-    startThread()
-    signal(ReaderThreadControllerAccess)
-}
-ReaderThreadController::startThread()
-{
-    reset alive event
-    reset dead event
-    reset stop event
-    do reader routine on new thread
-    wait until thread is alive
-}
-ReaderThreadController::stopThread()
-{
-    set stop event
-    wait until thread is dead
-}
-
-ReaderThread
-{
-    set alive event
-    open file
-    seek to position
-    while(!stop)
-    {
-        data = read(file)
-        update seek
-        PlaybackThreadController.appendToPlaybackBuffer(data)
-    }
-    close file
-    set dead event
+    ControlThreadController.changeStream(songId);
 }
 
 SERVER
@@ -162,6 +71,9 @@ Server::stopServer()
 Server::setServerPort(port)
 Server::changeStream()
 Server::onConnect()
+{
+    SessionThreadControllerFactory.make().start()
+}
 
 Server::onUpload(songID)
 Server::onDisconnect()
