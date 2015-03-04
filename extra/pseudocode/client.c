@@ -11,33 +11,45 @@ or requesting to change streams. Running as long as the program is in the connec
 **/
 Control()
 {
+	acquire resources
+	
 	while()
 	{
 		Read from the Socket()
-		{
-			if(there is an update to client list)
-			[
+		Wait for events from the socket read AND User Requests
+		switch(event)
+		
+		case there is an update to client list:
+			{
 				Modify Client List.
+				break
 			}
 			
-			if(a song file has been received)
+		case a song file has been received:
 			{
 				read the data
-				write the data to Music Bufferer //shared buffer
-			}		
-		}
+				write the data to Message Queue
+				
+			}			
+		case User wants to request a song to download:
+			{
+				Send flag
+				Send song request trough TCP socket
+			}
 		
-		if(User wants to request a song to download)
-		{
+		case User wants to request a song to play in stream)
+			{
 			Send flag
 			Send song request trough TCP socket
-		}
+			}
 		
-		if(User wants to request a song to play in stream)
-		{
-			Send flag
-			Send song request trough TCP socket
-		}	
+		case stopped - disconnected
+			{
+				free resources
+				break
+			}
+		default:
+				break;
 	}
 	
 }
@@ -49,22 +61,31 @@ the program is in the connected state.
 **/
 Receive()
 {
+	acquire resources
+	
 	while
 	{
 		Read from UDP Socket
+		Wait for an event from the socket read.
+		switch(data)
+		{
+			case voice:
+						Write data to Voice Jitter Buffer		
+						break;
+			case music:
+					
+						Write data to Music Jitter Buffer
+						break
+			default
+						Prompt for unknown type received
+						break;
+		}
 		
-		if(data == voice)
+		if(stopped - disconnected)
 		{
-			Write data to Voice Jitter Buffer		
+			free resources
+			break
 		}
-		else if(data == music)
-		{
-			Write data to Music Jitter Buffer
-		}
-		else
-		{
-			Prompt for unknown type received			
-		}	
 	}
 }
 
@@ -74,13 +95,21 @@ address. Running as long as the program is in the connected state.
 **/
 Transmit()
 {
-	while
+	acquire resources
+
+	while	
 	{
 		if(transmit buffer has data)
 		{
 			get UDP socket - Client Information
 			Send the data trough the socket		
-		}	
+		}
+		
+		if(stopped - disconnected)
+		{
+			free resources
+			break
+		}
 	}
 }
 
@@ -90,26 +119,38 @@ file. Running as long as the program is in the connected state.
 **/
 Music buffering()
 {
+	acquire resources
+	
 	while
 	{
-		if(there is data in the music jitter buffer)
+		if(there is data in the music jitter buffer) // event received
 		{
+			Open File
 			read the data
 			if(data is music data)
 			{
 				process data
 				Write data to the music buffer
-			}		
+			}
+			Close File			
 		}
 		
-		if(a file has been received from the control process) //probably by sharing a buffer
+		if(there is a music file in the message queue) // event received
 		{
+			Open File
 			read the data
 			if(data is music data)
 			{
 				Write data to the music buffer
-			}	
+			}
+			Close File
 		
+		}
+		
+		if(stopped - disconnected)
+		{
+			free resources
+			break
 		}
 	}
 }
@@ -120,6 +161,8 @@ Running as long as the application is in the connected state.
 **/
 Voice buffering()
 {
+	acquire resources	
+	
 	while
 	{
 		if(there is data in the voice jitter buffer)
@@ -129,7 +172,13 @@ Voice buffering()
 			{
 				process data
 				Write data to the audio buffer
-			}		
+			}
+
+			if(stopped - disconnected)
+			{
+				free resources
+				break
+			}
 		}	
 	}
 }
@@ -141,14 +190,18 @@ Running as long as the application is in the transmitting state.
 
 Record()
 {
-	if(record button is pressed)
+	Start Recording audio from the default mic.
+	
+	if(Stop record event received from GUI)
 	{
-		Start Recording audio from the default mic.
-		if(record button is pressed again or timeout)
-		{
-			Save recording to transmit buffer.		
-		}
-	]
+		write recording to transmit buffer.		
+	}
+		
+	if(stopped - disconnected)
+	{
+		free resources
+		break
+	}
 }
 
 
@@ -160,22 +213,23 @@ the connected state.
 **/
 Music Reader()
 {
+	acquire resources
+	
 	while
 	{
-		if(there are temp files)
-		{
-			read data from file.
-			Send data to Audio Buffer
-		}
-		
-		if(user selects a song from downloaded songs list && there are no tempfiles)
+		if(there is data in the music buffer)
 		{
 			get the file
-			read from it.
-			Send data to Audio Buffer.
-		
+			read from it
+			Send data to Audio Buffer
+			close the file		
 		}
-	
+		
+		if(stopped - disconnected)
+		{
+			free resources
+			break
+		}
 	}
 	
 }
@@ -187,34 +241,20 @@ the connected state.
 **/
 Output()
 {
+	acquire resources
+	
 	while
 	{
 		if(there is data in the audio buffer)
 		{
 			Read data
 			Play data- through speakers		
-		}	
+		}
+		
+		if(stopped - disconnected)
+		{
+			free resources
+			break
+		}
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
