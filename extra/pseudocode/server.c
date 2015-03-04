@@ -8,6 +8,10 @@ while
 		Create a new Session.
 		Add session to session List.
 	]
+	if(stopped)
+	{
+		free resources
+	}
 }
 
 /**
@@ -16,13 +20,20 @@ This process is used to exchange control data with the client
 @socket Client - New client connection
 **/
 Session(socket client)
-{
+{	
+	Send List of Songs to the Client
 	Send Client the list of all the sessions (Clients Connected)
 	
 	start Listening from the socket
 	while
-	{	
+	{			
+		if(stopped)
+		{
+			free resources
+		}
+		
 		Check Client List.
+		
 		if(there is an update)
 		{
 			Send update to every client
@@ -53,7 +64,7 @@ Session(socket client)
 			Flag Error
 			Let the client know
 		}
-	
+		
 	}
 }
 
@@ -65,23 +76,37 @@ Stream()
 {
 	While 
 	{
-		if(there are Songs in the Queue)
+		get resources
+		
+		if(there are Song requests)
 		{
 			Open the File(Song)
-			Start Playing Song in front of the Queue
-			//Let Client know the song being played
 			
-			For(every Client in client List)
+			while
 			{
-				Send the audio using UDP sockets for each client.
+				Start Playing Song
+				//Let Client know the song being played
+						
+				Multicast the audio using the UDP socket
+				
+				if(Song is complete)
+				{
+					Close File
+					break
+				}
+				
+				if(there is a new request)
+				{
+					Close File
+					break
+				}
 			}
-			
-			if(Song is complete)
-			{
-				Close File
-				Remove Song from Queue
-			}
-		}	
+		}
+
+		if(stopped)
+		{
+			free resources
+		}
 		
 	}
 	
