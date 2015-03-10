@@ -1,6 +1,8 @@
 #include <windows.h>
 #include <vector>
 
+#define MAX_MSGQ_SIZE 1000
+
 class MessageQueue
 {
 public:
