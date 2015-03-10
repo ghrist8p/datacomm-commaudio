@@ -9,8 +9,8 @@ struct Node
 MessageQueue::MessageQueue(int _elementSize) : elementSize(_elementSize)
 {
     hasMessage = CreateEvent(NULL,TRUE,FALSE,NULL);
-    canEnqueue = CreateSemaphore(NULL,100,100,NULL);
-    canDequeue = CreateSemaphore(NULL,0,100,NULL);
+    canEnqueue = CreateSemaphore(NULL,MAX_MSGQ_SIZE,MAX_MSGQ_SIZE,NULL);
+    canDequeue = CreateSemaphore(NULL,0,MAX_MSGQ_SIZE,NULL);
     access = CreateMutex(NULL, FALSE, NULL);
 }
 
