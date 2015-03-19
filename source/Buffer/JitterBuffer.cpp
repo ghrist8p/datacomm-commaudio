@@ -49,8 +49,8 @@ void JitterBuffer::heapify()
 }
 
 /**
- * reorganizes the heap so that the empty element at the root of the heap is
- *   filled in using its child elements.
+ * reorganizes the heap so that the out of place element at the root of the heap
+ *   is moved to the proper place in the heap.
  *
  * @function   JitterBuffer::trickleDown
  *
