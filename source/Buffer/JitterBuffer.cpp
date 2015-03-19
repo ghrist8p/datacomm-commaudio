@@ -14,16 +14,33 @@ static std::map<char,int> findLevel(int id);
 
 JitterBuffer::JitterBuffer(int _elementSize)
 {
+    this->elementSize = _elementSize;
 }
 
-int JitterBuffer::insert(long index, void* src)
+void JitterBuffer::insert(long index, void* src)
 {
-    return 0;
+    // put the new element into the heap
+    void* payload = malloc(elementSize);
+    memcpy(payload,src,elementSize);
+    data.emplace_back(index,payload);
+
+    // maintain the heap structure
+    heapify();
 }
 
-int JitterBuffer::remove(void* dest)
+void JitterBuffer::remove(void* dest)
 {
-    return 0;
+    // copy data from root to destination
+    memcpy(dest,data[0].second,elementSize);
+
+    // swap the root element with the last element
+    swap(0,data.size()-1);
+
+    // remove the last element (originally root) from the heap
+    data.erase(data.end());
+
+    // maintain the heap structure
+    trickleDown();
 }
 
 /**

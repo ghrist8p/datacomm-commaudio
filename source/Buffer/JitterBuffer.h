@@ -5,8 +5,8 @@ class JitterBuffer
 {
 public:
     JitterBuffer(int _elementSize);
-    int insert(long index, void* src);
-    int remove(void* dest);
+    void insert(long index, void* src);
+    void remove(void* dest);
 private:
     void heapify();
     void trickleDown();
@@ -14,6 +14,10 @@ private:
     int left(int id);
     int right(int id);
     int parent(int id);
+    /**
+     * size allocated for the payload of each element in the buffer.
+     */
+    int elementSize;
     /**
      * mutex that protects this {JitterBuffer}, and that only one path of
      *   execution is performing operations on the buffer at a time.
