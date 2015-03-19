@@ -9,43 +9,103 @@
 #define KEY_CURR_LEVEL_FIRST 2
 #define KEY_NEXT_LEVEL_FIRST 3
 
-static void fatal_error(char* errmsg);
-static std::map<char,int> findLevel(int id);
-
-JitterBuffer::JitterBuffer(int _elementSize)
+JitterBuffer::JitterBuffer(int elementSize, int delay, int interval)
 {
-    this->elementSize = _elementSize;
+    this->lastIndex   = 0;
+    this->elementSize = elementSize;
+    this->delay       = delay;
+    this->interval    = interval;
+    this->access      = CreateMutex(NULL, FALSE, NULL);
+    this->canPut      = CreateSemaphore(NULL,MAX_JB_SIZE,MAX_JB_SIZE,NULL);
+    this->canGet      = CreateSemaphore(NULL,0,MAX_JB_SIZE,NULL);
+
+    data.reserve(MAX_JB_SIZE);
 }
 
-void JitterBuffer::insert(long index, void* src)
+/**
+ * puts the passed data into the jitter buffer if the index of the last element
+ *   removed is smaller than the index of the element being inserted (i.e. this
+ *   element is being inserted too late, since elements that should be consumed
+ *   after it have already been consumed).
+ *
+ * @function   JitterBuffer::insert
+ *
+ * @date       2015-03-19
+ *
+ * @revision   none
+ *
+ * @designer   Eric Tsang
+ *
+ * @programmer Eric Tsang
+ *
+ * @note       none
+ *
+ * @signature  int JitterBuffer::insert(int index, void* src)
+ *
+ * @param      index index of the element being inserted.
+ * @param      src pointer to data to be copied into the element.
+ *
+ * @return     0 upon success, 1 upon rejection.
+ */
+int JitterBuffer::insert(int index, void* src)
 {
-    // put the new element into the heap
-    void* payload = malloc(elementSize);
-    memcpy(payload,src,elementSize);
-    data.emplace_back(index,payload);
+    int ret;
 
-    // maintain the heap structure
-    heapify();
+    // acquire synchronization objects
+    WaitForSingleObject(canPut,INFINITE);
+    WaitForSingleObject(access,INFINITE);
+
+    if(index > lastIndex)
+    {
+        ret = 0;
+
+        // put the new element into the heap
+        void* payload = malloc(elementSize);
+        memcpy(payload,src,elementSize);
+        data.emplace_back(index,payload);
+
+        // maintain the heap structure
+        heapify();
+    }
+    else
+    {
+        ret = 1;
+    }
+
+    // release synchronization objects
+    ReleaseMutex(access);
+    ReleaseSemaphore(canGet,1,NULL);
+
+    return ret;
 }
 
 void JitterBuffer::remove(void* dest)
 {
+    // acquire synchronization objects
+    WaitForSingleObject(canGet,INFINITE);
+    WaitForSingleObject(access,INFINITE);
+
     // copy data from root to destination
+    lastIndex = data[0].first;
     memcpy(dest,data[0].second,elementSize);
 
     // swap the root element with the last element
     swap(0,data.size()-1);
 
     // remove the last element (originally root) from the heap
-    data.erase(data.end());
+    data.erase(--data.end());
 
     // maintain the heap structure
     trickleDown();
+
+    // release synchronization objects
+    ReleaseMutex(access);
+    ReleaseSemaphore(canPut,1,NULL);
 }
 
 /**
- * reorganizes the heap so that the last inserted element is moved to the right
- *   place in the heap.
+ * reorganizes the minimum heap so that the last inserted element is moved to
+ *   the right place in the minimum heap.
  *
  * @function   JitterBuffer::heapify
  *
@@ -63,11 +123,27 @@ void JitterBuffer::remove(void* dest)
  */
 void JitterBuffer::heapify()
 {
+    int curr = data.size()-1;
+
+    // heapify
+    while(true)
+    {
+        int parent = parentId(curr);
+        if(data[curr].first < data[parent].first && parent != -1)
+        {
+            swap(parent,curr);
+            curr = parent;
+        }
+        else
+        {
+            break;
+        }
+    }
 }
 
 /**
- * reorganizes the heap so that the out of place element at the root of the heap
- *   is moved to the proper place in the heap.
+ * reorganizes the minimum heap so that the out of place element at the root of
+ *   the minimum heap is moved to the proper place in the minimum heap.
  *
  * @function   JitterBuffer::trickleDown
  *
@@ -85,23 +161,45 @@ void JitterBuffer::heapify()
  */
 void JitterBuffer::trickleDown()
 {
-    // int currId = 0;
+    int curr = 0;
 
-    // while(?)
-    // {
-    //     int left  = left(currId);
-    //     int right = right(currId);
-    //     if(data[left].first > data[right].first)
-    //     {
-    //         swap(left,currId);
-    //         currId = left;
-    //     }
-    //     else
-    //     {
-    //         swap(right,currId);
-    //         currId = right;
-    //     }
-    // }
+    while(true)
+    {
+        int left  = leftId(curr);
+        int right = rightId(curr);
+
+        // break if there are no more child nodes
+        if(left == -1 && right == -1)
+        {
+            break;
+        }
+
+        // do the trickling
+        if((right == -1 && left != -1) || (left != -1 && data[left].first < data[right].first))
+        {
+            if(data[left].first < data[curr].first)
+            {
+                swap(left,curr);
+                curr = left;
+            }
+            else
+            {
+                break;
+            }
+        }
+        else if((left == -1 && right != -1) || (right != -1 && data[right].first <= data[left].first))
+        {
+            if(data[right].first < data[curr].first)
+            {
+                swap(right,curr);
+                curr = right;
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
 }
 
 void JitterBuffer::swap(int id1, int id2)
@@ -111,70 +209,74 @@ void JitterBuffer::swap(int id1, int id2)
     data[id2] = temp;
 }
 
-int JitterBuffer::left(int id)
+int JitterBuffer::leftId(int id)
 {
     // calculate and return id of left child
-    auto result = findLevel(id);
-    int nextLevelOffset = (id-result[KEY_CURR_LEVEL_FIRST])*2;
-    int left = result[KEY_NEXT_LEVEL_FIRST]+nextLevelOffset;
-    return (left >= 0 && left < data.size()) ? left : -1;
+    int left = 2*id+1;
+    return (left >= 0 && left < (int) data.size()) ? left : -1;
 }
 
-int JitterBuffer::right(int id)
+int JitterBuffer::rightId(int id)
 {
     // calculate and return id of left child
-    auto result = findLevel(id);
-    int nextLevelOffset = (id-result[KEY_CURR_LEVEL_FIRST])*2+1;
-    int right = result[KEY_NEXT_LEVEL_FIRST]+nextLevelOffset;
-    return (right >= 0 && right < data.size()) ? right : -1;
+    int right = 2*id+2;
+    return (right >= 0 && right < (int) data.size()) ? right : -1;
 }
 
-int JitterBuffer::parent(int id)
+int JitterBuffer::parentId(int id)
 {
     // calculate and return id of parent element
-    auto result = findLevel(id);
-    int currLevelOffset = id-result[KEY_CURR_LEVEL_FIRST];
-    int prevLevelOffset = (int) ceil(currLevelOffset/2);
-    int parent = result[KEY_PREV_LEVEL_FIRST]+prevLevelOffset;
-    return (parent >= 0 && parent < data.size()) ? parent : -1;
-}
-
-static std::map<char,int> findLevel(int id)
-{
-    std::map<char,int> ret;
-    ret[KEY_CURR_LEVEL]       = 0;
-    ret[KEY_PREV_LEVEL_FIRST] = -1;
-    ret[KEY_CURR_LEVEL_FIRST] = 0;
-    ret[KEY_NEXT_LEVEL_FIRST] = 1;
-
-    while(ret[KEY_NEXT_LEVEL_FIRST]-1 <= id)
-    {
-        ++ret[KEY_CURR_LEVEL];
-        ret[KEY_PREV_LEVEL_FIRST] = ret[KEY_CURR_LEVEL_FIRST];
-        ret[KEY_CURR_LEVEL_FIRST] = ret[KEY_NEXT_LEVEL_FIRST]-1;
-        ret[KEY_NEXT_LEVEL_FIRST] *= 2;
-    }
-    --ret[KEY_NEXT_LEVEL_FIRST];
-
-    return ret;
-}
-
-static void fatal_error(char* errmsg)
-{
-    OutputDebugString(errmsg);
-    exit(0);
+    int parent = (id-1)/2;
+    return (parent >= 0 && parent < (int) data.size()) ? parent : -1;
 }
 
 int main(void)
 {
-    char output[1024];
+    int payload;
 
-    printf("left(3):   %2d; %s\n",left(3),  (left(3) == 7)   ? "pass" : "fail");
-    printf("right(3):  %2d; %s\n",right(3), (right(3) == 8)  ? "pass" : "fail");
-    printf("parent(3): %2d; %s\n",parent(3),(parent(3) == 1) ? "pass" : "fail");
-    printf("left(5):   %2d; %s\n",left(5),  (left(5) == 11)  ? "pass" : "fail");
-    printf("right(5):  %2d; %s\n",right(5), (right(5) == 12) ? "pass" : "fail");
-    printf("parent(5): %2d; %s\n",parent(5),(parent(5) == 2) ? "pass" : "fail");
+    JitterBuffer jb(sizeof(int),10,10);
+
+    payload = 10;
+    jb.insert(10,&payload);
+
+    payload = 15;
+    jb.insert(15,&payload);
+
+    payload = 7;
+    jb.insert(7,&payload);
+
+    payload = 6;
+    jb.insert(6,&payload);
+
+    payload = 4;
+    jb.insert(4,&payload);
+
+    payload = 1;
+    jb.insert(1,&payload);
+
+    payload = 56;
+    jb.insert(56,&payload);
+
+    jb.remove(&payload);
+    printf("payload: %d\n",payload);
+
+    jb.remove(&payload);
+    printf("payload: %d\n",payload);
+
+    jb.remove(&payload);
+    printf("payload: %d\n",payload);
+
+    jb.remove(&payload);
+    printf("payload: %d\n",payload);
+
+    jb.remove(&payload);
+    printf("payload: %d\n",payload);
+
+    jb.remove(&payload);
+    printf("payload: %d\n",payload);
+
+    jb.remove(&payload);
+    printf("payload: %d\n",payload);
 
     getchar();
 }

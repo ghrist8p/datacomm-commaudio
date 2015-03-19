@@ -1,23 +1,49 @@
 #include <windows.h>
 #include <vector>
 
+#define MAX_JB_SIZE 5000
+
 class JitterBuffer
 {
 public:
-    JitterBuffer(int _elementSize);
-    void insert(long index, void* src);
+    JitterBuffer(int elementSize, int delay, int interval);
+    int insert(int index, void* src);
     void remove(void* dest);
 private:
     void heapify();
     void trickleDown();
     void swap(int id1, int id2);
-    int left(int id);
-    int right(int id);
-    int parent(int id);
+    int leftId(int id);
+    int rightId(int id);
+    int parentId(int id);
+    /**
+     * holds the last index removed from the jitter buffer
+     */
+    int lastIndex;
     /**
      * size allocated for the payload of each element in the buffer.
      */
     int elementSize;
+    /**
+     * milliseconds to wait before enabling dequeueing after an element was
+     *   inserted, changing the state of the buffer from empty to not empty.
+     */
+    int delay;
+    /**
+     * milliseconds to wait before enabling dequeueing after another element was
+     *   dequeued.
+     */
+    int interval;
+    /**
+     * handle to a semaphore that is 0 then the buffer is empty, positive
+     *   otherwise.
+     */
+    HANDLE canGet;
+    /**
+     * handle to a semaphore that is 100 then the buffer is empty, positive
+     *   otherwise.
+     */
+    HANDLE canPut;
     /**
      * mutex that protects this {JitterBuffer}, and that only one path of
      *   execution is performing operations on the buffer at a time.
