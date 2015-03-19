@@ -15,9 +15,10 @@ JitterBuffer::JitterBuffer(int elementSize, int delay, int interval)
     this->elementSize = elementSize;
     this->delay       = delay;
     this->interval    = interval;
+    this->canGet      = CreateEvent(NULL,TRUE,FALSE,NULL);
     this->access      = CreateMutex(NULL, FALSE, NULL);
-    this->canPut      = CreateSemaphore(NULL,MAX_JB_SIZE,MAX_JB_SIZE,NULL);
-    this->canGet      = CreateSemaphore(NULL,0,MAX_JB_SIZE,NULL);
+    this->notFull     = CreateSemaphore(NULL,MAX_JB_SIZE,MAX_JB_SIZE,NULL);
+    this->notEmpty    = CreateSemaphore(NULL,0,MAX_JB_SIZE,NULL);
 
     data.reserve(MAX_JB_SIZE);
 }
@@ -52,7 +53,7 @@ int JitterBuffer::insert(int index, void* src)
     int ret;
 
     // acquire synchronization objects
-    WaitForSingleObject(canPut,INFINITE);
+    WaitForSingleObject(notFull,INFINITE);
     WaitForSingleObject(access,INFINITE);
 
     if(index > lastIndex)
@@ -74,7 +75,7 @@ int JitterBuffer::insert(int index, void* src)
 
     // release synchronization objects
     ReleaseMutex(access);
-    ReleaseSemaphore(canGet,1,NULL);
+    ReleaseSemaphore(notEmpty,1,NULL);
 
     return ret;
 }
@@ -83,6 +84,7 @@ void JitterBuffer::remove(void* dest)
 {
     // acquire synchronization objects
     WaitForSingleObject(canGet,INFINITE);
+    WaitForSingleObject(notEmpty,INFINITE);
     WaitForSingleObject(access,INFINITE);
 
     // copy data from root to destination
@@ -100,7 +102,7 @@ void JitterBuffer::remove(void* dest)
 
     // release synchronization objects
     ReleaseMutex(access);
-    ReleaseSemaphore(canPut,1,NULL);
+    ReleaseSemaphore(notFull,1,NULL);
 }
 
 /**

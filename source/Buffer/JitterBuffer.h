@@ -9,6 +9,11 @@ public:
     JitterBuffer(int elementSize, int delay, int interval);
     int insert(int index, void* src);
     void remove(void* dest);
+    /**
+     * handle to event that is set when the jitter buffer allows something to be
+     *   removed, unset otherwise.
+     */
+    HANDLE canGet;
 private:
     void heapify();
     void trickleDown();
@@ -38,12 +43,12 @@ private:
      * handle to a semaphore that is 0 then the buffer is empty, positive
      *   otherwise.
      */
-    HANDLE canGet;
+    HANDLE notEmpty;
     /**
      * handle to a semaphore that is 100 then the buffer is empty, positive
      *   otherwise.
      */
-    HANDLE canPut;
+    HANDLE notFull;
     /**
      * mutex that protects this {JitterBuffer}, and that only one path of
      *   execution is performing operations on the buffer at a time.
