@@ -41,7 +41,7 @@ DWORD WINAPI consumer(void* params)
 int main(void)
 {
     DWORD unused;
-    MessageQueue msgq(4);
+    MessageQueue msgq(1000,4);
     HANDLE threads[NUM_PRODUCERS+NUM_CONSUMERS];
 
     // create threads

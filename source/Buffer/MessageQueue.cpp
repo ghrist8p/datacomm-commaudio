@@ -25,12 +25,13 @@ struct Node
  *
  * @param      _elementSize the size of each element in the message queue.
  */
-MessageQueue::MessageQueue(int _elementSize) : elementSize(_elementSize)
+MessageQueue::MessageQueue(int capacity, int elementSize)
 {
-    hasMessage = CreateEvent(NULL,TRUE,FALSE,NULL);
-    canEnqueue = CreateSemaphore(NULL,MAX_MSGQ_SIZE,MAX_MSGQ_SIZE,NULL);
-    canDequeue = CreateSemaphore(NULL,0,MAX_MSGQ_SIZE,NULL);
-    access = CreateMutex(NULL, FALSE, NULL);
+    this->elementSize = elementSize;
+    this->hasMessage = CreateEvent(NULL,TRUE,FALSE,NULL);
+    this->canEnqueue = CreateSemaphore(NULL,capacity,capacity,NULL);
+    this->canDequeue = CreateSemaphore(NULL,0,capacity,NULL);
+    this->access = CreateMutex(NULL, FALSE, NULL);
 }
 
 /**
