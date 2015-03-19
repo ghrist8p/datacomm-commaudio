@@ -1,5 +1,7 @@
 #include "MessageQueue.h"
 
+#ifdef TEST_MESSAGE_QUEUE
+
 DWORD WINAPI producer(void* params)
 {
     MessageQueue* msgq = (MessageQueue*) params;
@@ -56,3 +58,5 @@ int main(void)
 
     return 0;
 }
+
+#endif

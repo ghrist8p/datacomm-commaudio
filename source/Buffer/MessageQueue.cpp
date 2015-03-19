@@ -6,6 +6,25 @@ struct Node
     void* data;
 };
 
+/**
+ * instantiates a new {MessageQeueue} object.
+ *
+ * @function   MessageQueue::MessageQueue
+ *
+ * @date       2015-03-18
+ *
+ * @revision   none
+ *
+ * @designer   Eric Tsang
+ *
+ * @programmer Eric Tsang
+ *
+ * @note       none
+ *
+ * @signature  MessageQueue::MessageQueue(int _elementSize) : elementSize(_elementSize)
+ *
+ * @param      _elementSize the size of each element in the message queue.
+ */
 MessageQueue::MessageQueue(int _elementSize) : elementSize(_elementSize)
 {
     hasMessage = CreateEvent(NULL,TRUE,FALSE,NULL);
@@ -14,6 +33,29 @@ MessageQueue::MessageQueue(int _elementSize) : elementSize(_elementSize)
     access = CreateMutex(NULL, FALSE, NULL);
 }
 
+/**
+ * appends the passed data to the message queue. if the queue is full, the
+ *   function may block until there is room to store the element into the queue.
+ *
+ * @function   MessageQueue::enqueue
+ *
+ * @date       2015-03-18
+ *
+ * @revision   none
+ *
+ * @designer   Eric Tsang
+ *
+ * @programmer Eric Tsang
+ *
+ * @note       none
+ *
+ * @signature  void MessageQueue::enqueue(int type, void* src)
+ *
+ * @param      type number indicating what kind of an element is being put into
+ *   the queue.
+ * @param      src pointer to the data that is being copied into the message
+ *   queue.
+ */
 void MessageQueue::enqueue(int type, void* src)
 {
     // allocate a node
@@ -41,6 +83,29 @@ void MessageQueue::enqueue(int type, void* src)
     ReleaseSemaphore(canDequeue,1,NULL);
 }
 
+/**
+ * removes an element from the {MessageQueue}, and copies the data from the
+ *   queue into {dest}.
+ *
+ * @function   MessageQueue::dequeue
+ *
+ * @date       2015-03-18
+ *
+ * @revision   none
+ *
+ * @designer   Eric Tsang
+ *
+ * @programmer Eric Tsang
+ *
+ * @note       none
+ *
+ * @signature  void MessageQueue::dequeue(int* type, void* dest)
+ *
+ * @param      type pointer to an integer that will be assigned a number
+ *   indicating what kind of an element was taken out from the queue.
+ * @param      dest pointer to the location to copy the data from the
+ *   {MessageQueue} into.
+ */
 void MessageQueue::dequeue(int* type, void* dest)
 {
     // obtain synchronization objects
