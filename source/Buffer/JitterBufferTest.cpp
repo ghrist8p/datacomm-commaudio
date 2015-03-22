@@ -1,4 +1,3 @@
-#define DEBUG_JITTERBUFFER
 #ifdef DEBUG_JITTERBUFFER
 
 #include "JitterBuffer.h"
