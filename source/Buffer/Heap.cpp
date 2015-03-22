@@ -65,6 +65,11 @@ void Heap::remove(int* index, void* dest)
     trickleDown();
 }
 
+int Heap::size()
+{
+    return data.size();
+}
+
 /**
  * reorganizes the minimum heap so that the last inserted element is moved to
  *   the right place in the minimum heap.

@@ -7,6 +7,7 @@ public:
     Heap(int capacity, int elementSize);
     virtual void insert(int index, void* src);
     virtual void remove(int* index, void* dest);
+    virtual int size();
 private:
     void heapify();
     void trickleDown();

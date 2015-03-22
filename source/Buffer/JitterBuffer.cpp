@@ -1,4 +1,5 @@
 #include "JitterBuffer.h"
+#include "../SynchronizationHelper.h"
 
 #include <map>
 #include <cmath>
@@ -52,6 +53,13 @@ int JitterBuffer::put(int index, void* src)
     {
         ret = 0;
 
+        // if this is the first element after the buffer is empty,
+        // delay...
+        if(Heap::size() == 0)
+        {
+            delayedSetEvent(canGet,delay);
+        }
+
         // put the new element into the heap
         Heap::insert(index,src);
     }
@@ -70,12 +78,17 @@ int JitterBuffer::put(int index, void* src)
 void JitterBuffer::get(void* dest)
 {
     // acquire synchronization objects
-    WaitForSingleObject(canGet,INFINITE);
     WaitForSingleObject(notEmpty,INFINITE);
     WaitForSingleObject(access,INFINITE);
+    WaitForSingleObject(canGet,INFINITE);
 
     // copy data from root to destination
     Heap::remove(&lastIndex,dest);
+
+    // reset the canGet event, and set it after
+    // interval
+    ResetEvent(canGet);
+    delayedSetEvent(canGet,interval);
 
     // release synchronization objects
     ReleaseMutex(access);
