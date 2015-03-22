@@ -7,7 +7,6 @@ class GuiPanel : public GuiComponent
 {
 public:
 	GuiPanel(HINSTANCE hInstance, GuiComponent *parent);
-
 	virtual HWND create(HINSTANCE hInstance, HWND parent);
 
 private:
