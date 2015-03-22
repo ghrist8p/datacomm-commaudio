@@ -1,5 +1,7 @@
 #include "MessageQueue.h"
 
+#ifdef TEST_MESSAGE_QUEUE
+
 DWORD WINAPI producer(void* params)
 {
     MessageQueue* msgq = (MessageQueue*) params;
@@ -39,7 +41,7 @@ DWORD WINAPI consumer(void* params)
 int main(void)
 {
     DWORD unused;
-    MessageQueue msgq(4);
+    MessageQueue msgq(1000,4);
     HANDLE threads[NUM_PRODUCERS+NUM_CONSUMERS];
 
     // create threads
@@ -56,3 +58,5 @@ int main(void)
 
     return 0;
 }
+
+#endif

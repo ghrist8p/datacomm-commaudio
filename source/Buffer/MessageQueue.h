@@ -1,12 +1,10 @@
 #include <windows.h>
 #include <vector>
 
-#define MAX_MSGQ_SIZE 1000
-
 class MessageQueue
 {
 public:
-    MessageQueue(int _elementSize);
+    MessageQueue(int capacity, int elementSize);
     void enqueue(int type, void* src);
     void dequeue(int* type, void* dest);
     /**
@@ -18,7 +16,7 @@ private:
     /**
      * size of an element in the queue.
      */
-    const int elementSize;
+    int elementSize;
     /**
      * holds the elements of the queue.
      */
