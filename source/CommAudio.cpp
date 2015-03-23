@@ -35,6 +35,8 @@
 #include "Client/ClientWindow.h"
 #include <WinSock2.h>
 
+#pragma comment(lib, "ws2_32.lib")
+
 // The version of Windows Sockets required.
 const DWORD WSA_VERSION = 0x0202;
 
