@@ -9,7 +9,7 @@ Server::Server( unsigned short _tcpPort, unsigned long groupIP, unsigned short u
     memset( &group, 0, sizeof( group ) );
     group.sin_family      = AF_INET;
     group.sin_addr.s_addr = groupIP;
-    group.sin_port        = port;
+    group.sin_port        = udpPort;
 }
 
 Server::~Server()
@@ -19,9 +19,7 @@ Server::~Server()
 
 void Server::startTCP()
 {
-    // Declare and create listening socket.
-    SOCKET listenSocket;
-    
+    // Create listening socket
     if( ( listenSocket = WSASocket( AF_INET               // _In_ int                af
                                   , SOCK_STREAM           // _In_ int                type
                                   , 0                     // _In_ int                protocol
@@ -31,8 +29,8 @@ void Server::startTCP()
         ) == INVALID_SOCKET
       )
     {
-        char errorStr[256] = {0};
-        sprintf( errorStr, "ERROR: creating listen socket: %d", WSAGetLastError() );
+        wchar_t errorStr[256] = {0};
+        swprintf_s( errorStr, 256, L"ERROR: creating listen socket: %d", WSAGetLastError() );
         MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
         return;
     }
@@ -42,7 +40,7 @@ void Server::startTCP()
     
     InternetAddr.sin_family      = AF_INET;
     InternetAddr.sin_addr.s_addr = htonl( INADDR_ANY );
-    InternetAddr.sin_port        = htoms( server->port );
+    InternetAddr.sin_port        = htons( tcpPort );
     
     if( bind( listenSocket
             , (PSOCKADDR) &InternetAddr
@@ -50,8 +48,8 @@ void Server::startTCP()
             ) == SOCKET_ERROR
       )
     {
-        char errorStr[256] = {0};
-        sprintf( errorStr, "ERROR: binding listen socket: %d", WSAGetLastError() );
+        wchar_t errorStr[256] = {0};
+        swprintf( errorStr, 256, L"ERROR: binding listen socket: %d", WSAGetLastError() );
         MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
         return;
     }
@@ -59,8 +57,8 @@ void Server::startTCP()
     // Put socket in listening state
     if( listen( listenSocket, 5 ) )
     {
-        char errorStr[256] = {0};
-        sprintf( errorStr, "listen() failed: %d", WSAGetLastError() );
+        wchar_t errorStr[256] = {0};
+        swprintf( errorStr, 256, L"listen() failed: %d", WSAGetLastError() );
         MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
         return;
     }
@@ -101,10 +99,10 @@ DWORD WINAPI AcceptThread( LPVOID lpParam )
         
         if( WSASetEvent( server->newConnectionEvent ) == FALSE )
         {
-            char errorStr[256] = {0};
-            sprintf( errorStr, "WSASetEvent() failed: %d", WSAGetLastError() );
+            wchar_t errorStr[256] = {0};
+            swprintf( errorStr, 256, L"WSASetEvent() failed: %d", WSAGetLastError() );
             MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
-            return;
+            return -1;
         }
     }
 }
@@ -131,9 +129,8 @@ DWORD WINAPI WorkerThread( LPVOID lpParam )
         // On error
         if( retval == WSA_WAIT_FAILED )
         {
-            char errorStr[256] = {0};
- 
-            sprintf( errorStr, "WSAWaitForMultipleEvents() failed: %d", WSAGetLastError() );
+            wchar_t errorStr[256] = {0};
+            swprintf( errorStr, 256, L"WSAWaitForMultipleEvents() failed: %d", WSAGetLastError() );
             MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
             return FALSE;
         }
@@ -143,18 +140,34 @@ DWORD WINAPI WorkerThread( LPVOID lpParam )
         {
             if( WSAResetEvent( eventArray[ retval - WSA_WAIT_EVENT_0 ] ) == FALSE )
             {
-                char errorStr[256] = {0};
-                sprintf( errorStr, "WSAResetEvent() failed: %d", WSAGetLastError() );
+                wchar_t errorStr[256] = {0};
+                swprintf( errorStr, 256, L"WSAResetEvent() failed: %d", WSAGetLastError() );
                 MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
             }
             // TCPConnections[ numTCPConnections ].sock;
-            ++numTCPConnections;
+            ++server->numTCPConnections;
             
-            TCPConnections = (TCPConnection *) realloc( TCPConnections , ( numTCPConnections + 1 ) * sizeof( TCPConnection ) );
-            memset( TCPConnections + numTCPConnections, 0, sizeof( TCPConnection ) );
+            server->TCPConnections = (TCPConnection *) realloc( server->TCPConnections , ( server->numTCPConnections + 1 ) * sizeof( TCPConnection ) );
+            memset( server->TCPConnections + server->numTCPConnections, 0, sizeof( TCPConnection ) );
             // deal with new connection
         }
     }
+}
+
+void Server::send( TCPConnection * to
+                 , LPWSABUF        lpBuffers
+                 , DWORD           dwBufferCount
+                 , LPWSAOVERLAPPED lpOverlapped
+                 , LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine )
+{
+    DWORD numberOfBytesSent;
+    WSASend( to->sock               // _In_  SOCKET                             s
+           , lpBuffers              // _In_  LPWSABUF                           lpBuffers
+           , dwBufferCount          // _In_  DWORD                              dwBufferCount
+           , &numberOfBytesSent     // _Out_ LPDWORD                            lpNumberOfBytesSent
+           , 0                      // _In_  DWORD                              dwFlags
+           , lpOverlapped           // _In_  LPWSAOVERLAPPED                    lpOverlapped
+           , lpCompletionRoutine ); // _In_  LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
 }
 
 void Server::startUDP()
@@ -167,9 +180,9 @@ void Server::startUDP()
                                , WSA_FLAG_OVERLAPPED );
     if( multicastSocket == INVALID_SOCKET )
     {
-        printf( "WSASocket() failed: %d\n"
-              , WSAGetLastError() );
-        return -1;
+        wchar_t errorStr[256] = {0};
+        swprintf( errorStr, 256, L"WSASocket() failed: %d", WSAGetLastError() );
+        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
     }
 }
 
@@ -183,6 +196,8 @@ void Server::sendToGroup( const char * buf, int len )
               , sizeof( group ) )          //_In_ int                     tolen
         < 0 )
     {
-        perror("sendto");
+        wchar_t errorStr[256] = {0};
+        swprintf( errorStr, 256, L"sendto() failed: %d", WSAGetLastError() );
+        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
     }
 }
