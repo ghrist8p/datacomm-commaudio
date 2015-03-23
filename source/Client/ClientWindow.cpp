@@ -57,7 +57,7 @@ ClientWindow::~ClientWindow()
 
 void ClientWindow::addRemoteFile(LPWSTR filename)
 {
-	fileContainerPanel->addItem(new FileListItem(hInst, filename));
+	fileContainerPanel->addItem(new FileListItem(this, hInst, filename));
 }
 
 void ClientWindow::onCreate()
