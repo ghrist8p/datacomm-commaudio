@@ -12,6 +12,7 @@
 #include "PlaybackTrackerPanel.h"
 #include "ButtonPanel.h"
 #include "FileListItem.h"
+#include "ConnectionWindow.h"
 
 ClientWindow::ClientWindow(HINSTANCE hInst)
 	: GuiWindow(hInst)

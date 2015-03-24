@@ -1,7 +1,6 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#include <windows.h>
 #include <WinSock2.h>
 
 typedef struct _TCPConnection

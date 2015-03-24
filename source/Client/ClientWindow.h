@@ -3,6 +3,8 @@
 
 #include "../GuiLibrary/GuiWindow.h"
 
+
+class ConnectionWindow;
 class GuiPanel;
 class GuiLabel;
 class GuiButton;
