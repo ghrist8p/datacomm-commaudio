@@ -10,7 +10,7 @@ class JitterBuffer : private Heap
 public:
     JitterBuffer(int capacity, int elementSize, int delay, int interval);
     int put(int index, void* src);
-    void get(void* dest);
+    int get(void* dest);
     /**
      * handle to event that is set when the jitter buffer allows something to be
      *   removed, unset otherwise.

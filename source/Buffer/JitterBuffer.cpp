@@ -39,20 +39,16 @@ JitterBuffer::JitterBuffer(int capacity, int elementSize, int delay, int interva
  * @param      index index of the element being inserted.
  * @param      src pointer to data to be copied into the element.
  *
- * @return     0 upon success, 1 upon rejection.
+ * @return     1 upon success, 0 upon rejection.
  */
 int JitterBuffer::put(int index, void* src)
 {
-    int ret;
-
     // acquire synchronization objects
     WaitForSingleObject(notFull,INFINITE);
     WaitForSingleObject(access,INFINITE);
 
     if(index > lastIndex)
     {
-        ret = 0;
-
         // if this is the first element after the buffer is empty,
         // delay...
         if(Heap::size() == 0)
@@ -63,19 +59,39 @@ int JitterBuffer::put(int index, void* src)
         // put the new element into the heap
         Heap::insert(index,src);
     }
-    else
-    {
-        ret = 1;
-    }
 
     // release synchronization objects
     ReleaseMutex(access);
     ReleaseSemaphore(notEmpty,1,NULL);
 
-    return ret;
+    return index > lastIndex;
 }
 
-void JitterBuffer::get(void* dest)
+/**
+ * copies the next element from th {JitterBuffer} to the {dest} pointer. if no
+ *   element was inserted for the element being removed, then the function
+ *   returns 0; 1 otherwise.
+ *
+ * @function   JitterBuffer::get
+ *
+ * @date       2015-03-24
+ *
+ * @revision   none
+ *
+ * @designer   Eric Tsang
+ *
+ * @programmer Eric Tsang
+ *
+ * @note       none
+ *
+ * @signature  int JitterBuffer::get(void* dest)
+ *
+ * @param      dest pointer to copy element data into
+ *
+ * @return     1 if there was an inserted to remove from the JitterBuffer; 0
+ *   otherwise.
+ */
+int JitterBuffer::get(void* dest)
 {
     // acquire synchronization objects
     WaitForSingleObject(notEmpty,INFINITE);
@@ -83,7 +99,13 @@ void JitterBuffer::get(void* dest)
     WaitForSingleObject(canGet,INFINITE);
 
     // copy data from root to destination
-    Heap::remove(&lastIndex,dest);
+    int tempIndex;
+    Heap::peek(&tempIndex,dest);
+
+    if(++lastIndex == tempIndex)
+    {
+        Heap::remove();
+    }
 
     // reset the canGet event, and set it after
     // interval
@@ -93,4 +115,6 @@ void JitterBuffer::get(void* dest)
     // release synchronization objects
     ReleaseMutex(access);
     ReleaseSemaphore(notFull,1,NULL);
+
+    return lastIndex == tempIndex;
 }
