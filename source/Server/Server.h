@@ -16,23 +16,24 @@ public:
     Server( unsigned short _tcpPort, unsigned long groupIP, unsigned short udpPort );
     virtual ~Server();
     void startTCP();
-    void send( TCPConnection * to
-                 , LPWSABUF        lpBuffers
-                 , DWORD           dwBufferCount
-                 , LPWSAOVERLAPPED lpOverlapped
-                 , LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine );
-    friend DWORD WINAPI AcceptThread( LPVOID lpParam );
-    friend DWORD WINAPI WorkerThread( LPVOID lpParam );
+    void submitCompletionRoutine( PAPCFUNC lpCompletionRoutine, TCPConnection * to );
     
     void startUDP();
     void sendToGroup( const char * buf, int len );
 private:
     unsigned short tcpPort;
+    SOCKET listenSocket;
+    
     WSAEVENT newConnectionEvent;
     
-    SOCKET listenSocket;
     int numTCPConnections;
     TCPConnection * TCPConnections;
+    
+    static DWORD WINAPI AcceptThread( LPVOID lpParam );
+    HANDLE hAcceptThread;
+    static DWORD WINAPI WorkerThread( LPVOID lpParam );
+    HANDLE hWorkerThread;
+    
     
     struct sockaddr_in group;
     SOCKET multicastSocket;

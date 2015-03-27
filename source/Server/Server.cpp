@@ -64,25 +64,25 @@ void Server::startTCP()
     }
     
     // Create worker thread
-    CreateThread( NULL          // _In_opt_  LPSECURITY_ATTRIBUTES  lpThreadAttributes
-                , 0             // _In_      SIZE_T                 dwStackSize
-                , WorkerThread  // _In_      LPTHREAD_START_ROUTINE lpStartAddress
-                , (LPVOID) this // _In_opt_  LPVOID                 lpParameter
-                , 0             // _In_      DWORD                  dwCreationFlags
-                , NULL );       // _Out_opt_ LPDWORD                lpThreadId
+    hWorkerThread = CreateThread( NULL          // _In_opt_  LPSECURITY_ATTRIBUTES  lpThreadAttributes
+                                , 0             // _In_      SIZE_T                 dwStackSize
+                                , WorkerThread  // _In_      LPTHREAD_START_ROUTINE lpStartAddress
+                                , (LPVOID) this // _In_opt_  LPVOID                 lpParameter
+                                , 0             // _In_      DWORD                  dwCreationFlags
+                                , NULL );       // _Out_opt_ LPDWORD                lpThreadId
     
     // Create accept thread
-    CreateThread( NULL          // _In_opt_  LPSECURITY_ATTRIBUTES  lpThreadAttributes
-                , 0             // _In_      SIZE_T                 dwStackSize
-                , AcceptThread  // _In_      LPTHREAD_START_ROUTINE lpStartAddress
-                , (LPVOID) this // _In_opt_  LPVOID                 lpParameter
-                , 0             // _In_      DWORD                  dwCreationFlags
-                , NULL );       // _Out_opt_ LPDWORD                lpThreadId
+    hAcceptThread = CreateThread( NULL          // _In_opt_  LPSECURITY_ATTRIBUTES  lpThreadAttributes
+                                , 0             // _In_      SIZE_T                 dwStackSize
+                                , AcceptThread  // _In_      LPTHREAD_START_ROUTINE lpStartAddress
+                                , (LPVOID) this // _In_opt_  LPVOID                 lpParameter
+                                , 0             // _In_      DWORD                  dwCreationFlags
+                                , NULL );       // _Out_opt_ LPDWORD                lpThreadId
     
     
 }
 
-DWORD WINAPI AcceptThread( LPVOID lpParam )
+DWORD WINAPI Server::AcceptThread( LPVOID lpParam )
 {
     Server * server = (Server *) lpParam;
     
@@ -107,7 +107,7 @@ DWORD WINAPI AcceptThread( LPVOID lpParam )
     }
 }
 
-DWORD WINAPI WorkerThread( LPVOID lpParam )
+DWORD WINAPI Server::WorkerThread( LPVOID lpParam )
 {
     Server * server = (Server *) lpParam;
     
@@ -154,20 +154,11 @@ DWORD WINAPI WorkerThread( LPVOID lpParam )
     }
 }
 
-void Server::send( TCPConnection * to
-                 , LPWSABUF        lpBuffers
-                 , DWORD           dwBufferCount
-                 , LPWSAOVERLAPPED lpOverlapped
-                 , LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine )
+void Server::submitCompletionRoutine( PAPCFUNC lpCompletionRoutine, TCPConnection * to )
 {
-    DWORD numberOfBytesSent;
-    WSASend( to->sock               // _In_  SOCKET                             s
-           , lpBuffers              // _In_  LPWSABUF                           lpBuffers
-           , dwBufferCount          // _In_  DWORD                              dwBufferCount
-           , &numberOfBytesSent     // _Out_ LPDWORD                            lpNumberOfBytesSent
-           , 0                      // _In_  DWORD                              dwFlags
-           , lpOverlapped           // _In_  LPWSAOVERLAPPED                    lpOverlapped
-           , lpCompletionRoutine ); // _In_  LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
+    QueueUserAPC( lpCompletionRoutine // _In_  PAPCFUNC pfnAPC,
+                , hWorkerThread       // _In_  HANDLE hThread,
+                , (ULONG_PTR)to );    // _In_  ULONG_PTR dwData
 }
 
 void Server::startUDP()
