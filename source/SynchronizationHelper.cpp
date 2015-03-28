@@ -13,6 +13,8 @@ struct DelayedSetEventParams
     long milliseconds;
 };
 
+typedef struct DelayedSetEventParams DelayedSetEventParams;
+
 //////////////////////////////
 // function implementations //
 //////////////////////////////

@@ -61,6 +61,7 @@ const DWORD WSA_VERSION = 0x0202;
 -- the server application will be built. If BUILD_TARGET is set to APP_CLIENT then the client
 -- application will be built.
 -------------------------------------------------------------------------------------------------*/
+/*
 int CALLBACK WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow)
 {
 	MSG msg;
@@ -105,3 +106,4 @@ int CALLBACK WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int 
 	delete window;
 	return 0;
 }
+*/
