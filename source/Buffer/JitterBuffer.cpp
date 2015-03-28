@@ -5,10 +5,31 @@
 #include <cmath>
 #include <stdio.h>
 
-JitterBuffer::JitterBuffer(int capacity, int elementSize, int delay, int interval) : Heap(capacity,elementSize)
+/**
+ * constructor for a {JitterBuffer} instance.
+ *
+ * @param capacity    maximum number of elements that the buffer can contain. if
+ *   the buffer is at its maximum capacity, any attempt to add things to the
+ *   buffer using the {JitterBuffer::put} method will block until there is more
+ *   room in the {JitterBuffer}.
+ * @param himark      minimum number of elements in the buffer before the buffer
+ *   stops regulating the rate that elements can be removed from the buffer
+ *   (using the {JitterBuffer::get} method).
+ * @param elementSize the size of a single element in the JitterBuffer in bytes.
+ * @param delay       milliseconds to wait after the first element is put in the
+ *   JitterBuffer before it can be removed from the buffer. So, when the buffer
+ *   is initially empty, and a new element is put into the buffer, any call to
+ *   {JitterBuffer::get} will block for {delay} milliseconds before unblocking,
+ *   and returning an element.
+ * @param interval    interval in milliseconds between calls to
+ *   {JitterBuffer::get} will block for; milliseconds a call to
+ *   {JitterBuffer::get} will block for until it returns after each call to it.
+ */
+JitterBuffer::JitterBuffer(int capacity, int himark, int elementSize, int delay, int interval) : Heap(capacity,elementSize)
 {
     this->lastIndex   = 0;
     this->delay       = delay;
+    this->himark      = himark;
     this->interval    = interval;
     this->canGet      = CreateEvent(NULL,TRUE,FALSE,NULL);
     this->access      = CreateMutex(NULL, FALSE, NULL);
@@ -58,11 +79,15 @@ int JitterBuffer::put(int index, void* src)
 
         // put the new element into the heap
         Heap::insert(index,src);
+        ReleaseSemaphore(notEmpty,1,NULL);
+    }
+    else
+    {
+        ReleaseSemaphore(notFull,1,NULL);
     }
 
     // release synchronization objects
     ReleaseMutex(access);
-    ReleaseSemaphore(notEmpty,1,NULL);
 
     return index > lastIndex;
 }
@@ -105,16 +130,47 @@ int JitterBuffer::get(void* dest)
     if(++lastIndex == tempIndex)
     {
         Heap::remove();
+        ReleaseSemaphore(notFull,1,NULL);
+    }
+    else
+    {
+        ReleaseSemaphore(notEmpty,1,NULL);
     }
 
     // reset the canGet event, and set it after
     // interval
-    ResetEvent(canGet);
-    delayedSetEvent(canGet,interval);
+    if(Heap::size() < himark)
+    {
+        ResetEvent(canGet);
+        delayedSetEvent(canGet,interval);
+    }
 
     // release synchronization objects
     ReleaseMutex(access);
-    ReleaseSemaphore(notFull,1,NULL);
 
     return lastIndex == tempIndex;
+}
+
+/**
+ * returns the number of elements in the {JitterBuffer}.
+ *
+ * @function   JitterBuffer::size
+ *
+ * @date       2015-03-28
+ *
+ * @revision   none
+ *
+ * @designer   Eric Tsang
+ *
+ * @programmer Eric Tsang
+ *
+ * @note       none
+ *
+ * @signature  int JitterBuffer::size()
+ *
+ * @return     number of elements in the {JitterBuffer}.
+ */
+int JitterBuffer::size()
+{
+    return Heap::size();
 }

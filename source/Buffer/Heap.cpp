@@ -68,23 +68,10 @@ void Heap::insert(int index, void* src)
 void Heap::remove(int* index, void* dest)
 {
     // copy data from root to destination
-    if(index != 0)
-    {
-        *index = data[0].first;
-    }
-    if(dest != 0)
-    {
-        memcpy(dest,data[0].second,elementSize);
-    }
+    Heap::peek(index,dest);
 
-    // swap the root element with the last element
-    swap(0,data.size()-1);
-
-    // remove the last element (originally root) from the heap
-    data.erase(--data.end());
-
-    // maintain the heap structure
-    trickleDown();
+    // remove the root element of the heap
+    Heap::remove();
 }
 
 /**
