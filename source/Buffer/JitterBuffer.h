@@ -8,9 +8,10 @@
 class JitterBuffer : private Heap
 {
 public:
-    JitterBuffer(int capacity, int elementSize, int delay, int interval);
-    int put(int index, void* src);
-    void get(void* dest);
+    JitterBuffer(int capacity, int himark, int elementSize, int delay, int interval);
+    virtual int put(int index, void* src);
+    virtual int get(void* dest);
+    virtual int size();
     /**
      * handle to event that is set when the jitter buffer allows something to be
      *   removed, unset otherwise.
@@ -18,9 +19,14 @@ public:
     HANDLE canGet;
 private:
     /**
-     * holds the last index removed from the jitter buffer
+     * holds the last index removed from the jitter buffer.
      */
     int lastIndex;
+    /**
+     * minimum number of elements in the buffer before the buffer stops
+     *   regulating the rate that elements can be removed from the buffer.
+     */
+    int himark;
     /**
      * milliseconds to wait before enabling dequeueing after an element was
      *   inserted, changing the state of the buffer from empty to not empty.

@@ -6,7 +6,7 @@ int main(void)
 {
     int payload;
 
-    JitterBuffer jb(1000,sizeof(int),5000,1000);
+    JitterBuffer jb(7,4,sizeof(int),5000,1000);
 
     payload = 10;
     jb.put(10,&payload);
@@ -27,29 +27,13 @@ int main(void)
     jb.put(1,&payload);
 
     payload = 56;
-    jb.put(56,&payload);
+    jb.put(20,&payload);
 
-    jb.get(&payload);
-    printf("payload: %d\n",payload);
-
-    jb.get(&payload);
-    printf("payload: %d\n",payload);
-
-    jb.get(&payload);
-    printf("payload: %d\n",payload);
-
-    jb.get(&payload);
-    printf("payload: %d\n",payload);
-
-    jb.get(&payload);
-    printf("payload: %d\n",payload);
-
-    jb.get(&payload);
-    printf("payload: %d\n",payload);
-
-    jb.get(&payload);
-    printf("payload: %d\n",payload);
-
+    while(jb.size() > 0)
+    {
+        jb.get(&payload);
+        printf("payload: %d\n",payload);
+    }
     getchar();
 }
 
