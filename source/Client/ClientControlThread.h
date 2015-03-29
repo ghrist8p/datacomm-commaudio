@@ -6,15 +6,16 @@
 class ClientControlThread
 {
 public:
-    ClientControlThread();
-    ~ClientControlThread();
+    static ClientControlThread* getInstance();
     void requestPacketRetransmission(int index);
     void requestDownload(char* file);
     void cancelDownload(char* file);
-    void changeStream(char* file);
+    void requestChangeStream(char* file);
     void start();
     void stop();
 protected:
+    ClientControlThread();
+    ~ClientControlThread();
     void onDownloadPacket(int index, void* data, int len);
     void onRetransmissionPacket(int index, void* data, int len);
     void onChangeStream(char* file);
@@ -25,6 +26,10 @@ private:
     static DWORD WINAPI _threadRoutine(void* params);
     static void _handleMsgqMsg(ClientControlThread* dis);
     static void _handleSockMsgqMsg(ClientControlThread* dis);
+    /**
+     * reference to the one and only {ClientControlThread} instance.
+     */
+    static ClientControlThread* _instance;
     /**
      * Message queue used to communicate to {_thread}, and get it to do tasks.
      */

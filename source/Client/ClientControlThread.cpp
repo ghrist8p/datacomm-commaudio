@@ -41,7 +41,7 @@
 /*
  * message queue element types
  */
-enum MsgqType
+enum class MsgqType
 {
     REQUEST_PACKET,
     REQUEST_DOWNLOAD,
@@ -53,7 +53,7 @@ enum MsgqType
  * socket message queue element types
  */
 // TODO: this should be defined elsewhere, because its part of a protocol
-enum SockMsgqType
+enum class SockMsgqType
 {
     DOWNLOAD_PACKET,
     RETRANSMISSION_PACKET,
@@ -77,9 +77,39 @@ union SockMsgqElement
     char data[DATA_BUFSIZE];
 };
 
+/////////////////////
+// synchronization //
+/////////////////////
+
+static HANDLE access = CreateMutex(NULL, FALSE, NULL);
+
 ////////////////////////////////////////
 // ClientControlThread implementation //
 ////////////////////////////////////////
+
+ClientControlThread* ClientControlThread::_instance = 0;
+
+/**
+ * returns a pointer to the one and only ClientControlThread instance.
+ *
+ * @return   pointer to the one and only ClientControlThread instance.
+ */
+ClientControlThread* ClientControlThread::getInstance()
+{
+    // acquire synchronization objects
+    WaitForSingleObject(access,INFINITE);
+
+    // retrieve singleton and make if needed
+    if(ClientControlThread::_instance == 0)
+    {
+        ClientControlThread::_instance = new ClientControlThread();
+    }
+
+    // release synchronization objects
+    ReleaseMutex(access);
+
+    return ClientControlThread::_instance;
+}
 
 /**
  * constructs a new {ClientControlThread} object, and initializes all its
@@ -92,6 +122,9 @@ ClientControlThread::ClientControlThread()
     // initialize instance variables
     _threadStopEv = CreateEvent(NULL,TRUE,FALSE,NULL);
     _thread       = INVALID_HANDLE_VALUE;
+
+    // start the thread
+    start();
 }
 
 /**
@@ -119,7 +152,7 @@ void ClientControlThread::requestPacketRetransmission(int index)
     element.index = index;
 
     // insert the element into the message queue
-    _msgq.enqueue(MSGQ_T_REQUEST_PACKET,&element);
+    _msgq.enqueue((int)MsgqType::REQUEST_PACKET,&element);
 }
 
 /**
@@ -139,7 +172,7 @@ void ClientControlThread::requestDownload(char* file)
     memcpy(&element.string,file,STR_LEN);
 
     // insert the element into the message queue
-    _msgq.enqueue(MSGQ_T_REQUEST_DOWNLOAD,&element);
+    _msgq.enqueue((int)MsgqType::REQUEST_DOWNLOAD,&element);
 }
 
 void ClientControlThread::cancelDownload(char* file)
@@ -149,27 +182,27 @@ void ClientControlThread::cancelDownload(char* file)
     memcpy(&element.string,file,STR_LEN);
 
     // insert the element into the message queue
-    _msgq.enqueue(MSGQ_T_CANCEL_DOWNLOAD,&element);
+    _msgq.enqueue((int)MsgqType::CANCEL_DOWNLOAD,&element);
 }
 
-void ClientControlThread::changeStream(char* file)
+void ClientControlThread::requestChangeStream(char* file)
 {
     // prepare the element for insertion into the message queue
     MsgqElement element;
     memcpy(&element.string,file,STR_LEN);
 
     // insert the element into the message queue
-    _msgq.enqueue(MSGQ_T_CHANGE_STREAM,&element);
+    _msgq.enqueue((int)MsgqType::CHANGE_STREAM,&element);
 }
 
 void ClientControlThread::start()
 {
-    startRoutine(&_thread,_threadStopEv,_threadRoutine,this);
+    _startRoutine(&_thread,_threadStopEv,_threadRoutine,this);
 }
 
 void ClientControlThread::stop()
 {
-    stopRoutine(&_thread,_threadStopEv);
+    _stopRoutine(&_thread,_threadStopEv);
 }
 
 void ClientControlThread::onDownloadPacket(int index, void* data, int len)
@@ -244,10 +277,10 @@ DWORD WINAPI ClientControlThread::_threadRoutine(void* params)
             breakLoop = TRUE;
             break;
         case WAIT_OBJECT_0+1:   // message queue has message
-            handleMsgqMsg();
+            _handleMsgqMsg(dis);
             break;
         case WAIT_OBJECT_0+2:   // socket received something
-            handleSockMsgqMsg();
+            _handleSockMsgqMsg(dis);
             break;
         default:
             fatalError("ClientControlThread::_threadRoutine WaitForMultipleObjects");
@@ -262,6 +295,8 @@ DWORD WINAPI ClientControlThread::_threadRoutine(void* params)
 
 void ClientControlThread::_handleMsgqMsg(ClientControlThread* dis)
 {
+    TCHAR s[256];
+
     // allocate memory to hold message queue message
     MsgqType msgType;
     MsgqElement element;
@@ -273,15 +308,22 @@ void ClientControlThread::_handleMsgqMsg(ClientControlThread* dis)
     switch(msgType)
     {
     case MsgqType::REQUEST_PACKET:
+        OutputDebugString(L"MsgqType::REQUEST_PACKET\n");
         // TODO: TCPSocket->send blahblahblah
         break;
     case MsgqType::REQUEST_DOWNLOAD:
+        swprintf_s(s,L"MsgqType::REQUEST_DOWNLOAD: %S\n",element.string);
+        OutputDebugString(s);
         // TODO: TCPSocket->send blahblahblah
         break;
     case MsgqType::CANCEL_DOWNLOAD:
+        swprintf_s(s,L"MsgqType::CANCEL_DOWNLOAD: %S\n",element.string);
+        OutputDebugString(s);
         // TODO: TCPSocket->send blahblahblah
         break;
     case MsgqType::CHANGE_STREAM:
+        swprintf_s(s,L"MsgqType::CHANGE_STREAM: %S\n",element.string);
+        OutputDebugString(s);
         // TODO: TCPSocket->send blahblahblah
         break;
     default:
@@ -303,14 +345,17 @@ void ClientControlThread::_handleSockMsgqMsg(ClientControlThread* dis)
     switch(msgType)
     {
     case SockMsgqType::DOWNLOAD_PACKET:
+        OutputDebugString(L"SockMsgqType::DOWNLOAD_PACKET\n");
         // TODO: parse packet, and fill in callback parameters
         dis->onDownloadPacket(0,0,0);
         break;
     case SockMsgqType::RETRANSMISSION_PACKET:
+        OutputDebugString(L"SockMsgqType::RETRANSMISSION_PACKET\n");
         // TODO: parse packet, and fill in callback parameters
         dis->onRetransmissionPacket(0,0,0);
         break;
     case SockMsgqType::CHANGE_STREAM:
+        OutputDebugString(L"SockMsgqType::CHANGE_STREAM\n");
         // TODO: parse packet, and fill in callback parameters
         dis->onChangeStream(0);
         break;
