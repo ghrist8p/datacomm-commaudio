@@ -8,6 +8,8 @@ class GuiLabel;
 class GuiButton;
 class GuiStatusBar;
 class PlaybackTrackerPanel;
+class ButtonPanel;
+class GuiScrollList;
 
 class ClientWindow : public GuiWindow
 {
@@ -16,15 +18,32 @@ public:
 	virtual ~ClientWindow();
 	virtual void onCreate();
 
+	void addRemoteFile(LPWSTR filename);
+
 private:
+	static void onClickPlay(void*);
+
+	HBITMAP playButtonUp;
+	HBITMAP playButtonDown;
+	HBRUSH darkBackground;
+	HBRUSH lightBackground;
+	HBRUSH accentBrush;
+	HPEN borderPen;
+	HPEN nullPen;
+	COLORREF textColor;
+
 	GuiPanel *topPanel;
 	GuiPanel *topPanelStretch;
-	GuiPanel *fileContainerPanel;
+	GuiScrollList *fileContainerPanel;
 	GuiPanel *seekPanel;
 	GuiLabel *micTargetLabel;
 	GuiButton *micTargetButton;
 	GuiStatusBar *statusBar;
 	PlaybackTrackerPanel *trackerPanel;
+	GuiPanel *buttonSpacer1;
+	GuiPanel *buttonSpacer2;
+	GuiPanel *bottomSpacer;
+	ButtonPanel *playButton;
 };
 
 #endif

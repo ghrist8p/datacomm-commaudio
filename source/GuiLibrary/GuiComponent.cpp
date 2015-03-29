@@ -314,7 +314,8 @@ int GuiComponent::getMinHeight()
 
 void GuiComponent::lpwstrToChar(LPWSTR input, char *output)
 {
-	wcstombs(output, input, lstrlenW(input));
+    size_t useless;
+	wcstombs_s(&useless, output, lstrlenW(input)+1, input, lstrlenW(input));
 }
 
 void GuiComponent::onSetParent()

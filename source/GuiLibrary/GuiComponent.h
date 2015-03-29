@@ -45,8 +45,8 @@ public:
 	void enforceMaximumSize(bool enforce);
 
 	void enableCustomDrawing(bool enable);
-	void setBackgroundBrush(HBRUSH brush);
-	void setBorderPen(HPEN pen);
+	virtual void setBackgroundBrush(HBRUSH brush);
+	virtual void setBorderPen(HPEN pen);
 	HBRUSH getBackgroundBrush();
 	HPEN getBorderPen();
 
