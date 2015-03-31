@@ -46,7 +46,7 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 	}
 
 	// Create the socket
-	if ((sd = WSASocket(PF_INET, SOCK_DGRAM, 0, NULL, 0,
+	if ((sd = WSASocket(PF_INET, SOCK_DGRAM, IPPROTO_IP, NULL, 0,
 		WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET)
 	{
 		printf("Socket cannot be created- Read Help guide for more information");
@@ -236,6 +236,7 @@ DWORD UDPSocket::ThreadStart(void)
 	DWORD Flags;
 	LPSOCKET_INFORMATION SocketInfo;
 	DWORD RecvBytes;
+	int flag = 0;
 
 
 	if ((SocketInfo = (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
@@ -265,35 +266,19 @@ DWORD UDPSocket::ThreadStart(void)
 		}
 		else
 		{
-			int type = SocketInfo->Buffer[0];
-			SocketInfo->mqueue->enqueue(type, SocketInfo->Buffer);
+			switch (flag)
+			{
+			case 1:
+				mreq.imr_multiaddr.s_addr = inet_addr(SocketInfo->Buffer);
+				flag += 1;
+			case 2:
+				mreq.imr_sourceaddr.s_addr = inet_addr(SocketInfo->Buffer);
+				setsockopt(SocketInfo->Socket, IPPROTO_IP, IP_ADD_SOURCE_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
+				flag += 1;
+			default:
+				int type = SocketInfo->Buffer[0];
+				SocketInfo->mqueue->enqueue(type, SocketInfo->Buffer);
+			}
 		}
 	}
-}/*
-
-void CALLBACK UDPSocket::UDPRoutine(DWORD Error, DWORD BytesTransferred,
-	LPWSAOVERLAPPED Overlapped, DWORD InFlags)
-{
-	DWORD Flags;
-	DWORD RecvBytes;
-
-	LPSOCKET_INFORMATION SocketInfo = (LPSOCKET_INFORMATION)Overlapped;
-
-	if ((WSARecvFrom(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags, 0,
-		0, &(SocketInfo->Overlapped), UDPRoutine) == SOCKET_ERROR))
-	{
-		if (WSAGetLastError() != WSA_IO_PENDING)
-		{
-			printf("WSARecv() failed with error %d\n", WSAGetLastError());
-			return;
-		}
-	}
-	else
-	{
-		int type = SocketInfo->Buffer[0];
-		SocketInfo->mqueue.enqueue(type, SocketInfo->Buffer);
-	}
-
-
-}*/
-
+}

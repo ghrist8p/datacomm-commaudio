@@ -175,6 +175,11 @@ void Server::startUDP()
         swprintf( errorStr, 256, L"WSASocket() failed: %d", WSAGetLastError() );
         MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
     }
+	
+	/**
+	setsockopt( multicastSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&group, sizeof(group));
+	setsockopt( multicastSocket, IPPROTO_IP, IP_MULTICAST_IF, (char*)&group, sizeof(group));
+	**/
 }
 
 void Server::sendToGroup( const char * buf, int len )

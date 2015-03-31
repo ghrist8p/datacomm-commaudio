@@ -1,4 +1,7 @@
+#include <winsock2.h>
+#include <windows.h>
 #include <stdio.h>
+#include <ws2tcpip.h>
 #include "MessageQueue.h"
 #pragma warning(disable:4996)
 #pragma comment(lib,"ws2_32.lib")
@@ -20,6 +23,7 @@ private:
 	SOCKET sd;
 	MessageQueue* msgqueue;
 	HANDLE mutex;
+	ip_mreq_source mreq;
 
 public:
 	UDPSocket(int port, MessageQueue* mqueue);
