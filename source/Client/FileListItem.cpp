@@ -1,4 +1,5 @@
 #include "FileListItem.h"
+#include "ClientControlThread.h"
 
 FileListItem::FileListItem(ClientWindow *clientWindow, HINSTANCE hInst, LPWSTR filename)
 {
@@ -73,25 +74,24 @@ void FileListItem::paint(HDC hdc, LPRECT drawingArea)
 
 void FileListItem::onClick(int x, int y)
 {
+	// allocate c style filename string converted from wide char string
+	char* cFilename = (char*) malloc(wcslen(filename)+1);
+	sprintf(cFilename,"%S",filename);
+
+	// handle the click event
 	if (pointInPlayButton(x, y))
 	{
-		/*
-		
-				TODO: REQUEST PLAYBACK OF SONG
-		
-		*/
-		MessageBox(NULL, L"YUP", L"PLAY", MB_ICONEXCLAMATION);
+		// Request Song Playback
+		ClientControlThread::getInstance()->requestChangeStream(cFilename);
 	}
 	else if (pointInSaveButton(x, y))
 	{
-		/*
-
-				TODO: REQUEST SAVING OF SONG
-
-		*/
-
-		MessageBox(NULL, L"YUP", L"SAVE", MB_ICONEXCLAMATION);
+		// request song download
+		ClientControlThread::getInstance()->requestDownload(cFilename);
 	}
+
+	// free c style filename string
+	free(cFilename);
 }
 
 void FileListItem::onMouseMove(int x, int y)
