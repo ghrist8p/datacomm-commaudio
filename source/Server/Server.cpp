@@ -1,11 +1,16 @@
 #include "Server.h"
 
-Server::Server( unsigned short _tcpPort, unsigned long groupIP, unsigned short udpPort )
+Server::Server( unsigned short _tcpPort, newConnectionHandler _handler, void * _data, unsigned long groupIP, unsigned short udpPort )
     : tcpPort( _tcpPort )
+    , handler( _handler )
+    , data( _data )
 {
+    numTCPConnections = 0;
     TCPConnections = (TCPConnection *) malloc( ( numTCPConnections + 1 ) * sizeof( TCPConnection ) );
     memset( TCPConnections, 0, sizeof( TCPConnection ) );
     
+    newConnectionEvent = WSACreateEvent();
+
     memset( &group, 0, sizeof( group ) );
     group.sin_family      = AF_INET;
     group.sin_addr.s_addr = groupIP;
@@ -149,7 +154,8 @@ DWORD WINAPI Server::WorkerThread( LPVOID lpParam )
             
             server->TCPConnections = (TCPConnection *) realloc( server->TCPConnections , ( server->numTCPConnections + 1 ) * sizeof( TCPConnection ) );
             memset( server->TCPConnections + server->numTCPConnections, 0, sizeof( TCPConnection ) );
-            // deal with new connection
+            if( server->handler )
+                server->handler( server, server->data );
         }
     }
 }
@@ -175,11 +181,6 @@ void Server::startUDP()
         swprintf( errorStr, 256, L"WSASocket() failed: %d", WSAGetLastError() );
         MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
     }
-	
-	/**
-	setsockopt( multicastSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&group, sizeof(group));
-	setsockopt( multicastSocket, IPPROTO_IP, IP_MULTICAST_IF, (char*)&group, sizeof(group));
-	**/
 }
 
 void Server::sendToGroup( const char * buf, int len )

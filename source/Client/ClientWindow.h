@@ -2,6 +2,7 @@
 #define _CLIENT_WINDOW_H_
 
 #include "../GuiLibrary/GuiWindow.h"
+#include "Sockets.h"
 
 class GuiPanel;
 class GuiLabel;
@@ -44,6 +45,8 @@ private:
 	GuiPanel *buttonSpacer2;
 	GuiPanel *bottomSpacer;
 	ButtonPanel *playButton;
+
+    TCPSocket * tcpSocket;
 };
 
 #endif

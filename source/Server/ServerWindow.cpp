@@ -30,8 +30,10 @@ ServerWindow::~ServerWindow()
 	delete bottomPanel;
 	delete leftPaddingPanel;
 	delete inputPanel;
-	delete portLabel;
-	delete portInput;
+	delete tcpPortLabel;
+    delete udpPortLabel;
+	delete tcpPortInput;
+	delete udpPortInput;
 	delete connectionButton;
 }
 
@@ -46,8 +48,10 @@ void ServerWindow::onCreate()
 	bottomPanel = new GuiPanel(hInst, this);
 	leftPaddingPanel = new GuiPanel(hInst, bottomPanel);
 	inputPanel = new GuiPanel(hInst, bottomPanel);
-	portLabel = new GuiLabel(hInst, inputPanel);
-	portInput = new GuiTextBox(hInst, inputPanel, false);
+	tcpPortLabel = new GuiLabel(hInst, inputPanel);
+	udpPortLabel = new GuiLabel(hInst, inputPanel);
+	tcpPortInput = new GuiTextBox(hInst, inputPanel, false);
+	udpPortInput = new GuiTextBox(hInst, inputPanel, false);
 	connectionButton = new GuiButton(hInst, inputPanel, IDB_CONNECTION_TOGGLE);
 
 	// Get the windows default vertical linear layout
@@ -77,7 +81,7 @@ void ServerWindow::onCreate()
 
 	// Add the Input Panel to the Bottom Panel Layout
 	inputPanel->init();
-	inputPanel->setPreferredSize(400, 0);
+	inputPanel->setPreferredSize(1000, 0);
 	inputPanel->addCommandListener(BN_CLICKED, toggleConnection, this);
 	layoutProps.bottomMargin = 5;
 	layoutProps.topMargin = 5;
@@ -90,20 +94,34 @@ void ServerWindow::onCreate()
 	layout->setHorizontal(true);
 
 	// Add Inputs to Input Panel
-	portLabel->init();
-	createLabelFont();
-	portLabel->setText(L"Port:");
-	layoutProps.leftMargin = 0;
-	layoutProps.rightMargin = 0;
-	layoutProps.topMargin = 5;
-	layout->addComponent(portLabel, &layoutProps);
+	
+
 
 	layout->zeroProperties(&layoutProps);
 	layoutProps.leftMargin = 5;
 
-	portInput->init();
-	portInput->setPreferredSize(256, 0);
-	layout->addComponent(portInput, &layoutProps);
+    tcpPortLabel->init();
+	createLabelFont();
+	tcpPortLabel->setText(L"TCP Port:");
+	layoutProps.leftMargin = 0;
+	layoutProps.rightMargin = 0;
+	layoutProps.topMargin = 5;
+	layout->addComponent(tcpPortLabel, &layoutProps);
+	tcpPortInput->init();
+	tcpPortInput->setPreferredSize(256, 0);
+	layout->addComponent(tcpPortInput, &layoutProps);
+
+	udpPortLabel->init();
+	createLabelFont();
+	udpPortLabel->setText(L"UDP Port:");
+	layoutProps.leftMargin = 0;
+	layoutProps.rightMargin = 0;
+	layoutProps.topMargin = 5;
+	layout->addComponent(udpPortLabel, &layoutProps);
+
+	udpPortInput->init();
+	udpPortInput->setPreferredSize(256, 0);
+	layout->addComponent(udpPortInput, &layoutProps);
 
 	connectionButton->init();
 	connectionButton->setText(L"Connect");
@@ -117,17 +135,32 @@ void ServerWindow::createLabelFont()
 	memset(&logFont, 0, sizeof(logFont));
 	logFont.lfHeight = -15; // see PS
 	labelFont = CreateFontIndirect(&logFont);
+    
+	SendMessage(tcpPortLabel->getHWND(), WM_SETFONT, (WPARAM)labelFont, TRUE);
+	SendMessage(udpPortLabel->getHWND(), WM_SETFONT, (WPARAM)labelFont, TRUE);
+}
 
-	SendMessage(portLabel->getHWND(), WM_SETFONT, (WPARAM)labelFont, TRUE);
+void ServerWindow::newConnHandler( Server * server, void * data )
+{
+	ServerWindow *serverWindow = (ServerWindow*) data;
+	serverWindow->connectedClients->addItem(L"New Connection!", -1);
 }
 
 bool ServerWindow::toggleConnection(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
 {
+    
+	ServerWindow *serverWindow = (ServerWindow*) pThis;
 	/**
 	 * START SERVER LISTENING HERE
 	 */
+    unsigned short tcpPort = _wtoi( serverWindow->tcpPortInput->getText() );
+    unsigned short udpPort = _wtoi( serverWindow->udpPortInput->getText() );
+    unsigned short groupAddress = inet_addr( MULTICAST_ADDRESS );
 
-	ServerWindow *serverWindow = (ServerWindow*) pThis;
+    serverWindow->server = new Server( tcpPort, newConnHandler, serverWindow, groupAddress, udpPort );
+    serverWindow->server->startTCP();
+    serverWindow->server->startUDP();
+
 	serverWindow->connectedClients->addItem(L"Button Pressed!", -1);
 
 	return true;

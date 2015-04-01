@@ -2,7 +2,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <ws2tcpip.h>
-#include "MessageQueue.h"
+#include "../Buffer/MessageQueue.h"
 #pragma warning(disable:4996)
 #pragma comment(lib,"ws2_32.lib")
 
