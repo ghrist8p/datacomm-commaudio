@@ -197,4 +197,62 @@ void Server::sendToGroup( const char * buf, int len )
         swprintf( errorStr, 256, L"sendto() failed: %d", WSAGetLastError() );
         MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
     }
+	
+	//makes the socket multicast and adds it to the group.
+	setsockopt( multicastSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&group, sizeof(group));
+	setsockopt( multicastSocket, IPPROTO_IP, IP_MULTICAST_IF, (char*)&group, sizeof(group));
+}
+
+void Server::sendWave(char* fname, WavSong *ret, int speed)
+{
+
+	FILE* fp = fopen(fname, "rb");
+	if (fp) {
+
+		char id[5];
+		unsigned long size;
+		short format_tag, channels, block_align, bits_per_sample;
+		unsigned long format_length, sample_rate, avg_bytes_sec, data_size;
+		int data_read = 0;
+
+		fread(id, sizeof(char), 4, fp);
+		id[4] = '\0';
+
+		if (!strcmp(id, "RIFF")) {
+			fread(&size, sizeof(unsigned long), 1, fp);
+			fread(id, sizeof(char), 4, fp);
+			id[4] = '\0';
+
+			if (!strcmp(id, "WAVE")) {
+				//get wave headers
+				fread(id, sizeof(char), 4, fp);
+				fread(&format_length, sizeof(unsigned long), 1, fp);
+				fread(&format_tag, sizeof(short), 1, fp);
+				fread(&channels, sizeof(short), 1, fp);
+				fread(&sample_rate, sizeof(unsigned long), 1, fp);
+				fread(&avg_bytes_sec, sizeof(unsigned long), 1, fp);
+				fread(&block_align, sizeof(short), 1, fp);
+				fread(&bits_per_sample, sizeof(short), 1, fp);
+				fread(id, sizeof(char), 4, fp);
+				fread(&data_size, sizeof(unsigned long), 1, fp);
+
+				ret->data = (char*)malloc(data_size);
+
+				//read chunks of data from the file based on the speed selected and send it
+				while (data_read = fread(ret->data, sizeof(short), speed, fp) > 0)
+				{
+					//we should add a flag to stop this if another song is being sent.
+					sendToGroup(ret->data, data_read);
+				}
+			}
+			else {
+				cout << "Error: RIFF file but not a wave file\n";
+			}
+		}
+		else {
+			cout << "Error: not a RIFF file\n";
+		}
+	}
+
+	fclose(fp);
 }
