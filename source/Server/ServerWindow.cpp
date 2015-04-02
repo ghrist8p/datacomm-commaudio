@@ -17,6 +17,7 @@ ServerWindow::ServerWindow(HINSTANCE hInst)
 
 	bottomPanelBrush = CreateSolidBrush(RGB(255, 0, 0));
 	pen = CreatePen(0, 2, RGB(0, 0, 255));
+	connected = false;
 }
 
 
@@ -41,7 +42,7 @@ void ServerWindow::onCreate()
 {
 	// Set Window Properties
 	setTitle(L"CommAudio Server");
-	setSize(700, 325);
+	setSize(750, 325);
 
 	// Create Window Components
 	connectedClients = new GuiListBox(hInst, this);
@@ -81,7 +82,7 @@ void ServerWindow::onCreate()
 
 	// Add the Input Panel to the Bottom Panel Layout
 	inputPanel->init();
-	inputPanel->setPreferredSize(1000, 0);
+	inputPanel->setPreferredSize(700, 0);
 	inputPanel->addCommandListener(BN_CLICKED, toggleConnection, this);
 	layoutProps.bottomMargin = 5;
 	layoutProps.topMargin = 5;
@@ -102,7 +103,7 @@ void ServerWindow::onCreate()
 
     tcpPortLabel->init();
 	createLabelFont();
-	tcpPortLabel->setText(L"TCP Port:");
+	tcpPortLabel->setText(L"TCP:");
 	layoutProps.leftMargin = 0;
 	layoutProps.rightMargin = 0;
 	layoutProps.topMargin = 5;
@@ -113,7 +114,7 @@ void ServerWindow::onCreate()
 
 	udpPortLabel->init();
 	createLabelFont();
-	udpPortLabel->setText(L"UDP Port:");
+	udpPortLabel->setText(L"UDP:");
 	layoutProps.leftMargin = 0;
 	layoutProps.rightMargin = 0;
 	layoutProps.topMargin = 5;
@@ -124,7 +125,7 @@ void ServerWindow::onCreate()
 	layout->addComponent(udpPortInput, &layoutProps);
 
 	connectionButton->init();
-	connectionButton->setText(L"Connect");
+	connectionButton->setText(L"Start");
 	layoutProps.weight = 1;
 	layout->addComponent(connectionButton, &layoutProps);
 }
@@ -150,18 +151,41 @@ bool ServerWindow::toggleConnection(GuiComponent *pThis, UINT command, UINT id, 
 {
     
 	ServerWindow *serverWindow = (ServerWindow*) pThis;
+
 	/**
-	 * START SERVER LISTENING HERE
+	 * STOP SERVER LISTENING HERE
 	 */
-    unsigned short tcpPort = _wtoi( serverWindow->tcpPortInput->getText() );
-    unsigned short udpPort = _wtoi( serverWindow->udpPortInput->getText() );
-    unsigned short groupAddress = inet_addr( MULTICAST_ADDRESS );
+	if (serverWindow->connected)
+	{
+		serverWindow->server->disconnect();
+		serverWindow->tcpPortInput->setEnabled(true);
+		serverWindow->udpPortInput->setEnabled(true);
+		serverWindow->connectionButton->setText(L"Start Server");
+		serverWindow->connected = false;
+	}
+	/**
+	* START SERVER LISTENING HERE
+	*/
+	else
+	{
+		unsigned short tcpPort = _wtoi(serverWindow->tcpPortInput->getText());
+		unsigned short udpPort = _wtoi(serverWindow->udpPortInput->getText());
+		unsigned short groupAddress = inet_addr(MULTICAST_ADDRESS);
 
-    serverWindow->server = new Server( tcpPort, newConnHandler, serverWindow, groupAddress, udpPort );
-    serverWindow->server->startTCP();
-    serverWindow->server->startUDP();
+		serverWindow->server = new Server(tcpPort, newConnHandler, serverWindow, groupAddress, udpPort);
+		if (serverWindow->server->startTCP())
+		{
+			if (serverWindow->server->startUDP())
+			{
+				serverWindow->tcpPortInput->setEnabled(false);
+				serverWindow->udpPortInput->setEnabled(false);
+				serverWindow->connectionButton->setText(L"Close Server");
+				serverWindow->connected = true;
+			}
+		}
+	}
 
-	serverWindow->connectedClients->addItem(L"Button Pressed!", -1);
+	//serverWindow->connectedClients->addItem(L"Button Pressed!", -1);
 
 	return true;
 }
