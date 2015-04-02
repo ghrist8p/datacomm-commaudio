@@ -86,11 +86,11 @@ int CALLBACK WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int 
 	#if BUILD_TARGET == APP_SERVER
 		window = new ServerWindow(hInst);
 	#else
-		MicReader micReader(5);
-		micReader.startReading();
-		char *recordedData = micReader.getRecordedData();
-		PlayWave player;
-		player.playWave(recordedData);
+		// MicReader micReader(5);
+		// micReader.startReading();
+		// char *recordedData = micReader.getRecordedData();
+		// PlayWave player;
+		// player.playWave(recordedData);
 		window = new ConnectionWindow(hInst);
 	#endif
 

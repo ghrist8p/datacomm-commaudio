@@ -81,6 +81,20 @@ bool ConnectionWindow::connect(GuiComponent *pThis, UINT command, UINT id, WPARA
 {
 	ConnectionWindow *window = (ConnectionWindow*) pThis;
 
+    size_t retvall;
+
+    LPWSTR wHost = window->hostInput->getText();
+    char * host = (char *) malloc( wcslen( wHost ) + 1 );
+
+    wcstombs_s( &retvall               // size_t *pReturnValue,
+              , host                   // char *mbstr,
+              , wcslen( wHost ) + 1    // size_t sizeInBytes,
+              , wHost                  // const wchar_t *wcstr,
+              , wcslen( wHost ) + 1 ); // size_t count 
+
+    ClientControlThread * cct = ClientControlThread::getInstance();
+    cct->connect( host, _wtoi( window->portInput->getText() ) );
+
 	window->clientWindow->setVisible(true);
 	window->setVisible(false);
 

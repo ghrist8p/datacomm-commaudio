@@ -29,8 +29,6 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	accentBrush = (HBRUSH) CreateSolidBrush(RGB(0, 162, 232));
 	nullPen = (HPEN) CreatePen(PS_SOLID, 0, 0);
 	borderPen = (HPEN)CreatePen(PS_SOLID, 1, RGB(128, 0, 128));
-
-    tcpSocket = new TCPSocket( "localhost", 7000, NULL );
 }
 
 

@@ -21,7 +21,8 @@ private:
 	GuiListBox *connectedClients;
 	GuiPanel *bottomPanel;
 	GuiPanel *leftPaddingPanel;
-	GuiPanel *inputPanel;
+	GuiPanel *tcpInputPanel;
+	GuiPanel *udpInputPanel;
 	GuiLabel *tcpPortLabel;
 	GuiLabel *udpPortLabel;
 	GuiTextBox *tcpPortInput;

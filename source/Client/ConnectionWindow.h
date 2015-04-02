@@ -2,6 +2,7 @@
 #define _CONNECTION_WINDOW_H_
 
 #include "../GuiLibrary/GuiWindow.h"
+#include "ClientControlThread.h"
 
 class GuiButton;
 class GuiLabel;
