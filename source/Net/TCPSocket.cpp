@@ -23,7 +23,7 @@
 --  This is the constructor for the TCP socket, it will create the socket and connect to the specified server,
 --  then it will start the thread to receive data.
 ----------------------------------------------------------------------------------------------------------------------*/
-TCPSocket::TCPSocket(char* host, int port, MessageQueue mqueue)
+TCPSocket::TCPSocket(char* host, int port, MessageQueue *mqueue)
 {
 	int error;
 	struct hostent	*hp;
@@ -209,7 +209,7 @@ void CALLBACK TCPSocket::TCPRoutine(DWORD Error, DWORD BytesTransferred,
 	else
 	{
 		int type = SocketInfo->Buffer[0];
-		SocketInfo->mqueue.enqueue(type, SocketInfo->Buffer);
+		SocketInfo->mqueue->enqueue(type, SocketInfo->Buffer);
 	}
 
 

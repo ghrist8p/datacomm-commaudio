@@ -4,6 +4,8 @@
 #include "../GuiLibrary/GuiWindow.h"
 #include "Sockets.h"
 
+
+class ConnectionWindow;
 class GuiPanel;
 class GuiLabel;
 class GuiButton;

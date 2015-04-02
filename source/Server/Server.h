@@ -41,6 +41,7 @@ public:
     void sendToGroup( const char * buf, int len );
 	void sendWave(char* fname, WavSong *ret, int speed);
 	
+    friend DWORD WINAPI WorkerThread( LPVOID lpParam );
 private:
     unsigned short tcpPort;
     SOCKET listenSocket;
