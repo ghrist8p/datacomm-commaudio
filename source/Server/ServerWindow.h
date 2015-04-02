@@ -2,6 +2,7 @@
 #define _SERVER_WINDOW_H_
 
 #include "../GuiLibrary/GuiWindow.h"
+#include "Server.h"
 
 class GuiListBox;
 class GuiPanel;
@@ -21,16 +22,21 @@ private:
 	GuiPanel *bottomPanel;
 	GuiPanel *leftPaddingPanel;
 	GuiPanel *inputPanel;
-	GuiLabel *portLabel;
-	GuiTextBox *portInput;
+	GuiLabel *tcpPortLabel;
+	GuiLabel *udpPortLabel;
+	GuiTextBox *tcpPortInput;
+	GuiTextBox *udpPortInput;
 	GuiButton *connectionButton;
 	HFONT labelFont;
 	HBRUSH bottomPanelBrush;
 	HPEN pen;
 
+    Server * server;
+
 	void createLabelFont();
 
 	static bool toggleConnection(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval);
+    static void newConnHandler( Server * server, void * data );
 };
 
 #endif

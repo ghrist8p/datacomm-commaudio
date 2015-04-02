@@ -1,15 +1,20 @@
 #include "Server.h"
 
-Server::Server( unsigned short _tcpPort, unsigned long groupIP, unsigned short udpPort )
+Server::Server( unsigned short _tcpPort, newConnectionHandler _handler, void * _data, unsigned long groupIP, unsigned short udpPort )
     : tcpPort( _tcpPort )
+    , handler( _handler )
+    , data( _data )
 {
+    numTCPConnections = 0;
     TCPConnections = (TCPConnection *) malloc( ( numTCPConnections + 1 ) * sizeof( TCPConnection ) );
     memset( TCPConnections, 0, sizeof( TCPConnection ) );
     
+    newConnectionEvent = WSACreateEvent();
+
     memset( &group, 0, sizeof( group ) );
     group.sin_family      = AF_INET;
     group.sin_addr.s_addr = groupIP;
-    group.sin_port        = port;
+    group.sin_port        = udpPort;
 }
 
 Server::~Server()
@@ -19,9 +24,7 @@ Server::~Server()
 
 void Server::startTCP()
 {
-    // Declare and create listening socket.
-    SOCKET listenSocket;
-    
+    // Create listening socket
     if( ( listenSocket = WSASocket( AF_INET               // _In_ int                af
                                   , SOCK_STREAM           // _In_ int                type
                                   , 0                     // _In_ int                protocol
@@ -31,8 +34,8 @@ void Server::startTCP()
         ) == INVALID_SOCKET
       )
     {
-        char errorStr[256] = {0};
-        sprintf( errorStr, "ERROR: creating listen socket: %d", WSAGetLastError() );
+        wchar_t errorStr[256] = {0};
+        swprintf_s( errorStr, 256, L"ERROR: creating listen socket: %d", WSAGetLastError() );
         MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
         return;
     }
@@ -42,7 +45,7 @@ void Server::startTCP()
     
     InternetAddr.sin_family      = AF_INET;
     InternetAddr.sin_addr.s_addr = htonl( INADDR_ANY );
-    InternetAddr.sin_port        = htoms( server->port );
+    InternetAddr.sin_port        = htons( tcpPort );
     
     if( bind( listenSocket
             , (PSOCKADDR) &InternetAddr
@@ -50,8 +53,8 @@ void Server::startTCP()
             ) == SOCKET_ERROR
       )
     {
-        char errorStr[256] = {0};
-        sprintf( errorStr, "ERROR: binding listen socket: %d", WSAGetLastError() );
+        wchar_t errorStr[256] = {0};
+        swprintf( errorStr, 256, L"ERROR: binding listen socket: %d", WSAGetLastError() );
         MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
         return;
     }
@@ -59,32 +62,32 @@ void Server::startTCP()
     // Put socket in listening state
     if( listen( listenSocket, 5 ) )
     {
-        char errorStr[256] = {0};
-        sprintf( errorStr, "listen() failed: %d", WSAGetLastError() );
+        wchar_t errorStr[256] = {0};
+        swprintf( errorStr, 256, L"listen() failed: %d", WSAGetLastError() );
         MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
         return;
     }
     
     // Create worker thread
-    CreateThread( NULL          // _In_opt_  LPSECURITY_ATTRIBUTES  lpThreadAttributes
-                , 0             // _In_      SIZE_T                 dwStackSize
-                , WorkerThread  // _In_      LPTHREAD_START_ROUTINE lpStartAddress
-                , (LPVOID) this // _In_opt_  LPVOID                 lpParameter
-                , 0             // _In_      DWORD                  dwCreationFlags
-                , NULL );       // _Out_opt_ LPDWORD                lpThreadId
+    hWorkerThread = CreateThread( NULL          // _In_opt_  LPSECURITY_ATTRIBUTES  lpThreadAttributes
+                                , 0             // _In_      SIZE_T                 dwStackSize
+                                , WorkerThread  // _In_      LPTHREAD_START_ROUTINE lpStartAddress
+                                , (LPVOID) this // _In_opt_  LPVOID                 lpParameter
+                                , 0             // _In_      DWORD                  dwCreationFlags
+                                , NULL );       // _Out_opt_ LPDWORD                lpThreadId
     
     // Create accept thread
-    CreateThread( NULL          // _In_opt_  LPSECURITY_ATTRIBUTES  lpThreadAttributes
-                , 0             // _In_      SIZE_T                 dwStackSize
-                , AcceptThread  // _In_      LPTHREAD_START_ROUTINE lpStartAddress
-                , (LPVOID) this // _In_opt_  LPVOID                 lpParameter
-                , 0             // _In_      DWORD                  dwCreationFlags
-                , NULL );       // _Out_opt_ LPDWORD                lpThreadId
+    hAcceptThread = CreateThread( NULL          // _In_opt_  LPSECURITY_ATTRIBUTES  lpThreadAttributes
+                                , 0             // _In_      SIZE_T                 dwStackSize
+                                , AcceptThread  // _In_      LPTHREAD_START_ROUTINE lpStartAddress
+                                , (LPVOID) this // _In_opt_  LPVOID                 lpParameter
+                                , 0             // _In_      DWORD                  dwCreationFlags
+                                , NULL );       // _Out_opt_ LPDWORD                lpThreadId
     
     
 }
 
-DWORD WINAPI AcceptThread( LPVOID lpParam )
+DWORD WINAPI Server::AcceptThread( LPVOID lpParam )
 {
     Server * server = (Server *) lpParam;
     
@@ -101,15 +104,15 @@ DWORD WINAPI AcceptThread( LPVOID lpParam )
         
         if( WSASetEvent( server->newConnectionEvent ) == FALSE )
         {
-            char errorStr[256] = {0};
-            sprintf( errorStr, "WSASetEvent() failed: %d", WSAGetLastError() );
+            wchar_t errorStr[256] = {0};
+            swprintf( errorStr, 256, L"WSASetEvent() failed: %d", WSAGetLastError() );
             MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
-            return;
+            return -1;
         }
     }
 }
 
-DWORD WINAPI WorkerThread( LPVOID lpParam )
+DWORD WINAPI Server::WorkerThread( LPVOID lpParam )
 {
     Server * server = (Server *) lpParam;
     
@@ -131,9 +134,8 @@ DWORD WINAPI WorkerThread( LPVOID lpParam )
         // On error
         if( retval == WSA_WAIT_FAILED )
         {
-            char errorStr[256] = {0};
- 
-            sprintf( errorStr, "WSAWaitForMultipleEvents() failed: %d", WSAGetLastError() );
+            wchar_t errorStr[256] = {0};
+            swprintf( errorStr, 256, L"WSAWaitForMultipleEvents() failed: %d", WSAGetLastError() );
             MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
             return FALSE;
         }
@@ -143,18 +145,26 @@ DWORD WINAPI WorkerThread( LPVOID lpParam )
         {
             if( WSAResetEvent( eventArray[ retval - WSA_WAIT_EVENT_0 ] ) == FALSE )
             {
-                char errorStr[256] = {0};
-                sprintf( errorStr, "WSAResetEvent() failed: %d", WSAGetLastError() );
+                wchar_t errorStr[256] = {0};
+                swprintf( errorStr, 256, L"WSAResetEvent() failed: %d", WSAGetLastError() );
                 MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
             }
             // TCPConnections[ numTCPConnections ].sock;
-            ++numTCPConnections;
+            ++server->numTCPConnections;
             
-            TCPConnections = (TCPConnection *) realloc( TCPConnections , ( numTCPConnections + 1 ) * sizeof( TCPConnection ) );
-            memset( TCPConnections + numTCPConnections, 0, sizeof( TCPConnection ) );
-            // deal with new connection
+            server->TCPConnections = (TCPConnection *) realloc( server->TCPConnections , ( server->numTCPConnections + 1 ) * sizeof( TCPConnection ) );
+            memset( server->TCPConnections + server->numTCPConnections, 0, sizeof( TCPConnection ) );
+            if( server->handler )
+                server->handler( server, server->data );
         }
     }
+}
+
+void Server::submitCompletionRoutine( PAPCFUNC lpCompletionRoutine, TCPConnection * to )
+{
+    QueueUserAPC( lpCompletionRoutine // _In_  PAPCFUNC pfnAPC,
+                , hWorkerThread       // _In_  HANDLE hThread,
+                , (ULONG_PTR)to );    // _In_  ULONG_PTR dwData
 }
 
 void Server::startUDP()
@@ -167,9 +177,9 @@ void Server::startUDP()
                                , WSA_FLAG_OVERLAPPED );
     if( multicastSocket == INVALID_SOCKET )
     {
-        printf( "WSASocket() failed: %d\n"
-              , WSAGetLastError() );
-        return -1;
+        wchar_t errorStr[256] = {0};
+        swprintf( errorStr, 256, L"WSASocket() failed: %d", WSAGetLastError() );
+        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
     }
 }
 
@@ -183,6 +193,66 @@ void Server::sendToGroup( const char * buf, int len )
               , sizeof( group ) )          //_In_ int                     tolen
         < 0 )
     {
-        perror("sendto");
+        wchar_t errorStr[256] = {0};
+        swprintf( errorStr, 256, L"sendto() failed: %d", WSAGetLastError() );
+        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
     }
+	
+	//makes the socket multicast and adds it to the group.
+	setsockopt( multicastSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&group, sizeof(group));
+	setsockopt( multicastSocket, IPPROTO_IP, IP_MULTICAST_IF, (char*)&group, sizeof(group));
+}
+
+void Server::sendWave(char* fname, WavSong *ret, int speed)
+{
+
+	FILE* fp = fopen(fname, "rb");
+	if (fp) {
+
+		char id[5];
+		unsigned long size;
+		short format_tag, channels, block_align, bits_per_sample;
+		unsigned long format_length, sample_rate, avg_bytes_sec, data_size;
+		int data_read = 0;
+
+		fread(id, sizeof(char), 4, fp);
+		id[4] = '\0';
+
+		if (!strcmp(id, "RIFF")) {
+			fread(&size, sizeof(unsigned long), 1, fp);
+			fread(id, sizeof(char), 4, fp);
+			id[4] = '\0';
+
+			if (!strcmp(id, "WAVE")) {
+				//get wave headers
+				fread(id, sizeof(char), 4, fp);
+				fread(&format_length, sizeof(unsigned long), 1, fp);
+				fread(&format_tag, sizeof(short), 1, fp);
+				fread(&channels, sizeof(short), 1, fp);
+				fread(&sample_rate, sizeof(unsigned long), 1, fp);
+				fread(&avg_bytes_sec, sizeof(unsigned long), 1, fp);
+				fread(&block_align, sizeof(short), 1, fp);
+				fread(&bits_per_sample, sizeof(short), 1, fp);
+				fread(id, sizeof(char), 4, fp);
+				fread(&data_size, sizeof(unsigned long), 1, fp);
+
+				ret->data = (char*)malloc(data_size);
+
+				//read chunks of data from the file based on the speed selected and send it
+				while (data_read = fread(ret->data, sizeof(short), speed, fp) > 0)
+				{
+					//we should add a flag to stop this if another song is being sent.
+					sendToGroup(ret->data, data_read);
+				}
+			}
+			else {
+				cout << "Error: RIFF file but not a wave file\n";
+			}
+		}
+		else {
+			cout << "Error: not a RIFF file\n";
+		}
+	}
+
+	fclose(fp);
 }

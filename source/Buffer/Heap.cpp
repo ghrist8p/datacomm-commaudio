@@ -43,18 +43,56 @@ void Heap::insert(int index, void* src)
     heapify();
 }
 
+/**
+ * copies the root element from the heap to the passed user's pointers, then
+ *   removed the root element from the heap, while maintaining the heap data
+ *   structure.
+ *
+ * @function   Heap::remove
+ *
+ * @date       2015-03-24
+ *
+ * @revision   none
+ *
+ * @designer   Eric Tsang
+ *
+ * @programmer Eric Tsang
+ *
+ * @note       none
+ *
+ * @signature  void Heap::remove(int* index, void* dest)
+ *
+ * @param      index integer to copy the index of the peeked element of.
+ * @param      dest holds the data at the index.
+ */
 void Heap::remove(int* index, void* dest)
 {
     // copy data from root to destination
-    if(index != 0)
-    {
-        *index = data[0].first;
-    }
-    if(dest != 0)
-    {
-        memcpy(dest,data[0].second,elementSize);
-    }
+    Heap::peek(index,dest);
 
+    // remove the root element of the heap
+    Heap::remove();
+}
+
+/**
+ * removes the root element from the heap, without saving it.
+ *
+ * @function   Heap::remove
+ *
+ * @date       2015-03-24
+ *
+ * @revision   none
+ *
+ * @designer   Eric Tsang
+ *
+ * @programmer Eric Tsang
+ *
+ * @note       none
+ *
+ * @signature  void Heap::remove()
+ */
+void Heap::remove()
+{
     // swap the root element with the last element
     swap(0,data.size()-1);
 
@@ -65,6 +103,59 @@ void Heap::remove(int* index, void* dest)
     trickleDown();
 }
 
+/**
+ * takes the information at the root of the heap, and copies it to the user's
+ *   space, without modifying the elements in the heap.
+ *
+ * @function   Heap::peek
+ *
+ * @date       2015-03-24
+ *
+ * @revision   none
+ *
+ * @designer   Eric Tsang
+ *
+ * @programmer Eric Tsang
+ *
+ * @note       none
+ *
+ * @signature  void Heap::peek(int* index, void* dest)
+ *
+ * @param      index integer to copy the index of the peeked element of.
+ * @param      dest holds the data at the index.
+ */
+void Heap::peek(int* index, void* dest)
+{
+    // copy data from root to destination
+    if(index != 0)
+    {
+        *index = data[0].first;
+    }
+    if(dest != 0)
+    {
+        memcpy(dest,data[0].second,elementSize);
+    }
+}
+
+/**
+ * returns the number of elements currently in the heap.
+ *
+ * @function   Heap::size
+ *
+ * @date       2015-03-24
+ *
+ * @revision   none
+ *
+ * @designer   Eric Tsang
+ *
+ * @programmer Eric Tsang
+ *
+ * @note       none
+ *
+ * @signature  int Heap::size()
+ *
+ * @return     number of elements currently in the heap.
+ */
 int Heap::size()
 {
     return data.size();
@@ -185,7 +276,7 @@ int Heap::leftId(int id)
 
 int Heap::rightId(int id)
 {
-    // calculate and return id of left child
+    // calculate and return id of right child
     int right = 2*id+2;
     return (right >= 0 && right < (int) data.size()) ? right : -1;
 }
