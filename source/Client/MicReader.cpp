@@ -1,20 +1,26 @@
 #include "MicReader.h"
 #include <iostream>
 
+#define SAMPLE_RATE 44100
+#define BITS_PER_SAMPLE 16
+#define CHANNELS 2
+#define BITS_PER_BYTE 8
+#define BUFSIZE (SAMPLE_RATE*BITS_PER_SAMPLE/BITS_PER_BYTE*CHANNELS)
+
 MicReader::MicReader(int numSeconds)
 {
 	recordLength = numSeconds;
-	sampleRate = 22050;
-	buffLen = 22050 * numSeconds;
+	sampleRate = SAMPLE_RATE;
+	buffLen = BUFSIZE * numSeconds;
 	waveIn = new short[buffLen];
 
 	result = 0;
 	format.wFormatTag = WAVE_FORMAT_PCM;
-	format.wBitsPerSample = 8;
-	format.nChannels = 1;
+	format.wBitsPerSample = BITS_PER_SAMPLE;
+	format.nChannels = CHANNELS;
 	format.nSamplesPerSec = sampleRate;
 	format.nAvgBytesPerSec = format.nSamplesPerSec * format.nChannels * format.wBitsPerSample / 8;
-	format.nBlockAlign = format.nChannels * format.wBitsPerSample / 8;
+	format.nBlockAlign = format.nChannels * format.wBitsPerSample / BITS_PER_BYTE;
 	format.cbSize = 0;
 }
 
@@ -51,7 +57,7 @@ void MicReader::startReading()
 	}
 
 	result = waveInStart(mic);
-	
+
 	if (result)
 	{
 		std::cout << "Error reading from microphone" << std::endl;
