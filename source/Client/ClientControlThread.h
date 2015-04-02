@@ -3,6 +3,8 @@
 
 #include "../Buffer/MessageQueue.h"
 
+#define IP_ADDR_LEN 16
+
 class ClientControlThread
 {
 public:
@@ -11,7 +13,7 @@ public:
     void requestDownload(char* file);
     void cancelDownload(char* file);
     void requestChangeStream(char* file);
-    void start();
+    void connect(char* ipAddress, short port);
     void stop();
 protected:
     ClientControlThread();
@@ -30,6 +32,14 @@ private:
      * reference to the one and only {ClientControlThread} instance.
      */
     static ClientControlThread* _instance;
+    /**
+     * pointer to IP address of the remote host
+     */
+    char ipAddress[IP_ADDR_LEN];
+    /**
+     * pointer to IP address of the remote host
+     */
+    short port;
     /**
      * Message queue used to communicate to {_thread}, and get it to do tasks.
      */

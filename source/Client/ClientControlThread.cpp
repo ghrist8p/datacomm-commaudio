@@ -122,9 +122,6 @@ ClientControlThread::ClientControlThread()
     // initialize instance variables
     _threadStopEv = CreateEvent(NULL,TRUE,FALSE,NULL);
     _thread       = INVALID_HANDLE_VALUE;
-
-    // start the thread
-    start();
 }
 
 /**
@@ -195,7 +192,7 @@ void ClientControlThread::requestChangeStream(char* file)
     _msgq.enqueue((int)MsgqType::CHANGE_STREAM,&element);
 }
 
-void ClientControlThread::start()
+void ClientControlThread::connect(char* ipAddress, short port)
 {
     _startRoutine(&_thread,_threadStopEv,_threadRoutine,this);
 }
