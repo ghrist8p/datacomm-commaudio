@@ -2,6 +2,8 @@
 #include <windows.h>
 #include <stdio.h>
 
+#include "../Buffer/MessageQueue.h"
+
 #define GETLENGTH	4
 #define DATA_BUFSIZE 8192
 
@@ -10,18 +12,18 @@ typedef struct _SOCKET_INFORMATION {
 	SOCKET Socket;
 	CHAR Buffer[DATA_BUFSIZE];
 	WSABUF DataBuf;
-	MessageQueue mqueue;
+	MessageQueue *mqueue;
 } SOCKET_INFORMATION, *LPSOCKET_INFORMATION;
 
 class UDPSocket
 {
 private:
 	SOCKET sd;
-	MessageQueue msgqueue;
+	MessageQueue* msgqueue;
 	HANDLE mutex;
 
 public:
-	UDPSocket(int port, MessageQueue mqueue);
+	UDPSocket(int port, MessageQueue *mqueue);
 	~UDPSocket();
 	int Send(void* data, int length, char* dest_ip, int dest_port);
 	static DWORD WINAPI UDPThread(LPVOID lpParameter);
