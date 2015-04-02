@@ -8,8 +8,7 @@ class PlayWave
 {
 public:
 	PlayWave();
-	void startWave();
-	void playWave(char *data);
+	void playWave(char *data, int length);
 
 private:
 	HWAVEOUT hWaveOut;

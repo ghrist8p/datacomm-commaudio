@@ -1,5 +1,5 @@
-#define DEBUG
-#ifndef DEBUG
+//#define DEBUG
+#ifndef TEST
 /*-------------------------------------------------------------------------------------------------
 -- SOURCE FILE: CommAudio.cpp - An application that implements a client/server model where
 --				mulitple clients may connect to the server and audio is multicast from the server
@@ -68,6 +68,13 @@ const DWORD WSA_VERSION = 0x0202;
 -- the server application will be built. If BUILD_TARGET is set to APP_CLIENT then the client
 -- application will be built.
 -------------------------------------------------------------------------------------------------*/
+
+#define SAMPLE_RATE 44100
+#define BITS_PER_SAMPLE 16
+#define CHANNELS 2
+#define BITS_PER_BYTE 8
+#define BUFSIZE (SAMPLE_RATE*BITS_PER_SAMPLE/BITS_PER_BYTE*CHANNELS)
+
 int CALLBACK WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow)
 {
 	MSG msg;
@@ -90,9 +97,8 @@ int CALLBACK WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int 
 	#else
 		MicReader micReader(5);
 		micReader.startReading();
-		char *recordedData = micReader.getRecordedData();
 		PlayWave player;
-		player.playWave(recordedData);
+		player.playWave(micReader.getRecordedData(),BUFSIZE * 5);
 		window = new ConnectionWindow(hInst);
 	#endif
 
