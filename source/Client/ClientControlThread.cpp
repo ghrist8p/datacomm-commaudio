@@ -192,7 +192,7 @@ void ClientControlThread::requestChangeStream(char* file)
     _msgq.enqueue((int)MsgqType::CHANGE_STREAM,&element);
 }
 
-void ClientControlThread::connect(char* ipAddress, u_short port)
+void ClientControlThread::connect(char* ipAddress, unsigned short port)
 {
     // copy connection parameters into the object
     memcpy(this->ipAddress,ipAddress,IP_ADDR_LEN);

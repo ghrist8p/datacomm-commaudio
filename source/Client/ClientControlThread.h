@@ -15,7 +15,7 @@ public:
     void requestDownload(char* file);
     void cancelDownload(char* file);
     void requestChangeStream(char* file);
-    void connect(char* ipAddress, u_short port);
+    void connect(char* ipAddress, unsigned short port);
     void disconnect();
 protected:
     ClientControlThread();
