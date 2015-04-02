@@ -20,7 +20,7 @@ class Server;
 struct WavSong
 {
 	char* data;
-	unsigned long size;
+	unsigned long len;
 };
 
 typedef void (*newConnectionHandler)( Server *, void * );
@@ -44,6 +44,7 @@ public:
     void sendToGroup( const char * buf, int len );
 	void sendWave(char* fname, WavSong *ret, int speed);
 	
+    friend DWORD WINAPI WorkerThread( LPVOID lpParam );
 private:
     unsigned short tcpPort;
     SOCKET listenSocket;

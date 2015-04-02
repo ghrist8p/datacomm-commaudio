@@ -34,10 +34,15 @@
 #define BUILD_TARGET APP_CLIENT
 
 #include "Server/ServerWindow.h"
-#include "Client/ClientWindow.h"
+#include "Client/ConnectionWindow.h"
+#include "Client/MicReader.h"
+#include "Client/PlayWave.h"
 #include <WinSock2.h>
 
 #pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "MSIMG32.lib")
+#pragma comment(lib, "Gdi32.lib")
+#pragma comment(lib, "Winmm.lib")
 
 // The version of Windows Sockets required.
 const DWORD WSA_VERSION = 0x0202;
@@ -83,7 +88,12 @@ int CALLBACK WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int 
 	#if BUILD_TARGET == APP_SERVER
 		window = new ServerWindow(hInst);
 	#else
-		window = new ClientWindow(hInst);
+		MicReader micReader(5);
+		micReader.startReading();
+		char *recordedData = micReader.getRecordedData();
+		PlayWave player;
+		player.playWave(recordedData);
+		window = new ConnectionWindow(hInst);
 	#endif
 
 	// Ensure the Window was successfully created

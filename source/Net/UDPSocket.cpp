@@ -21,7 +21,7 @@
 --	NOTES:
 --  This is the constructor for the UDP socket, it will create the socket and will start the thread to listen for data
 ----------------------------------------------------------------------------------------------------------------------*/
-UDPSocket::UDPSocket(int port, MessageQueue mqueue)
+UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 {
 	int error;
 	struct hostent	*hp;
@@ -266,10 +266,10 @@ DWORD UDPSocket::ThreadStart(void)
 		else
 		{
 			int type = SocketInfo->Buffer[0];
-			SocketInfo->mqueue.enqueue(type, SocketInfo->Buffer);
+			SocketInfo->mqueue->enqueue(type, SocketInfo->Buffer);
 		}
 	}
-}/*
+}
 
 void CALLBACK UDPSocket::UDPRoutine(DWORD Error, DWORD BytesTransferred,
 	LPWSAOVERLAPPED Overlapped, DWORD InFlags)
@@ -291,9 +291,9 @@ void CALLBACK UDPSocket::UDPRoutine(DWORD Error, DWORD BytesTransferred,
 	else
 	{
 		int type = SocketInfo->Buffer[0];
-		SocketInfo->mqueue.enqueue(type, SocketInfo->Buffer);
+		SocketInfo->mqueue->enqueue(type, SocketInfo->Buffer);
 	}
 
 
-}*/
+}
 

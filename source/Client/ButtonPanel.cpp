@@ -1,5 +1,7 @@
 #include "ButtonPanel.h"
 
+#define TRANSPARENT_COLOR RGB(0,255,0)
+
 ButtonPanel::ButtonPanel(HINSTANCE hInstance, GuiComponent *parent, HBITMAP up, HBITMAP down)
 	: GuiPanel(hInstance, parent)
 {
@@ -54,7 +56,9 @@ bool ButtonPanel::paint(GuiComponent *pThis, UINT command, UINT id, WPARAM wPara
 	DWORD error = GetLastError();
 
 	GetObject(activeState, sizeof(bitmap), &bitmap);
-	BitBlt(hdc, 0, 0, bitmap.bmWidth, bitmap.bmHeight, buffer, 0, 0, SRCCOPY);
+	TransparentBlt(hdc, 0, 0, bitmap.bmWidth, bitmap.bmHeight,
+				   buffer, 0, 0, bitmap.bmWidth, bitmap.bmHeight,
+				   TRANSPARENT_COLOR);
 
 	SelectObject(buffer, oldBitmap);
 	DeleteDC(buffer);
