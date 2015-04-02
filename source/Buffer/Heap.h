@@ -1,3 +1,6 @@
+#ifndef HEAP_H
+#define HEAP_H
+
 #include <windows.h>
 #include <vector>
 
@@ -28,3 +31,5 @@ private:
      */
     std::vector<std::pair<int,void*>> data;
 };
+
+#endif

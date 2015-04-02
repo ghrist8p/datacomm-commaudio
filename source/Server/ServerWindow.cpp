@@ -29,7 +29,8 @@ ServerWindow::~ServerWindow()
 	delete connectedClients;
 	delete bottomPanel;
 	delete leftPaddingPanel;
-	delete inputPanel;
+	delete tcpInputPanel;
+	delete udpInputPanel;
 	delete tcpPortLabel;
     delete udpPortLabel;
 	delete tcpPortInput;
@@ -47,12 +48,13 @@ void ServerWindow::onCreate()
 	connectedClients = new GuiListBox(hInst, this);
 	bottomPanel = new GuiPanel(hInst, this);
 	leftPaddingPanel = new GuiPanel(hInst, bottomPanel);
-	inputPanel = new GuiPanel(hInst, bottomPanel);
-	tcpPortLabel = new GuiLabel(hInst, inputPanel);
-	udpPortLabel = new GuiLabel(hInst, inputPanel);
-	tcpPortInput = new GuiTextBox(hInst, inputPanel, false);
-	udpPortInput = new GuiTextBox(hInst, inputPanel, false);
-	connectionButton = new GuiButton(hInst, inputPanel, IDB_CONNECTION_TOGGLE);
+	tcpInputPanel = new GuiPanel(hInst, bottomPanel);
+	udpInputPanel = new GuiPanel(hInst, bottomPanel);
+	tcpPortLabel = new GuiLabel(hInst, tcpInputPanel);
+	udpPortLabel = new GuiLabel(hInst, udpInputPanel);
+	tcpPortInput = new GuiTextBox(hInst, tcpInputPanel, false);
+	udpPortInput = new GuiTextBox(hInst, udpInputPanel, false);
+	connectionButton = new GuiButton(hInst, tcpInputPanel, IDB_CONNECTION_TOGGLE);
 
 	// Get the windows default vertical linear layout
 	GuiLinearLayout *layout = (GuiLinearLayout*)getLayoutManager();
@@ -68,41 +70,38 @@ void ServerWindow::onCreate()
 
 	// Add Bottom Panel to the Window Layout
 	bottomPanel->init();
-	bottomPanel->setPreferredSize(0, 36);
+	bottomPanel->setPreferredSize(0, 72);
 	layout->addComponent(bottomPanel);
 
 	// Get the Bottom Panel Layout
 	layout = (GuiLinearLayout*)bottomPanel->getLayoutManager();
-	layout->setHorizontal(true);
+	layout->setHorizontal(false);
 
 	// Add the Left Padding Panel to the Bottom Panel Layout
 	leftPaddingPanel->init();
-	layout->addComponent(leftPaddingPanel, &layoutProps);
+	//layout->addComponent(leftPaddingPanel, &layoutProps);
 
-	// Add the Input Panel to the Bottom Panel Layout
-	inputPanel->init();
-	inputPanel->setPreferredSize(1000, 0);
-	inputPanel->addCommandListener(BN_CLICKED, toggleConnection, this);
+	// Add the TCP Input Panel to the Bottom Panel Layout
+	tcpInputPanel->init();
+	tcpInputPanel->setPreferredSize(1000, 0);
+	tcpInputPanel->addCommandListener(BN_CLICKED, toggleConnection, this);
 	layoutProps.bottomMargin = 5;
 	layoutProps.topMargin = 5;
 	layoutProps.leftMargin = 5;
 	layoutProps.rightMargin = 5;
-	layout->addComponent(inputPanel, &layoutProps);
+	layout->addComponent(tcpInputPanel, &layoutProps);
 
 	// Get the Input Panel Layout
-	layout = (GuiLinearLayout*)inputPanel->getLayoutManager();
+	layout = (GuiLinearLayout*)tcpInputPanel->getLayoutManager();
 	layout->setHorizontal(true);
 
-	// Add Inputs to Input Panel
-	
-
-
+	// Add Inputs to TCP Input Panel
 	layout->zeroProperties(&layoutProps);
 	layoutProps.leftMargin = 5;
 
     tcpPortLabel->init();
 	createLabelFont();
-	tcpPortLabel->setText(L"TCP Port:");
+	tcpPortLabel->setText(L"TCP:");
 	layoutProps.leftMargin = 0;
 	layoutProps.rightMargin = 0;
 	layoutProps.topMargin = 5;
@@ -111,9 +110,29 @@ void ServerWindow::onCreate()
 	tcpPortInput->setPreferredSize(256, 0);
 	layout->addComponent(tcpPortInput, &layoutProps);
 
+	connectionButton->init();
+	connectionButton->setText(L"Connect");
+	layoutProps.weight = 1;
+	layout->addComponent(connectionButton, &layoutProps);
+    
+	layout = (GuiLinearLayout*)bottomPanel->getLayoutManager();
+    // Add the TCP Input Panel to the Bottom Panel Layout
+	udpInputPanel->init();
+	udpInputPanel->setPreferredSize(1000, 0);
+	udpInputPanel->addCommandListener(BN_CLICKED, toggleConnection, this);
+	layoutProps.bottomMargin = 5;
+	layoutProps.topMargin = 5;
+	layoutProps.leftMargin = 5;
+	layoutProps.rightMargin = 5;
+	layout->addComponent(udpInputPanel, &layoutProps);
+
+	// Get the Input Panel Layout
+	layout = (GuiLinearLayout*)udpInputPanel->getLayoutManager();
+	layout->setHorizontal(true);
+
 	udpPortLabel->init();
 	createLabelFont();
-	udpPortLabel->setText(L"UDP Port:");
+	udpPortLabel->setText(L"UDP:");
 	layoutProps.leftMargin = 0;
 	layoutProps.rightMargin = 0;
 	layoutProps.topMargin = 5;
@@ -123,10 +142,6 @@ void ServerWindow::onCreate()
 	udpPortInput->setPreferredSize(256, 0);
 	layout->addComponent(udpPortInput, &layoutProps);
 
-	connectionButton->init();
-	connectionButton->setText(L"Connect");
-	layoutProps.weight = 1;
-	layout->addComponent(connectionButton, &layoutProps);
 }
 
 void ServerWindow::createLabelFont()
