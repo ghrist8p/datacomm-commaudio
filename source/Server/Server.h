@@ -10,6 +10,9 @@
 #include <iostream>
 using namespace std;
 
+#pragma warning(disable:4996)
+#pragma comment(lib,"ws2_32.lib")
+
 #define MULTICAST_ADDRESS "239.255.255.240"
 
 class Server;

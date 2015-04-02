@@ -1,3 +1,5 @@
+#define DEBUG
+#ifndef DEBUG
 /*-------------------------------------------------------------------------------------------------
 -- SOURCE FILE: CommAudio.cpp - An application that implements a client/server model where
 --				mulitple clients may connect to the server and audio is multicast from the server
@@ -105,3 +107,4 @@ int CALLBACK WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int 
 	delete window;
 	return 0;
 }
+#endif

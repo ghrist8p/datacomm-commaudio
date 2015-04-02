@@ -205,7 +205,6 @@ void Server::sendToGroup( const char * buf, int len )
 
 void Server::sendWave(char* fname, WavSong *ret, int speed)
 {
-
 	FILE* fp = fopen(fname, "rb");
 	if (fp) {
 
