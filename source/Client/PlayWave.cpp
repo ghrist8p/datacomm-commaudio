@@ -1,12 +1,19 @@
+#ifndef _PLAY_WAVE_CPP_
+#define _PLAY_WAVE_CPP_
+
+#include "PlayWave.h"
+
 #include <windows.h>
-#include <mmsystem.h>
 #include <stdio.h>
 
 //add wimm.lib to the libraries list
 
-HWAVEOUT hWaveOut; // device handle
+PlayWave::PlayWave()
+{
+	hWaveOut = 0;
+}
 
-void startWave()
+void PlayWave::startWave()
 {	
 	WAVEFORMATEX wfx;  // settings stuff
 	
@@ -29,7 +36,7 @@ void startWave()
 
 }
 
-void playWave(char* data)
+void PlayWave::playWave(char* data)
 {
 	WAVEHDR PiecetoPlay;
 	PiecetoPlay.lpData = data;
@@ -41,3 +48,5 @@ void playWave(char* data)
 
 	waveOutWrite(hWaveOut, (LPWAVEHDR)&PiecetoPlay, sizeof(PiecetoPlay));
 }
+
+#endif

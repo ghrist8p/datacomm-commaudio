@@ -291,7 +291,7 @@ void CALLBACK UDPSocket::UDPRoutine(DWORD Error, DWORD BytesTransferred,
 	else
 	{
 		int type = SocketInfo->Buffer[0];
-		SocketInfo->mqueue.enqueue(type, SocketInfo->Buffer);
+		SocketInfo->mqueue->enqueue(type, SocketInfo->Buffer);
 	}
 
 
