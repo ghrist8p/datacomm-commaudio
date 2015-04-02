@@ -1,7 +1,7 @@
 #ifndef MESSAGE_QUEUE_H
 #define MESSAGE_QUEUE_H
 
-#include <windows.h>
+#include "../common.h"
 #include <vector>
 
 class MessageQueue

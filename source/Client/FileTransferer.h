@@ -1,7 +1,7 @@
 #ifndef _FILE_TRANSFERER_H_
 #define _FILE_TRANSFERER_H_
 
-#include <Windows.h>
+#include "../common.h"
 
 #define FILENAME_PACKET_LENGTH 128
 #define FILE_PACKET_SIZE 256
@@ -17,7 +17,7 @@ class FileTransferer
 	public:
 		FileTransferer();
 		~FileTransferer();
-		
+
 		void sendFile(int socket, char *file);
 
 	private:

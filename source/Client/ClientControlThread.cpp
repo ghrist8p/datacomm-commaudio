@@ -15,7 +15,7 @@
 
 #include "ClientControlThread.h"
 #include "../handlerHelper.h"
-//#include "Sockets.h"
+#include "Sockets.h"
 
 // TODO: be able to include the "../Net/TCPSocket.h", and use the DATA_BUFSIZE
 // from that header file instead of this one
@@ -265,7 +265,7 @@ DWORD WINAPI ClientControlThread::_threadRoutine(void* params)
     ClientControlThread* dis = (ClientControlThread*) params;
 
     // connect to the remote host
-    //dis->tcpSock = new TCPSocket(dis->ipAddress,dis->port,&dis->_sockMsgq);
+    dis->tcpSock = new TCPSocket(dis->ipAddress,dis->port,&dis->_sockMsgq);
 
     // perform the thread routine
     int breakLoop = FALSE;
@@ -294,7 +294,7 @@ DWORD WINAPI ClientControlThread::_threadRoutine(void* params)
     }
 
     // disconnect from remote host
-    //delete dis->tcpSock;
+    delete dis->tcpSock;
 
     // return...
     printf("Thread stopped...\n");

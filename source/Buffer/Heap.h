@@ -1,7 +1,7 @@
 #ifndef HEAP_H
 #define HEAP_H
 
-#include <windows.h>
+#include "../common.h"
 #include <vector>
 
 class Heap

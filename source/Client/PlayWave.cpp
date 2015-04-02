@@ -3,7 +3,7 @@
 
 #include "PlayWave.h"
 
-#include <windows.h>
+#include "../common.h"
 #include <stdio.h>
 
 //add wimm.lib to the libraries list
@@ -14,14 +14,14 @@ PlayWave::PlayWave()
 }
 
 void PlayWave::startWave()
-{	
+{
 	WAVEFORMATEX wfx;  // settings stuff
-	
+
 
 	wfx.nSamplesPerSec = 44100; /* sample rate */
 	wfx.wBitsPerSample = 16; /* sample size */
 	wfx.nChannels = 2; /* channels*/
-	
+
 
 	wfx.cbSize = 0; /* size of _extra_ info */
 	wfx.wFormatTag = WAVE_FORMAT_PCM;

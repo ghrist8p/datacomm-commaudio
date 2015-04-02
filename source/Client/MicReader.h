@@ -1,7 +1,7 @@
 #ifndef _MIC_READER_H_
 #define _MIC_READER_H_
 
-#include <Windows.h>
+#include "../common.h"
 #include <mmsystem.h>
 
 class MicReader

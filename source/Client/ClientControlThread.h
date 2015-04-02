@@ -3,7 +3,7 @@
 
 #include "../Buffer/MessageQueue.h"
 
-//class TCPSocket;
+class TCPSocket;
 
 #define IP_ADDR_LEN 16
 
@@ -37,7 +37,7 @@ private:
     /**
      * pointer to the TCPSocket owned by the control thread.
      */
-    //TCPSocket* tcpSock;
+    TCPSocket* tcpSock;
     /**
      * pointer to IP address of the remote host
      */

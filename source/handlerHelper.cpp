@@ -1,4 +1,6 @@
-#include <windows.h>
+#include "handlerHelper.h"
+
+#include "common.h"
 
 void fatalError(char* errstr)
 {

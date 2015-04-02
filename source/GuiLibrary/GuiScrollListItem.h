@@ -1,7 +1,7 @@
 #ifndef _GUI_SCROLL_LIST_ITEM_H_
 #define _GUI_SCROLL_LIST_ITEM_H_
 
-#include <Windows.h>
+#include "../common.h"
 
 class GuiScrollList;
 
