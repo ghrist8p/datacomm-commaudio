@@ -1,5 +1,7 @@
 #include "Server.h"
 
+#define MUSICSTREAM '1'
+
 Server::Server( unsigned short _tcpPort, newConnectionHandler _handler, void * _data, unsigned long groupIP, unsigned short udpPort )
     : tcpPort( _tcpPort )
     , handler( _handler )
@@ -181,6 +183,10 @@ void Server::startUDP()
         swprintf( errorStr, 256, L"WSASocket() failed: %d", WSAGetLastError() );
         MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
     }
+	
+	//makes the socket multicast and adds it to the group.
+	setsockopt( multicastSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&group, sizeof(group));
+	setsockopt( multicastSocket, IPPROTO_IP, IP_MULTICAST_IF, (char*)&group, sizeof(group));
 }
 
 void Server::sendToGroup( const char * buf, int len )
@@ -197,23 +203,19 @@ void Server::sendToGroup( const char * buf, int len )
         swprintf( errorStr, 256, L"sendto() failed: %d", WSAGetLastError() );
         MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
     }
-	
-	//makes the socket multicast and adds it to the group.
-	setsockopt( multicastSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&group, sizeof(group));
-	setsockopt( multicastSocket, IPPROTO_IP, IP_MULTICAST_IF, (char*)&group, sizeof(group));
 }
 
-void Server::sendWave(char* fname, WavSong *ret, int speed)
+void Server::sendWave(char* fname, WavSong *song, int speed)
 {
 
 	FILE* fp = fopen(fname, "rb");
 	if (fp) {
-
 		char id[5];
 		unsigned long size;
 		short format_tag, channels, block_align, bits_per_sample;
 		unsigned long format_length, sample_rate, avg_bytes_sec, data_size;
 		int data_read = 0;
+		char temp;
 
 		fread(id, sizeof(char), 4, fp);
 		id[4] = '\0';
@@ -236,13 +238,20 @@ void Server::sendWave(char* fname, WavSong *ret, int speed)
 				fread(id, sizeof(char), 4, fp);
 				fread(&data_size, sizeof(unsigned long), 1, fp);
 
-				ret->data = (char*)malloc(data_size);
+				song->data = (char*)malloc(speed + 1);
 
 				//read chunks of data from the file based on the speed selected and send it
-				while (data_read = fread(ret->data, sizeof(short), speed, fp) > 0)
+				while (data_read = fread(song->data, 1, speed, fp) > 0)
 				{
 					//we should add a flag to stop this if another song is being sent.
-					sendToGroup(ret->data, data_read);
+					for(int i = data_read; i > 0; i--)
+					{
+						song->data[i+1] = song->data[i];
+									
+					}
+					song->data[0] = MUSICSTREAM;
+					
+					sendToGroup(song->data, data_read + 1);
 				}
 			}
 			else {
