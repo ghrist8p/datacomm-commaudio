@@ -20,11 +20,10 @@ public:
 private:
 	int openDevice(int samplesPerSecond, int bitsPerSample, int numChannels);
 	int closeDevice();
-	void enqueueAudioData(char* data, int length);
 	static DWORD WINAPI playRoutine(void* params);
 	void handleMsgqMsg();
-	static void freeAudioPacketOnceUsed(PlayWave* dis, WAVEHDR* audioPacket);
-	static DWORD WINAPI freeAudioPacketOnceUsedRoutine(void* params);
+	static void startCleanupRoutine(PlayWave* dis, WAVEHDR* audioPacket);
+	static DWORD WINAPI cleanupRoutine(void* params);
 
 	/**
 	 * pointer to the last enqueued audio packet if it exists; 0 otherwise.
@@ -39,7 +38,7 @@ private:
 	WAVEHDR* lastAudioPacket;
 
 	/**
-	 * mutex used to protect the _lastAudioPacket linked list.
+	 * mutex used to protect the lastAudioPacket linked list.
 	 */
 	HANDLE lastAudioPacketAccess;
 
@@ -54,6 +53,13 @@ private:
 	 *   otherwise.
 	 */
 	HANDLE canEnqueue;
+
+	/**
+	 * handle to thread that's used to deallocate packets that have been
+	 *   allocated to be played by the speakers, after they have been played by
+	 *   the speakers.
+	 */
+	HANDLE cleanupThread;
 
 	/**
 	 * handle to thread used to dequeue audio from the message queue, and add

@@ -1,8 +1,8 @@
 #ifndef _PLAY_WAVE_CPP_
 #define _PLAY_WAVE_CPP_
 
-// #define DEBUG
-// #define TEST
+#define DEBUG
+#define RUN_TEST
 
 #include "PlayWave.h"
 #include "../common.h"
@@ -24,7 +24,7 @@
  * interval of time to wait between checks to free allocated audio packets to
  *   play.
  */
-#define CHECK_FOR_FREEING_INTERVAL 100
+#define CHECK_FOR_FREEING_INTERVAL 50
 
 using namespace std;
 
@@ -33,15 +33,15 @@ using namespace std;
 ////////////////////////////
 
 /**
- * used as thread parameters for the freeAudioPacketOnceUsedRoutine.
+ * used as thread parameters for the cleanupRoutine.
  */
-struct FapouParams
+struct CrParams
 {
 	PlayWave* dis;
 	WAVEHDR* audioPacket;
 };
 
-typedef struct FapouParams FapouParams;
+typedef struct CrParams CrParams;
 
 /////////////////////////////////////////
 // static function forward declaration //
@@ -67,6 +67,7 @@ PlayWave::PlayWave(int capacity, MessageQueue* msgq)
 	this->msgq = msgq;
 	this->speakers = 0;
 	this->playThread = INVALID_HANDLE_VALUE;
+	this->cleanupThread = INVALID_HANDLE_VALUE;
 	this->playThreadStopEv = CreateEvent(NULL,TRUE,FALSE,NULL);
 	this->lastAudioPacket = 0;
 	this->lastAudioPacketAccess = CreateMutex(NULL, FALSE, NULL);
@@ -74,12 +75,34 @@ PlayWave::PlayWave(int capacity, MessageQueue* msgq)
 	this->canDequeue = CreateSemaphore(NULL,0,capacity,NULL);
 }
 
+/**
+ * destructor for the audio device. when destructed, the play thread is stopped,
+ *   and the class's handle to the audio device is invalidated.
+ *
+ * @date     2015-04-03T10:42:59-0800
+ *
+ * @author   Eric Tsang
+ */
 PlayWave::~PlayWave()
 {
 	stopPlaying();
 	closeDevice();
 }
 
+/**
+ * obtains a handle to the audio device, and starts the play thread, if there
+ *   are no problems.
+ *
+ * @date     2015-04-03T10:44:30-0800
+ *
+ * @author   Eric Tsang
+ *
+ * @param    samplesPerSecond   the number of samples per second the audio device should play
+ * @param    bitsPerSample   the number of bits used per sample for the passed PCM data
+ * @param    numChannels   the number of channels there are in the passed PCM data.
+ *
+ * @return   see openDevice
+ */
 int PlayWave::startPlaying(
 	int samplesPerSecond,
 	int bitsPerSample,
@@ -90,17 +113,34 @@ int PlayWave::startPlaying(
 	{
 		startRoutine(&playThread,playThreadStopEv,playRoutine,this);
 	}
+	else
+	{
+		#ifdef DEBUG
+		printf("failed to get the device: %d\n",GetLastError());
+		#endif
+	}
 	return ret;
 }
 
+/**
+ * stops the playing thread, then waits for the cleanup thread to stop as well,
+ *   before closing the device and returning.
+ *
+ * @date     2015-04-03T10:49:13-0800
+ *
+ * @author   Eric Tsang
+ *
+ * @return   see closeDevice()
+ */
 int PlayWave::stopPlaying()
 {
 	#ifdef DEBUG
 	printf("PlayWave::stopPlaying called\n");
 	#endif
 	stopRoutine(&playThread,playThreadStopEv);
+	stopRoutine(&cleanupThread,0);
 
-	#ifdef DEBUGwhile(lastAudioPacket != 0);
+	#ifdef DEBUG
 	printf("PlayWave::stopPlaying returns\n");
 	#endif
 	return closeDevice();
@@ -204,46 +244,18 @@ int PlayWave::closeDevice()
 	return ret;
 }
 
-void PlayWave::enqueueAudioData(char* data, int length)
-{
-	// allocate, and set header data
-	WAVEHDR* audioPacket = (WAVEHDR*) malloc(sizeof(*audioPacket));
-
-	// prepare the current audio packet
-	memset(audioPacket,0,sizeof(*audioPacket));
-	audioPacket->dwUser         = 0;
-	audioPacket->lpData         = (char*) malloc(length);
-	audioPacket->dwBufferLength = length;
-
-	// copy the data from the user space to our own
-	memcpy(audioPacket->lpData,data,length);
-
-	// acquire synchronization objects
-	WaitForSingleObject(canEnqueue,INFINITE);
-	WaitForSingleObject(lastAudioPacketAccess,INFINITE);
-
-	// link the previous audio packet, if it has not been deallocated yet, to
-	// the current packet. if it has been deallocated already, then start
-	// another thread used to deallocate them
-	if(lastAudioPacket != 0)
-	{
-		lastAudioPacket->dwUser = (DWORD_PTR) audioPacket;
-	}
-	else
-	{
-		freeAudioPacketOnceUsed(this,audioPacket);
-	}
-	lastAudioPacket = audioPacket;
-
-	// release synchronization objects
-	ReleaseMutex(lastAudioPacketAccess);
-	ReleaseSemaphore(canDequeue,1,NULL);
-
-	// prepare the header.
-	waveOutPrepareHeader(speakers,audioPacket,sizeof(*audioPacket));
-	waveOutWrite(speakers,audioPacket,sizeof(*audioPacket));
-}
-
+/**
+ * the play routine reads audio data from the message queue into the speaker's
+ *   output buffers as quickly as possible, until the thread is stopped.
+ *
+ * @date     2015-04-03T11:12:51-0800
+ *
+ * @author   Eric Tsang
+ *
+ * @param    params   pointer to the calling PlayWave instance.
+ *
+ * @return   exit code
+ */
 DWORD WINAPI PlayWave::playRoutine(void* params)
 {
 	#ifdef DEBUG
@@ -276,52 +288,92 @@ DWORD WINAPI PlayWave::playRoutine(void* params)
 	}
 
 
-	#ifdef DEBUG// return...
+	#ifdef DEBUG
+	// return...
 	printf("Thread stopped...\n");
 	#endif
 	return 0;
 }
 
+/**
+ * invoked to handle data from the message queue. the type of data is ignored.
+ *   all data in the message queue is assumed to be PCM data that should be
+ *   played.
+ *
+ * reads data from the message queue, and enqueues it to the speaker's output
+ *   buffer, waiting to be played.
+ *
+ * this function may block if the speaker's audio buffer is full.
+ *
+ * @date     2015-04-03T11:17:36-0800
+ *
+ * @author   Eric Tsang
+ */
 void PlayWave::handleMsgqMsg()
 {
-	// allocate memory to hold message queue message
-	int msgType;
-	char* element = (char*) malloc(msgq->elementSize);
+	// allocate, and set header data
+	WAVEHDR* audioPacket = (WAVEHDR*) malloc(sizeof(*audioPacket));
 
-	// get the message queue message
-	msgq->dequeue((int*)&msgType,element);
+	// prepare the current audio packet
+	memset(audioPacket,0,sizeof(*audioPacket));
+	audioPacket->dwUser         = 0;
+	audioPacket->lpData         = (char*) malloc(msgq->elementSize);
+	audioPacket->dwBufferLength = msgq->elementSize;
 
-	// process the message queue message according to its type
-	enqueueAudioData(element,msgq->elementSize);
+	// copy the audio data from message queue to our own buffer
+	int useless;
+	msgq->dequeue((int*)&useless,audioPacket->lpData);
+
+	// prepare the header.
+	waveOutPrepareHeader(speakers,audioPacket,sizeof(*audioPacket));
+	waveOutWrite(speakers,audioPacket,sizeof(*audioPacket));
+
+	// acquire synchronization objects
+	WaitForSingleObject(canEnqueue,INFINITE);
+	WaitForSingleObject(lastAudioPacketAccess,INFINITE);
+
+	// link the previous audio packet, if it has not been deallocated yet, to
+	// the current packet. if it has been deallocated already, then start
+	// another thread used to deallocate them
+	if(lastAudioPacket != 0)
+	{
+		lastAudioPacket->dwUser = (DWORD_PTR) audioPacket;
+	}
+	else
+	{
+		startCleanupRoutine(this,audioPacket);
+	}
+	lastAudioPacket = audioPacket;
+
+	// release synchronization objects
+	ReleaseMutex(lastAudioPacketAccess);
+	ReleaseSemaphore(canDequeue,1,NULL);
 }
 
-/////////////////////////////////////
-// static function implementations //
-/////////////////////////////////////
-
-void PlayWave::freeAudioPacketOnceUsed(PlayWave* dis, WAVEHDR* audioPacket)
+void PlayWave::startCleanupRoutine(PlayWave* dis, WAVEHDR* audioPacket)
 {
 	// prepare thread parameters
-	FapouParams* params = (FapouParams*) malloc(sizeof(*params));
+	CrParams* params = (CrParams*) malloc(sizeof(*params));
 	params->dis = dis;
 	params->audioPacket = audioPacket;
 
 	// start the thread
-	DWORD useless;
-	CreateThread(0,0,freeAudioPacketOnceUsedRoutine,params,0,&useless);
+	startRoutine(&dis->cleanupThread,0,cleanupRoutine,params);
 }
 
-DWORD WINAPI PlayWave::freeAudioPacketOnceUsedRoutine(void* params)
+DWORD WINAPI PlayWave::cleanupRoutine(void* params)
 {
 	#ifdef DEBUG
 	printf("cleanup thread started\n");
 	#endif
 	// parse thread parameters
-	FapouParams* p = (FapouParams*) params;
+	CrParams* p = (CrParams*) params;
 
 	while(p->audioPacket != 0)
 	{
-		// wait for the "header finished being used" flag to be set
+		// wait for the "header finished being used" flag to be set. the flag is
+		// set once the audio device has finished reading it, and playing out
+		// the speakers
 		while(!(p->audioPacket->dwFlags&WHDR_DONE))
 		{
 			#ifdef DEBUG
@@ -338,8 +390,8 @@ DWORD WINAPI PlayWave::freeAudioPacketOnceUsedRoutine(void* params)
 		WAVEHDR* next = (WAVEHDR*) p->audioPacket->dwUser;
 
 		// unprepare the audio header, free the audio header and free the
-
-		#ifdef DEBUG// payload
+		// payload
+		#ifdef DEBUG
 		printf("cleanup thread freeing packet %p\n",p->audioPacket);
 		#endif
 		waveOutUnprepareHeader(p->dis->speakers,p->audioPacket,sizeof(WAVEHDR));
@@ -362,13 +414,17 @@ DWORD WINAPI PlayWave::freeAudioPacketOnceUsedRoutine(void* params)
 		ReleaseSemaphore(p->dis->canEnqueue,1,NULL);
 	}
 
-
-	#ifdef DEBUG// free thread parameters & return
+	// free thread parameters & return
+	#ifdef DEBUG
 	printf("cleanup thread stopped\n");
 	#endif
 	free(p);
 	return 0;
 }
+
+/////////////////////////////////////
+// static function implementations //
+/////////////////////////////////////
 
 int startRoutine(HANDLE* thread, HANDLE stopEvent,
 	LPTHREAD_START_ROUTINE routine, void* params)
@@ -409,7 +465,7 @@ int stopRoutine(HANDLE* thread, HANDLE stopEvent)
 // main test //
 ///////////////
 
-#ifdef TEST
+#ifdef RUN_TEST
 
 #define BUFSIZE 60
 
@@ -419,7 +475,7 @@ DWORD WINAPI stopAndStart(void* params)
 
 	Sleep(5000);
 	play->stopPlaying();
-	Sleep(1000);
+	Sleep(3000);
 	play->startPlaying(SAMPLE_RATE,BITS_PER_SAMPLE,CHANNELS);
 
     return 0;
@@ -428,8 +484,8 @@ DWORD WINAPI stopAndStart(void* params)
 int main(void)
 {
 	MessageQueue msgq(10,BUFSIZE);
-	PlayWave play(5000,&msgq);
-    DWORD useless;
+	PlayWave play(500,&msgq);
+	DWORD useless;
 	CreateThread(0,0,stopAndStart,&play,0,&useless);
 	play.startPlaying(SAMPLE_RATE,BITS_PER_SAMPLE,CHANNELS);
 	char sound[BUFSIZE];
