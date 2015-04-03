@@ -1,6 +1,9 @@
 #ifndef _PLAY_WAVE_CPP_
 #define _PLAY_WAVE_CPP_
 
+// #define DEBUG
+// #define TEST
+
 #include "PlayWave.h"
 #include "../common.h"
 #include "../handlerHelper.h"
@@ -92,10 +95,14 @@ int PlayWave::startPlaying(
 
 int PlayWave::stopPlaying()
 {
+	#ifdef DEBUG
 	printf("PlayWave::stopPlaying called\n");
+	#endif
 	stopRoutine(&playThread,playThreadStopEv);
-	while(lastAudioPacket != 0);
+
+	#ifdef DEBUGwhile(lastAudioPacket != 0);
 	printf("PlayWave::stopPlaying returns\n");
+	#endif
 	return closeDevice();
 }
 
@@ -239,7 +246,9 @@ void PlayWave::enqueueAudioData(char* data, int length)
 
 DWORD WINAPI PlayWave::playRoutine(void* params)
 {
+	#ifdef DEBUG
 	printf("Thread started...\n");
+	#endif
 
 	// parse thread parameters
 	PlayWave* dis = (PlayWave*) params;
@@ -266,8 +275,10 @@ DWORD WINAPI PlayWave::playRoutine(void* params)
 		}
 	}
 
-	// return...
+
+	#ifdef DEBUG// return...
 	printf("Thread stopped...\n");
+	#endif
 	return 0;
 }
 
@@ -302,7 +313,9 @@ void PlayWave::freeAudioPacketOnceUsed(PlayWave* dis, WAVEHDR* audioPacket)
 
 DWORD WINAPI PlayWave::freeAudioPacketOnceUsedRoutine(void* params)
 {
+	#ifdef DEBUG
 	printf("cleanup thread started\n");
+	#endif
 	// parse thread parameters
 	FapouParams* p = (FapouParams*) params;
 
@@ -311,7 +324,9 @@ DWORD WINAPI PlayWave::freeAudioPacketOnceUsedRoutine(void* params)
 		// wait for the "header finished being used" flag to be set
 		while(!(p->audioPacket->dwFlags&WHDR_DONE))
 		{
+			#ifdef DEBUG
 			printf("cleanup thread waiting\n");
+			#endif
 			Sleep(CHECK_FOR_FREEING_INTERVAL);
 		}
 
@@ -323,8 +338,10 @@ DWORD WINAPI PlayWave::freeAudioPacketOnceUsedRoutine(void* params)
 		WAVEHDR* next = (WAVEHDR*) p->audioPacket->dwUser;
 
 		// unprepare the audio header, free the audio header and free the
-		// payload
+
+		#ifdef DEBUG// payload
 		printf("cleanup thread freeing packet %p\n",p->audioPacket);
+		#endif
 		waveOutUnprepareHeader(p->dis->speakers,p->audioPacket,sizeof(WAVEHDR));
 		free(p->audioPacket->lpData);
 		free(p->audioPacket);
@@ -345,8 +362,10 @@ DWORD WINAPI PlayWave::freeAudioPacketOnceUsedRoutine(void* params)
 		ReleaseSemaphore(p->dis->canEnqueue,1,NULL);
 	}
 
-	// free thread parameters & return
+
+	#ifdef DEBUG// free thread parameters & return
 	printf("cleanup thread stopped\n");
+	#endif
 	free(p);
 	return 0;
 }
@@ -390,6 +409,8 @@ int stopRoutine(HANDLE* thread, HANDLE stopEvent)
 // main test //
 ///////////////
 
+#ifdef TEST
+
 #define BUFSIZE 60
 
 DWORD WINAPI stopAndStart(void* params)
@@ -419,5 +440,7 @@ int main(void)
 	}
 	play.stopPlaying();
 }
+
+#endif
 
 #endif
