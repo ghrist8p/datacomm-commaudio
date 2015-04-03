@@ -26,7 +26,7 @@ ServerWindow::~ServerWindow()
 	DeleteObject(labelFont);
 	DeleteObject(bottomPanelBrush);
 	DeleteObject(pen);
-	
+
 	delete connectedClients;
 	delete bottomPanel;
 	delete leftPaddingPanel;
@@ -133,7 +133,7 @@ void ServerWindow::createLabelFont()
 	memset(&logFont, 0, sizeof(logFont));
 	logFont.lfHeight = -15; // see PS
 	labelFont = CreateFontIndirect(&logFont);
-    
+
 	SendMessage(tcpPortLabel->getHWND(), WM_SETFONT, (WPARAM)labelFont, TRUE);
 	SendMessage(udpPortLabel->getHWND(), WM_SETFONT, (WPARAM)labelFont, TRUE);
 }
@@ -146,7 +146,7 @@ void ServerWindow::newConnHandler( Server * server, void * data )
 
 bool ServerWindow::toggleConnection(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
 {
-    
+
 	ServerWindow *serverWindow = (ServerWindow*) pThis;
 
 	/**

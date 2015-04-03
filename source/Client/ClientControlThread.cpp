@@ -317,22 +317,22 @@ void ClientControlThread::_handleMsgqMsg(ClientControlThread* dis)
     {
     case MsgqType::REQUEST_PACKET:
         OutputDebugString(L"MsgqType::REQUEST_PACKET\n");
-        // TODO: TCPSocket->send blahblahblah
+        dis->tcpSock->Send("MsgqType::REQUEST_PACKET",strlen("MsgqType::REQUEST_PACKET")+1);
         break;
     case MsgqType::REQUEST_DOWNLOAD:
         swprintf_s(s,L"MsgqType::REQUEST_DOWNLOAD: %S\n",element.string);
         OutputDebugString(s);
-        // TODO: TCPSocket->send blahblahblah
+        dis->tcpSock->Send("MsgqType::REQUEST_DOWNLOAD",strlen("MsgqType::REQUEST_DOWNLOAD")+1);
         break;
     case MsgqType::CANCEL_DOWNLOAD:
         swprintf_s(s,L"MsgqType::CANCEL_DOWNLOAD: %S\n",element.string);
         OutputDebugString(s);
-        // TODO: TCPSocket->send blahblahblah
+        dis->tcpSock->Send("MsgqType::CANCEL_DOWNLOAD",strlen("MsgqType::CANCEL_DOWNLOAD")+1);
         break;
     case MsgqType::CHANGE_STREAM:
         swprintf_s(s,L"MsgqType::CHANGE_STREAM: %S\n",element.string);
         OutputDebugString(s);
-        // TODO: TCPSocket->send blahblahblah
+        dis->tcpSock->Send("MsgqType::CHANGE_STREAM",strlen("MsgqType::CHANGE_STREAM")+1);
         break;
     default:
         fprintf(stderr,"WARNING: received unknown message type: %d\n",msgType);
