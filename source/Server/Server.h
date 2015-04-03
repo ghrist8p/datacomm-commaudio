@@ -17,7 +17,7 @@ class Server;
 struct WavSong
 {
 	char* data;
-	unsigned long size;
+	unsigned long len;
 };
 
 typedef void (*newConnectionHandler)( Server *, void * );

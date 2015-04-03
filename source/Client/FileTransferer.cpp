@@ -14,7 +14,7 @@ FileTransferer::~FileTransferer()
 		
 void FileTransferer::sendFile(int socket, char *file)
 {
-	FileTransferInfo info;
+    FileTransferInfo info = {0};
 	memcpy(info.file, file, strlen(file));
 	info.socket = socket;
 

@@ -3,6 +3,10 @@
 
 #include "../Buffer/MessageQueue.h"
 
+//class TCPSocket;
+
+#define IP_ADDR_LEN 16
+
 class ClientControlThread
 {
 public:
@@ -11,8 +15,8 @@ public:
     void requestDownload(char* file);
     void cancelDownload(char* file);
     void requestChangeStream(char* file);
-    void start();
-    void stop();
+    void connect(char* ipAddress, unsigned short port);
+    void disconnect();
 protected:
     ClientControlThread();
     ~ClientControlThread();
@@ -30,6 +34,18 @@ private:
      * reference to the one and only {ClientControlThread} instance.
      */
     static ClientControlThread* _instance;
+    /**
+     * pointer to the TCPSocket owned by the control thread.
+     */
+    //TCPSocket* tcpSock;
+    /**
+     * pointer to IP address of the remote host
+     */
+    char ipAddress[IP_ADDR_LEN];
+    /**
+     * pointer to IP address of the remote host
+     */
+    short port;
     /**
      * Message queue used to communicate to {_thread}, and get it to do tasks.
      */
