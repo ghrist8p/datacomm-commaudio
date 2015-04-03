@@ -33,13 +33,15 @@ class Server
 public:
     Server( unsigned short _tcpPort, newConnectionHandler _handler, void * _data, unsigned long groupIP, unsigned short udpPort );
     virtual ~Server();
-    void startTCP();
+    bool startTCP();
     void submitCompletionRoutine( PAPCFUNC lpCompletionRoutine, TCPConnection * to );
     friend newConnectionHandler;
     
-    void startUDP();
+    bool startUDP();
     void sendToGroup( const char * buf, int len );
 	void sendWave(char* fname, WavSong *ret, int speed);
+
+	void disconnect();
 	
     friend DWORD WINAPI WorkerThread( LPVOID lpParam );
 private:

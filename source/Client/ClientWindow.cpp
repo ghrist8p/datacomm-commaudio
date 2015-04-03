@@ -13,6 +13,11 @@
 #include "ButtonPanel.h"
 #include "FileListItem.h"
 #include "ConnectionWindow.h"
+#include "../Buffer/MessageQueue.h"
+#include "MicReader.h"
+
+#define MIC_SAMPLE_RATE 44100
+#define MIC_RECORD_INTERVAL 1
 
 ClientWindow::ClientWindow(HINSTANCE hInst)
 	: GuiWindow(hInst)
@@ -29,6 +34,10 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	accentBrush = (HBRUSH) CreateSolidBrush(RGB(0, 162, 232));
 	nullPen = (HPEN) CreatePen(PS_SOLID, 0, 0);
 	borderPen = (HPEN)CreatePen(PS_SOLID, 1, RGB(128, 0, 128));
+
+	recording = false;
+	requestingRecorderStop = false;
+	micMQueue = new MessageQueue(100, MicReader::calculateBufferSize(MIC_SAMPLE_RATE, MIC_RECORD_INTERVAL));
 }
 
 
@@ -65,6 +74,8 @@ void ClientWindow::onCreate()
 {
 	setTitle(L"CommAudio Client");
 	setSize(700, 325);
+	micReader = new MicReader(MIC_SAMPLE_RATE, MIC_RECORD_INTERVAL, micMQueue, getHWND());
+	this->addMessageListener(WM_MIC_STOPPED_READING, onMicStop, this);
 
 	// Create Elements
 	topPanel = new GuiPanel(hInst, this);
@@ -135,6 +146,14 @@ void ClientWindow::onCreate()
 	bottomSpacer->setBackgroundBrush(darkBackground);
 	layout->addComponent(bottomSpacer);
 
+	// Add Microphone Button
+	micTargetButton->init();
+	micTargetButton->setText(L"Start Speaking");
+	layout = (GuiLinearLayout*) topPanel->getLayoutManager();
+	layout->setHorizontal(true);
+	layout->addComponent(micTargetButton);
+	topPanel->addCommandListener(BN_CLICKED, onClickMic, this);
+
 	// Create Play Button
 	playButton->init();
 	playButton->setClickListener(ClientWindow::onClickPlay);
@@ -165,4 +184,37 @@ void ClientWindow::onCreate()
 void ClientWindow::onClickPlay(void*)
 {
 	MessageBox(NULL, L"CLICKED PLAY!", L"YAY!", MB_ICONINFORMATION);
+}
+
+bool ClientWindow::onClickMic(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
+{
+	ClientWindow *pThis = (ClientWindow*) _pThis;
+
+	if (!pThis->requestingRecorderStop)
+	{
+		if (pThis->recording)
+		{
+			pThis->requestingRecorderStop = true;
+			pThis->micReader->stopReading();
+		}
+		else
+		{
+			pThis->micTargetButton->setText(L"Stop Speaking");
+			pThis->recording = true;
+			pThis->micReader->startReading();
+		}
+	}
+
+	return true;
+}
+
+bool ClientWindow::onMicStop(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
+{
+	ClientWindow *pThis = (ClientWindow*)_pThis;
+
+	pThis->micTargetButton->setText(L"Start Speaking");
+	pThis->recording = false;
+	pThis->requestingRecorderStop = false;
+
+	return true;
 }

@@ -38,6 +38,7 @@
 #include "Client/ConnectionWindow.h"
 #include "Client/MicReader.h"
 #include "Client/PlayWave.h"
+#include "Buffer/MessageQueue.h"
 #include <WinSock2.h>
 
 #pragma comment(lib, "ws2_32.lib")
