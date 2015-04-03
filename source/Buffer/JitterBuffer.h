@@ -1,4 +1,7 @@
-#include <windows.h>
+#ifndef JITTER_BUFFER_H
+#define JITTER_BUFFER_H
+
+#include "../common.h"
 #include <vector>
 
 #include "Heap.h"
@@ -53,3 +56,5 @@ private:
      */
     HANDLE access;
 };
+
+#endif

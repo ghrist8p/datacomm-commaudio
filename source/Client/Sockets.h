@@ -1,8 +1,10 @@
-#include <winsock2.h>
-#include <windows.h>
+#ifndef _SOCKETS_H_
+#define _SOCKETS_H_
+
+#include <wS2tcpip.h>
 #include <stdio.h>
-#include <ws2tcpip.h>
 #include "../Buffer/MessageQueue.h"
+
 #pragma warning(disable:4996)
 #pragma comment(lib,"ws2_32.lib")
 
@@ -53,3 +55,5 @@ public:
 		LPWSAOVERLAPPED Overlapped, DWORD InFlags);
 
 };
+
+#endif

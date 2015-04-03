@@ -1,4 +1,7 @@
-#include <windows.h>
+#ifndef MESSAGE_QUEUE_H
+#define MESSAGE_QUEUE_H
+
+#include "../common.h"
 #include <vector>
 
 class MessageQueue
@@ -12,11 +15,11 @@ public:
      *   otherwise.
      */
     HANDLE hasMessage;
-private:
     /**
      * size of an element in the queue.
      */
-    int elementSize;
+    const int elementSize;
+private:
     /**
      * holds the elements of the queue.
      */
@@ -36,3 +39,5 @@ private:
      */
     HANDLE access;
 };
+
+#endif

@@ -15,7 +15,7 @@
 
 #include "ClientControlThread.h"
 #include "../handlerHelper.h"
-// TODO: #include "../Net/TCPSocket.h"
+#include "Sockets.h"
 
 // TODO: be able to include the "../Net/TCPSocket.h", and use the DATA_BUFSIZE
 // from that header file instead of this one
@@ -122,9 +122,6 @@ ClientControlThread::ClientControlThread()
     // initialize instance variables
     _threadStopEv = CreateEvent(NULL,TRUE,FALSE,NULL);
     _thread       = INVALID_HANDLE_VALUE;
-
-    // start the thread
-    start();
 }
 
 /**
@@ -132,7 +129,7 @@ ClientControlThread::ClientControlThread()
  */
 ClientControlThread::~ClientControlThread()
 {
-    stop();
+    disconnect();
 }
 
 /**
@@ -195,12 +192,17 @@ void ClientControlThread::requestChangeStream(char* file)
     _msgq.enqueue((int)MsgqType::CHANGE_STREAM,&element);
 }
 
-void ClientControlThread::start()
+void ClientControlThread::connect(char* ipAddress, unsigned short port)
 {
+    // copy connection parameters into the object
+    memcpy(this->ipAddress,ipAddress,IP_ADDR_LEN);
+    this->port = port;
+
+    // start the threaded routine
     _startRoutine(&_thread,_threadStopEv,_threadRoutine,this);
 }
 
-void ClientControlThread::stop()
+void ClientControlThread::disconnect()
 {
     _stopRoutine(&_thread,_threadStopEv);
 }
@@ -262,6 +264,9 @@ DWORD WINAPI ClientControlThread::_threadRoutine(void* params)
     // parse thread parameters
     ClientControlThread* dis = (ClientControlThread*) params;
 
+    // connect to the remote host
+    dis->tcpSock = new TCPSocket(dis->ipAddress,dis->port,&dis->_sockMsgq);
+
     // perform the thread routine
     int breakLoop = FALSE;
     while(!breakLoop)
@@ -287,6 +292,9 @@ DWORD WINAPI ClientControlThread::_threadRoutine(void* params)
             break;
         }
     }
+
+    // disconnect from remote host
+    delete dis->tcpSock;
 
     // return...
     printf("Thread stopped...\n");

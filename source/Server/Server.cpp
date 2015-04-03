@@ -24,7 +24,7 @@ Server::~Server()
     free( TCPConnections );
 }
 
-void Server::startTCP()
+bool Server::startTCP()
 {
     // Create listening socket
     if( ( listenSocket = WSASocket( AF_INET               // _In_ int                af
@@ -39,7 +39,7 @@ void Server::startTCP()
         wchar_t errorStr[256] = {0};
         swprintf_s( errorStr, 256, L"ERROR: creating listen socket: %d", WSAGetLastError() );
         MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
-        return;
+        return false;
     }
     
     // Declare and initialize address and bind to it
@@ -58,7 +58,7 @@ void Server::startTCP()
         wchar_t errorStr[256] = {0};
         swprintf( errorStr, 256, L"ERROR: binding listen socket: %d", WSAGetLastError() );
         MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
-        return;
+        return false;
     }
     
     // Put socket in listening state
@@ -67,7 +67,7 @@ void Server::startTCP()
         wchar_t errorStr[256] = {0};
         swprintf( errorStr, 256, L"listen() failed: %d", WSAGetLastError() );
         MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
-        return;
+        return false;
     }
     
     // Create worker thread
@@ -86,7 +86,7 @@ void Server::startTCP()
                                 , 0             // _In_      DWORD                  dwCreationFlags
                                 , NULL );       // _Out_opt_ LPDWORD                lpThreadId
     
-    
+	return true;
 }
 
 DWORD WINAPI Server::AcceptThread( LPVOID lpParam )
@@ -100,7 +100,6 @@ DWORD WINAPI Server::AcceptThread( LPVOID lpParam )
               = accept( server->listenSocket, NULL, NULL ) )
             == INVALID_SOCKET )
         {
-            MessageBox(NULL, L"accept() returned with INVALID_SOCKET!", L"Error", MB_ICONERROR);
             break;
         }
         
@@ -169,7 +168,7 @@ void Server::submitCompletionRoutine( PAPCFUNC lpCompletionRoutine, TCPConnectio
                 , (ULONG_PTR)to );    // _In_  ULONG_PTR dwData
 }
 
-void Server::startUDP()
+bool Server::startUDP()
 {
     multicastSocket = WSASocket( AF_INET
                                , SOCK_DGRAM
@@ -182,7 +181,10 @@ void Server::startUDP()
         wchar_t errorStr[256] = {0};
         swprintf( errorStr, 256, L"WSASocket() failed: %d", WSAGetLastError() );
         MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
+		return false;
     }
+
+	return true;
 	
 	//makes the socket multicast and adds it to the group.
 	setsockopt( multicastSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&group, sizeof(group));
@@ -203,13 +205,18 @@ void Server::sendToGroup( const char * buf, int len )
         swprintf( errorStr, 256, L"sendto() failed: %d", WSAGetLastError() );
         MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
     }
+	
+	//makes the socket multicast and adds it to the group.
+	setsockopt( multicastSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&group, sizeof(group));
+	setsockopt( multicastSocket, IPPROTO_IP, IP_MULTICAST_IF, (char*)&group, sizeof(group));
 }
 
 void Server::sendWave(char* fname, WavSong *song, int speed)
 {
-
+    /*
 	FILE* fp = fopen(fname, "rb");
 	if (fp) {
+
 		char id[5];
 		unsigned long size;
 		short format_tag, channels, block_align, bits_per_sample;
@@ -264,4 +271,17 @@ void Server::sendWave(char* fname, WavSong *song, int speed)
 	}
 
 	fclose(fp);
+    */
+}
+
+void Server::disconnect()
+{
+	closesocket(listenSocket);
+	closesocket(multicastSocket);
+
+	for (int i = 0; i < numTCPConnections; i++)
+	{
+		closesocket(TCPConnections[i].sock);
+	}
+	numTCPConnections = 0;
 }

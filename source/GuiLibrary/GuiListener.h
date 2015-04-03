@@ -1,7 +1,7 @@
 #ifndef _GUI_LISTENER_H_
 #define _GUI_LISTENER_H_
 
-#include <Windows.h>
+#include "../common.h"
 
 class GuiComponent;
 

@@ -32,6 +32,7 @@ private:
 	HPEN pen;
 
     Server * server;
+	bool connected;
 
 	void createLabelFont();
 

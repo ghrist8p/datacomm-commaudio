@@ -1,3 +1,5 @@
+#ifndef _COMMAUDIO_CPP_
+#define _COMMAUDIO_CPP_
 /*-------------------------------------------------------------------------------------------------
 -- SOURCE FILE: CommAudio.cpp - An application that implements a client/server model where
 --				mulitple clients may connect to the server and audio is multicast from the server
@@ -29,15 +31,19 @@
 #define APP_CLIENT 1
 
 // Set to APP_SERVER to build the Server, APP_CLIENT to build the client.
-#define BUILD_TARGET APP_CLIENT
+#define BUILD_TARGET APP_SERVER
 
 #include "Server/ServerWindow.h"
 #include "Client/ConnectionWindow.h"
+#include "Client/MicReader.h"
+#include "Client/PlayWave.h"
+#include "Buffer/MessageQueue.h"
 #include <WinSock2.h>
 
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "MSIMG32.lib")
 #pragma comment(lib, "Gdi32.lib")
+#pragma comment(lib, "Winmm.lib")
 
 // The version of Windows Sockets required.
 const DWORD WSA_VERSION = 0x0202;
@@ -80,7 +86,7 @@ int CALLBACK WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int 
 	}
 
 	// Create the Server or Client based on preprocessor defines
-	#if BUILD_TARGET == APP_SERVER
+	#if BUILD_TARGET == APP_CLIENT
 		window = new ServerWindow(hInst);
 	#else
 		window = new ConnectionWindow(hInst);
@@ -107,3 +113,5 @@ int CALLBACK WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int 
 	delete window;
 	return 0;
 }
+
+#endif
