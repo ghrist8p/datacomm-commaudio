@@ -1,3 +1,6 @@
+#define _COMMAUDIO_CPP_
+#ifndef _COMMAUDIO_CPP_
+#define _COMMAUDIO_CPP_
 /*-------------------------------------------------------------------------------------------------
 -- SOURCE FILE: CommAudio.cpp - An application that implements a client/server model where
 --				mulitple clients may connect to the server and audio is multicast from the server
@@ -83,14 +86,9 @@ int CALLBACK WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int 
 	}
 
 	// Create the Server or Client based on preprocessor defines
-	#if BUILD_TARGET == APP_SERVER
+	#if BUILD_TARGET == APP_CLIENT
 		window = new ServerWindow(hInst);
 	#else
-		// MicReader micReader(5);
-		// micReader.startReading();
-		// char *recordedData = micReader.getRecordedData();
-		// PlayWave player;
-		// player.playWave(recordedData);
 		window = new ConnectionWindow(hInst);
 	#endif
 
@@ -115,3 +113,5 @@ int CALLBACK WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int 
 	delete window;
 	return 0;
 }
+
+#endif

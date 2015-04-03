@@ -26,8 +26,8 @@ struct Node
  * @param      _elementSize the size of each element in the message queue.
  */
 MessageQueue::MessageQueue(int capacity, int elementSize)
+    : elementSize(elementSize)
 {
-    this->elementSize = elementSize;
     this->hasMessage = CreateEvent(NULL,TRUE,FALSE,NULL);
     this->canEnqueue = CreateSemaphore(NULL,capacity,capacity,NULL);
     this->canDequeue = CreateSemaphore(NULL,0,capacity,NULL);

@@ -15,11 +15,11 @@ public:
      *   otherwise.
      */
     HANDLE hasMessage;
-private:
     /**
      * size of an element in the queue.
      */
-    int elementSize;
+    const int elementSize;
+private:
     /**
      * holds the elements of the queue.
      */
