@@ -20,13 +20,14 @@ struct WavSong
 	unsigned long len;
 };
 
-typedef void (*newConnectionHandler)( Server *, void * );
-
 typedef struct _TCPConnection
 {
     SOCKET sock;
     // add more connection data at will
 } TCPConnection;
+
+typedef void (*newConnectionHandler)( TCPConnection *, void * );
+
 
 class Server
 {

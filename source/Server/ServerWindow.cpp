@@ -138,7 +138,7 @@ void ServerWindow::createLabelFont()
 	SendMessage(udpPortLabel->getHWND(), WM_SETFONT, (WPARAM)labelFont, TRUE);
 }
 
-void ServerWindow::newConnHandler( Server * server, void * data )
+void ServerWindow::newConnHandler( TCPConnection * server, void * data )
 {
 	ServerWindow *serverWindow = (ServerWindow*) data;
 	serverWindow->connectedClients->addItem(L"New Connection!", -1);

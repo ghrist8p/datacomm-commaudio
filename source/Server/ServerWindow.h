@@ -37,7 +37,7 @@ private:
 	void createLabelFont();
 
 	static bool toggleConnection(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval);
-    static void newConnHandler( Server * server, void * data );
+    static void newConnHandler( TCPConnection * server, void * data );
 };
 
 #endif

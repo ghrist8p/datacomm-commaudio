@@ -156,7 +156,7 @@ DWORD WINAPI Server::WorkerThread( LPVOID lpParam )
             server->TCPConnections = (TCPConnection *) realloc( server->TCPConnections , ( server->numTCPConnections + 1 ) * sizeof( TCPConnection ) );
             memset( server->TCPConnections + server->numTCPConnections, 0, sizeof( TCPConnection ) );
             if( server->handler )
-                server->handler( server, server->data );
+                server->handler( server->TCPConnections + server->numTCPConnections - 1, server->data );
         }
     }
 }
