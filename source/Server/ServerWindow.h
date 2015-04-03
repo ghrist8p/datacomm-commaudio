@@ -21,8 +21,7 @@ private:
 	GuiListBox *connectedClients;
 	GuiPanel *bottomPanel;
 	GuiPanel *leftPaddingPanel;
-	GuiPanel *tcpInputPanel;
-	GuiPanel *udpInputPanel;
+	GuiPanel *inputPanel;
 	GuiLabel *tcpPortLabel;
 	GuiLabel *udpPortLabel;
 	GuiTextBox *tcpPortInput;
@@ -33,6 +32,7 @@ private:
 	HPEN pen;
 
     Server * server;
+	bool connected;
 
 	void createLabelFont();
 
