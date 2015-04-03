@@ -13,6 +13,8 @@ class GuiStatusBar;
 class PlaybackTrackerPanel;
 class ButtonPanel;
 class GuiScrollList;
+class MessageQueue;
+class MicReader;
 
 class ClientWindow : public GuiWindow
 {
@@ -25,6 +27,13 @@ public:
 
 private:
 	static void onClickPlay(void*);
+	static bool onClickMic(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval);
+	static bool onMicStop(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval);
+
+	bool recording;
+	bool requestingRecorderStop;
+	MessageQueue *micMQueue;
+	MicReader *micReader;
 
 	HBITMAP playButtonUp;
 	HBITMAP playButtonDown;

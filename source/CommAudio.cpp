@@ -29,12 +29,13 @@
 #define APP_CLIENT 1
 
 // Set to APP_SERVER to build the Server, APP_CLIENT to build the client.
-#define BUILD_TARGET APP_SERVER
+#define BUILD_TARGET APP_CLIENT
 
 #include "Server/ServerWindow.h"
 #include "Client/ConnectionWindow.h"
 #include "Client/MicReader.h"
 #include "Client/PlayWave.h"
+#include "Buffer/MessageQueue.h"
 #include <WinSock2.h>
 
 #pragma comment(lib, "ws2_32.lib")
@@ -86,11 +87,6 @@ int CALLBACK WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int 
 	#if BUILD_TARGET == APP_SERVER
 		window = new ServerWindow(hInst);
 	#else
-		// MicReader micReader(5);
-		// micReader.startReading();
-		// char *recordedData = micReader.getRecordedData();
-		// PlayWave player;
-		// player.playWave(recordedData);
 		window = new ConnectionWindow(hInst);
 	#endif
 
