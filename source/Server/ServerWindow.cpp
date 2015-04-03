@@ -69,18 +69,18 @@ void ServerWindow::onCreate()
 
 	// Add Bottom Panel to the Window Layout
 	bottomPanel->init();
-	bottomPanel->setPreferredSize(0, 36);
+	bottomPanel->setPreferredSize(0, 38);
 	layout->addComponent(bottomPanel);
 
 	// Get the Bottom Panel Layout
 	layout = (GuiLinearLayout*)bottomPanel->getLayoutManager();
-	layout->setHorizontal(true);
+	layout->setHorizontal(false);
 
 	// Add the Left Padding Panel to the Bottom Panel Layout
 	leftPaddingPanel->init();
-	layout->addComponent(leftPaddingPanel, &layoutProps);
+	//layout->addComponent(leftPaddingPanel, &layoutProps);
 
-	// Add the Input Panel to the Bottom Panel Layout
+	// Add the TCP Input Panel to the Bottom Panel Layout
 	inputPanel->init();
 	inputPanel->setPreferredSize(700, 0);
 	inputPanel->addCommandListener(BN_CLICKED, toggleConnection, this);
@@ -94,10 +94,7 @@ void ServerWindow::onCreate()
 	layout = (GuiLinearLayout*)inputPanel->getLayoutManager();
 	layout->setHorizontal(true);
 
-	// Add Inputs to Input Panel
-	
-
-
+	// Add Inputs to TCP Input Panel
 	layout->zeroProperties(&layoutProps);
 	layoutProps.leftMargin = 5;
 

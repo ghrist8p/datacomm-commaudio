@@ -100,7 +100,6 @@ DWORD WINAPI Server::AcceptThread( LPVOID lpParam )
               = accept( server->listenSocket, NULL, NULL ) )
             == INVALID_SOCKET )
         {
-            MessageBox(NULL, L"accept() returned with INVALID_SOCKET!", L"Error", MB_ICONERROR);
             break;
         }
         
