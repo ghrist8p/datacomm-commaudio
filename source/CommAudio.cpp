@@ -1,4 +1,3 @@
-#define _COMMAUDIO_CPP_
 #ifndef _COMMAUDIO_CPP_
 #define _COMMAUDIO_CPP_
 /*-------------------------------------------------------------------------------------------------

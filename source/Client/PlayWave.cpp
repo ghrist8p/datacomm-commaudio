@@ -1,8 +1,8 @@
 #ifndef _PLAY_WAVE_CPP_
 #define _PLAY_WAVE_CPP_
 
-#define DEBUG
-#define RUN_TEST
+//#define DEBUG
+//#define RUN_TEST
 
 #include "PlayWave.h"
 #include "../common.h"
