@@ -3,7 +3,7 @@
 
 #include "GuiResizable.h"
 
-#include <Windows.h>
+#include "../common.h"
 #include <set>
 
 class GuiLayoutComponent : public GuiResizable

@@ -1,7 +1,7 @@
 #ifndef _MIC_READER_H_
 #define _MIC_READER_H_
 
-#include <Windows.h>
+#include "../common.h"
 #include <mmsystem.h>
 
 #define WM_MIC_STOPPED_READING (WM_USER + 0x0001)

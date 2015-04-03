@@ -15,6 +15,7 @@
 #include "ConnectionWindow.h"
 #include "../Buffer/MessageQueue.h"
 #include "MicReader.h"
+#include "PlayWave.h"
 
 #define MIC_SAMPLE_RATE 44100
 #define MIC_RECORD_INTERVAL 1
@@ -38,6 +39,9 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	recording = false;
 	requestingRecorderStop = false;
 	micMQueue = new MessageQueue(100, MicReader::calculateBufferSize(MIC_SAMPLE_RATE, MIC_RECORD_INTERVAL));
+
+    PlayWave* p = new PlayWave(1000,micMQueue);
+    p->startPlaying(MIC_SAMPLE_RATE,8,1);
 }
 
 
