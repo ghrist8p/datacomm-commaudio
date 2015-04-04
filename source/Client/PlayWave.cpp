@@ -15,7 +15,7 @@
 #pragma comment(lib,"winmm.lib")
 
 #define SAMPLE_RATE 44100
-#define BITS_PER_SAMPLE 16
+#define BITS_PER_SAMPLE 8
 #define CHANNELS 2
 #define BITS_PER_BYTE 8
 #define MILLISEC_PER_SEC 1000
