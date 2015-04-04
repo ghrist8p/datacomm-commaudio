@@ -186,7 +186,7 @@ void CALLBACK ServerWindow::receive( IN DWORD dwError
 {
     RECEIVER * receiver = (RECEIVER *) lpOverlapped;
 
-    memoryCopy( receiver->buf + receiver->cursor, receiver->wsabuf.buf, cbTransferred );
+    memcpy( receiver->buf + receiver->cursor, receiver->wsabuf.buf, cbTransferred );
     receiver->cursor += cbTransferred;
     receiver->bytesToRead -= cbTransferred;
 

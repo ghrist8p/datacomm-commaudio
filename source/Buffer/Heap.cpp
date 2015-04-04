@@ -36,7 +36,7 @@ void Heap::insert(int index, void* src)
 {
     // put the new element into the heap
     void* payload = malloc(elementSize);
-    memoryCopy(payload,src,elementSize);
+    memcpy(payload,src,elementSize);
     data.emplace_back(index,payload);
 
     // maintain the heap structure
@@ -133,7 +133,7 @@ void Heap::peek(int* index, void* dest)
     }
     if(dest != 0)
     {
-        memoryCopy(dest,data[0].second,elementSize);
+        memcpy(dest,data[0].second,elementSize);
     }
 }
 

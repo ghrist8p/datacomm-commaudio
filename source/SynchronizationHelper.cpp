@@ -5,7 +5,6 @@
 ///////////////////////////
 
 static DWORD WINAPI delayedSetEventRoutine(LPVOID params);
-static HANDLE memoryCopyAccess = CreateMutex(NULL, FALSE, NULL);;
 static HANDLE delayedSetEventAccess = CreateMutex(NULL, FALSE, NULL);;
 
 struct DelayedSetEventParams
@@ -37,18 +36,6 @@ void delayedSetEvent(HANDLE event, long milliseconds)
 
     // release synchronization objects
     ReleaseMutex(delayedSetEventAccess);
-}
-
-void memoryCopy(void* dest, void* src, int len)
-{
-    // obtain synchronization objects
-    WaitForSingleObject(memoryCopyAccess,INFINITE);
-
-    // do the memcpy
-    memcpy(dest,src,len);
-
-    // release synchronization objects
-    ReleaseMutex(memoryCopyAccess);
 }
 
 static DWORD WINAPI delayedSetEventRoutine(LPVOID params)

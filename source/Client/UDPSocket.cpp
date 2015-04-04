@@ -56,7 +56,7 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 	// Initialize and set up the address structure
 	memset((char *)&server, 0, sizeof(struct sockaddr_in));
 	server.sin_family = AF_INET;
-	server.sin_port = htons(port);
+	server.sin_port = MULTICAST_PORT;//htons(port);
 	server.sin_addr.s_addr = htonl(INADDR_ANY);
 	// Copy the server address
 
@@ -281,7 +281,7 @@ DWORD UDPSocket::ThreadStart(void)
 		{
 			len = (SocketInfo->Buffer[1] << 24) | (SocketInfo->Buffer[2] << 16) | (SocketInfo->Buffer[3] << 8) | (SocketInfo->Buffer[4]);
 			CHAR* dataReceived = (char*)malloc(sizeof(char) * len);
-			memoryCopy(dataReceived, SocketInfo->Buffer+5, len);
+			memcpy(dataReceived, SocketInfo->Buffer+5, len);
 			char* sourceaddr = inet_ntoa(source.sin_addr);
 
 			switch (SocketInfo->Buffer[0])
@@ -349,7 +349,13 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 		SocketInfo->DataBuf.buf = data_send;
 		Flags = 0;
 
-		if (WSASendTo(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &SendBytes, Flags, (struct sockaddr*)&mreq, sizeof(mreq),
+        sockaddr_in address;
+        memset(&address,0,sizeof(address));
+        address.sin_family = AF_INET;
+        address.sin_port   = MULTICAST_PORT;
+        memcpy(&address.sin_addr,&mreq.imr_multiaddr,sizeof(struct in_addr));
+
+		if (WSASendTo(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &SendBytes, Flags, (struct sockaddr*)&address, sizeof(address),
 			&(SocketInfo->Overlapped), 0) == SOCKET_ERROR)
 		{
             int err;

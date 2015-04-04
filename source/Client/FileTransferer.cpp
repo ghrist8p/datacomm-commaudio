@@ -15,7 +15,7 @@ FileTransferer::~FileTransferer()
 void FileTransferer::sendFile(int socket, char *file)
 {
     FileTransferInfo info = {0};
-	memoryCopy(info.file, file, strlen(file));
+	memcpy(info.file, file, strlen(file));
 	info.socket = socket;
 
 	CreateThread(NULL, 0, FileTransferer::TransferThread, &info, 0, NULL);

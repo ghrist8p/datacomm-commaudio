@@ -66,7 +66,7 @@ TCPSocket::TCPSocket(char* host, int port, MessageQueue* mqueue)
 	}
 
 	// Copy the server address
-	memoryCopy((char *)&server.sin_addr, hp->h_addr, hp->h_length);
+	memcpy((char *)&server.sin_addr, hp->h_addr, hp->h_length);
 
 	// Connecting to the server
 	if (connect(sd, (struct sockaddr *)&server, sizeof(server)) == -1)
@@ -180,7 +180,7 @@ DWORD TCPSocket::ThreadStart(void)
 			else
 			{
 				char* dataReceived = (char*)malloc(sizeof(char) * length);
-				memoryCopy(dataReceived, SocketInfo->Buffer + 1, length);
+				memcpy(dataReceived, SocketInfo->Buffer + 1, length);
                 SocketInfo->mqueue->enqueue(SocketInfo->Buffer[0], dataReceived, length);
 				free(dataReceived);
 			}
@@ -300,7 +300,7 @@ int TCPSocket::Send(char type, void* data, int length)
 	data_send[3] = (length >> 8) & 0xFF;
 	data_send[4] = length & 0xFF;
 
-	memoryCopy(data_send + 5, (char*)data, length);
+	memcpy(data_send + 5, (char*)data, length);
 
 	WaitResult = WaitForSingleObject( mutex, INFINITE);
 
