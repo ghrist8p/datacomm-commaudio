@@ -2,16 +2,17 @@
 #define _SERVER_WINDOW_H_
 
 #include "../GuiLibrary/GuiWindow.h"
-#include "Server.h"
-#include "../protocol.h"
 
 #define BUFSIZE 64
 
+class Server;
 class GuiListBox;
 class GuiPanel;
 class GuiLabel;
 class GuiButton;
 class GuiTextBox;
+class TCPSocket;
+struct TCPConnection;
 
 class ServerWindow : public GuiWindow
 {

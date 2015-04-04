@@ -1,5 +1,20 @@
 #include "Sockets.h"
 
+TCPSocket::TCPSocket(SOCKET socket, MessageQueue* mqueue)
+{
+	sd = socket;
+	msgqueue = mqueue;
+
+	HANDLE ThreadHandle;
+	DWORD ThreadId;
+
+	if ((ThreadHandle = CreateThread(NULL, 0, TCPThread, (void*)this, 0, &ThreadId)) == NULL)
+	{
+		MessageBox(NULL, L"CreateThread failed with error", L"ERROR", MB_ICONERROR);
+		return;
+	}
+}
+
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: TCPSocket
 --

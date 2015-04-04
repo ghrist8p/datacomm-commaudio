@@ -4,6 +4,9 @@
 #include <winsock2.h>
 #include <windows.h>
 #include "synchronizationHelper.h"
+#include "protocol.h"
+#include "TCPSockets.h"
+
 
 #pragma warning(disable:4996)
 
