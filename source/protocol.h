@@ -3,23 +3,7 @@
 
 #define DATA_BUFSIZE 8192
 
-/*
- * length of a string
- */
 #define STR_LEN 128
-
-/*
- * packet types sent between clients and servers.
- */
-enum class PacketType
-{
-    REQUEST_PACKET,
-    REQUEST_DOWNLOAD,
-    CANCEL_DOWNLOAD,
-    DOWNLOAD_PACKET,
-    RETRANSMISSION_PACKET,
-    CHANGE_STREAM
-};
 
 struct DataPacket
 {
@@ -35,12 +19,6 @@ struct StringPacket
 };
 
 typedef struct DataPacket DataPacket;
-
-struct CommandPacket
-{
-};
-
-typedef struct CommandPacket CommandPacket;
 
 struct RequestPacket
 {
