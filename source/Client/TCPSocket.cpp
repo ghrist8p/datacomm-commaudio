@@ -1,4 +1,5 @@
 #include "Sockets.h"
+#include "../Buffer/MessageQueue.h"
 
 TCPSocket::TCPSocket(SOCKET socket, MessageQueue* mqueue)
 {

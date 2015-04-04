@@ -5,7 +5,7 @@
 #include <windows.h>
 #include "synchronizationHelper.h"
 #include "protocol.h"
-#include "TCPSockets.h"
+#include "Client/Sockets.h"
 
 
 #pragma warning(disable:4996)
