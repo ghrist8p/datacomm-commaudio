@@ -180,7 +180,7 @@ DWORD TCPSocket::ThreadStart(void)
 	        else
 	        {
 		        char type = SocketInfo->Buffer[0];
-		        //SocketInfo->mqueue->enqueue(type, SocketInfo->Buffer);
+		        SocketInfo->mqueue->enqueue(type, SocketInfo->Buffer);
 	        }
 		}
 }
