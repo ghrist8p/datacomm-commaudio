@@ -59,12 +59,41 @@ MessageQueue::MessageQueue(int capacity, int elementSize)
  */
 void MessageQueue::enqueue(int type, void* src)
 {
+    enqueue(type,src,elementSize);
+}
+
+/**
+ * appends the passed data to the message queue. if the queue is full, the
+ *   function may block until there is room to store the element into the queue.
+ *
+ * @function   MessageQueue::enqueue
+ *
+ * @date       2015-03-18
+ *
+ * @revision   none
+ *
+ * @designer   Eric Tsang
+ *
+ * @programmer Eric Tsang
+ *
+ * @note       none
+ *
+ * @signature  void MessageQueue::enqueue(int type, void* src)
+ *
+ * @param      type number indicating what kind of an element is being put into
+ *   the queue.
+ * @param      src pointer to the data that is being copied into the message
+ *   queue.
+ * @param      len number of bytes to copy from {src} ino the buffer
+ */
+void MessageQueue::enqueue(int type, void* src, int len)
+{
     // allocate a node
     Node* n = (Node*) malloc(sizeof(Node));
     void* data = malloc(elementSize);
 
     // put the data into a node
-    memcpy(data,src,elementSize);
+    memcpy(data,src,len);
     n->type = type;
     n->data = data;
 

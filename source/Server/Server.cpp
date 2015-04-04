@@ -186,7 +186,6 @@ bool Server::startUDP()
 	return true;
 	
 	//makes the socket multicast and adds it to the group.
-	setsockopt( multicastSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&group, sizeof(group));
 	setsockopt( multicastSocket, IPPROTO_IP, IP_MULTICAST_IF, (char*)&group, sizeof(group));
 }
 
@@ -204,10 +203,6 @@ void Server::sendToGroup( const char * buf, int len )
         swprintf( errorStr, 256, L"sendto() failed: %d", WSAGetLastError() );
         MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
     }
-	
-	//makes the socket multicast and adds it to the group.
-	setsockopt( multicastSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&group, sizeof(group));
-	setsockopt( multicastSocket, IPPROTO_IP, IP_MULTICAST_IF, (char*)&group, sizeof(group));
 }
 
 void Server::sendWave(char* fname, WavSong *song, int speed)

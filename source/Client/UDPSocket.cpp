@@ -124,7 +124,7 @@ UDPSocket::~UDPSocket()
 --	NOTES:
 --  This will send the desired data to another UDP client socket.
 ----------------------------------------------------------------------------------------------------------------------*/
-int UDPSocket::Send(void* data, int length, char* dest_ip, int dest_port)
+int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_port)
 {
 	DWORD Flags;
 	LPSOCKET_INFORMATION SocketInfo;
@@ -132,6 +132,15 @@ int UDPSocket::Send(void* data, int length, char* dest_ip, int dest_port)
 	DWORD WaitResult;
 	struct sockaddr_in destination;
 	int destsize = sizeof(destination);
+	char* data_send = (char*)malloc(sizeof(char) * (length + 5));
+
+	data_send[0] = type;
+
+	//message len
+	data_send[1] = (length >> 24) & 0xFF;
+	data_send[2] = (length >> 16) & 0xFF;
+	data_send[3] = (length >> 8) & 0xFF;
+	data_send[4] = length & 0xFF;
 
 	WaitResult = WaitForSingleObject(mutex, INFINITE);
 
@@ -146,8 +155,8 @@ int UDPSocket::Send(void* data, int length, char* dest_ip, int dest_port)
 
 		SocketInfo->Socket = sd;
 		ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));
-		SocketInfo->DataBuf.len = length;
-		SocketInfo->DataBuf.buf = (char*)data;
+		SocketInfo->DataBuf.len = length + 5;
+		SocketInfo->DataBuf.buf = data_send;
 		Flags = 0;
 
 		destination.sin_addr.s_addr = inet_addr(dest_ip);
@@ -298,4 +307,59 @@ void UDPSocket::setGroup(char* group_address)
 {
 	mreq.imr_multiaddr.s_addr = inet_addr(group_address);
 	setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
+	setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char*)&mreq, sizeof(mreq));
+}
+
+int UDPSocket::sendtoGroup(char type, void* data, int length)
+{
+	DWORD Flags;
+	LPSOCKET_INFORMATION SocketInfo;
+	DWORD SendBytes;
+	DWORD WaitResult;
+	char* data_send = (char*)malloc(sizeof(char) * (length + 5));
+
+	data_send[0] = type;
+
+	//message len
+	data_send[1] = (length >> 24) & 0xFF;
+	data_send[2] = (length >> 16) & 0xFF;
+	data_send[3] = (length >> 8) & 0xFF;
+	data_send[4] = length & 0xFF;
+
+	WaitResult = WaitForSingleObject(mutex, INFINITE);
+
+	if (WaitResult = WAIT_OBJECT_0)
+	{
+		if ((SocketInfo = (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
+			sizeof(SOCKET_INFORMATION))) == NULL)
+		{
+			printf("GlobalAlloc() failed with error %d\n", GetLastError());
+			return 0;
+		}
+
+		SocketInfo->Socket = sd;
+		ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));
+		SocketInfo->DataBuf.len = length + 5;
+		SocketInfo->DataBuf.buf = data_send;
+		Flags = 0;
+
+		if (WSASendTo(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &SendBytes, Flags, (struct sockaddr*)&mreq, sizeof(mreq),
+			&(SocketInfo->Overlapped), 0) == SOCKET_ERROR)
+		{
+			if (WSAGetLastError() != WSA_IO_PENDING)
+			{
+				MessageBox(NULL, L"WSASend() failed with error", L"ERROR", MB_ICONERROR);
+				return 0;
+			}
+		}
+		else
+		{
+			return 1;
+		}
+	}
+	else
+	{
+		MessageBox(NULL, L"Error in the mutex", L"ERROR", MB_ICONERROR);
+	}
+
 }

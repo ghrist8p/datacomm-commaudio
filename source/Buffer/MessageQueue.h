@@ -9,6 +9,7 @@ class MessageQueue
 public:
     MessageQueue(int capacity, int elementSize);
     void enqueue(int type, void* src);
+    void enqueue(int type, void* src, int len);
     void dequeue(int* type, void* dest);
     /**
      * handle to an event that is set when the queue is not empty; it is unset
