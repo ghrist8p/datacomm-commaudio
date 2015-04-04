@@ -30,6 +30,13 @@
 // type definitions //
 //////////////////////
 
+enum class MsgqType
+{
+    REQUEST_DOWNLOAD,
+    CANCEL_DOWNLOAD,
+    CHANGE_STREAM
+};
+
 /**
  * element that is put into the message queue.
  */
@@ -104,26 +111,6 @@ ClientControlThread::~ClientControlThread()
 
 /**
  * posts a message to an internal message queue, informing the control thread
- *   that it should send a packet retransmission request.
- *
- * @date     2015-03-28T11:17:45-0800
- *
- * @author   Eric Tsang
- *
- * @param    index   what position the packet is for.
- */
-void ClientControlThread::requestPacketRetransmission(int index)
-{
-    // prepare the element for insertion into the message queue
-    MsgqElement element;
-    element.index = index;
-
-    // insert the element into the message queue
-    _msgq.enqueue((int)PacketType::REQUEST_PACKET,&element);
-}
-
-/**
- * posts a message to an internal message queue, informing the control thread
  *   that it should send a request to download a song.
  *
  * @date     2015-03-28T11:19:49-0800
@@ -139,7 +126,7 @@ void ClientControlThread::requestDownload(char* file)
     memcpy(&element.string,file,STR_LEN);
 
     // insert the element into the message queue
-    _msgq.enqueue((int)PacketType::REQUEST_DOWNLOAD,&element);
+    _msgq.enqueue(MsgqType::REQUEST_DOWNLOAD,&element);
 }
 
 void ClientControlThread::cancelDownload(char* file)
@@ -149,7 +136,7 @@ void ClientControlThread::cancelDownload(char* file)
     memcpy(&element.string,file,STR_LEN);
 
     // insert the element into the message queue
-    _msgq.enqueue((int)PacketType::CANCEL_DOWNLOAD,&element);
+    _msgq.enqueue(MsgqType::CANCEL_DOWNLOAD,&element);
 }
 
 void ClientControlThread::requestChangeStream(char* file)
@@ -159,7 +146,7 @@ void ClientControlThread::requestChangeStream(char* file)
     memcpy(&element.string,file,STR_LEN);
 
     // insert the element into the message queue
-    _msgq.enqueue((int)PacketType::CHANGE_STREAM,&element);
+    _msgq.enqueue(MsgqType::CHANGE_STREAM,&element);
 }
 
 void ClientControlThread::connect(char* ipAddress, unsigned short port)
@@ -276,7 +263,7 @@ void ClientControlThread::_handleMsgqMsg(ClientControlThread* dis)
     TCHAR s[256];
 
     // allocate memory to hold message queue message
-    PacketType msgType;
+    MsgqType msgType;
     MsgqElement element;
 
     // get the message queue message
@@ -285,32 +272,25 @@ void ClientControlThread::_handleMsgqMsg(ClientControlThread* dis)
     // process the message queue message according to its type
     switch(msgType)
     {
-    case PacketType::REQUEST_PACKET:
-    {
-        RequestPacket packet;
-        packet.index = element.index;
-        dis->tcpSock->Send((char)PacketType::REQUEST_PACKET,&packet,sizeof(packet));
-        break;
-    }
-    case PacketType::REQUEST_DOWNLOAD:
+    case MsgqType::REQUEST_DOWNLOAD:
     {
         StringPacket packet;
         memcpy(packet.string,element.string,STR_LEN);
-        dis->tcpSock->Send((char)PacketType::REQUEST_DOWNLOAD,&packet,sizeof(packet));
+        dis->tcpSock->Send(REQUEST_DOWNLOAD,&packet,sizeof(packet));
         break;
     }
-    case PacketType::CANCEL_DOWNLOAD:
+    case MsgqType::CANCEL_DOWNLOAD:
     {
         StringPacket packet;
         memcpy(packet.string,element.string,STR_LEN);
-        dis->tcpSock->Send((char)PacketType::CANCEL_DOWNLOAD,&packet,sizeof(packet));
+        dis->tcpSock->Send(CANCEL_DOWNLOAD,&packet,sizeof(packet));
         break;
     }
-    case PacketType::CHANGE_STREAM:
+    case MsgqType::CHANGE_STREAM:
     {
         StringPacket packet;
         memcpy(packet.string,element.string,STR_LEN);
-        dis->tcpSock->Send((char)PacketType::CHANGE_STREAM,&packet,sizeof(packet));
+        dis->tcpSock->Send(CHANGE_STREAM,&packet,sizeof(packet));
         break;
     }
     default:
