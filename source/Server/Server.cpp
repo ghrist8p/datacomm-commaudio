@@ -1,12 +1,11 @@
 #include "Server.h"
 
-#define MUSICSTREAM '1'
-
 Server::Server( unsigned short _tcpPort, newConnectionHandler _handler, void * _data, unsigned long groupIP, unsigned short udpPort )
     : tcpPort( _tcpPort )
     , handler( _handler )
     , data( _data )
 {
+	stopSending = false;
     numTCPConnections = 0;
     TCPConnections = (TCPConnection *) malloc( ( numTCPConnections + 1 ) * sizeof( TCPConnection ) );
     memset( TCPConnections, 0, sizeof( TCPConnection ) );
@@ -213,7 +212,6 @@ void Server::sendToGroup( const char * buf, int len )
 
 void Server::sendWave(char* fname, WavSong *song, int speed)
 {
-    /*
 	FILE* fp = fopen(fname, "rb");
 	if (fp) {
 
@@ -222,7 +220,6 @@ void Server::sendWave(char* fname, WavSong *song, int speed)
 		short format_tag, channels, block_align, bits_per_sample;
 		unsigned long format_length, sample_rate, avg_bytes_sec, data_size;
 		int data_read = 0;
-		char temp;
 
 		fread(id, sizeof(char), 4, fp);
 		id[4] = '\0';
@@ -245,33 +242,44 @@ void Server::sendWave(char* fname, WavSong *song, int speed)
 				fread(id, sizeof(char), 4, fp);
 				fread(&data_size, sizeof(unsigned long), 1, fp);
 
-				song->data = (char*)malloc(speed + 1);
+				song->data = (char*)malloc(speed + 5);
 
 				//read chunks of data from the file based on the speed selected and send it
-				while (data_read = fread(song->data, 1, speed, fp) > 0)
+				while (data_read = fread(song->data + 5, 1, speed, fp) > 0)
 				{
-					//we should add a flag to stop this if another song is being sent.
-					for(int i = data_read; i > 0; i--)
+					if (stopSending)
 					{
-						song->data[i+1] = song->data[i];
-									
+						song->data[0] = CHANGE_STREAM;
+						sendToGroup(song->data, 1);
+						return;
 					}
+
+					//type of message
 					song->data[0] = MUSICSTREAM;
+
+					//message len
+					song->data[1] = (data_read >> 24) & 0xFF;
+					song->data[2] = (data_read >> 16) & 0xFF;
+					song->data[3] = (data_read >> 8) & 0xFF;
+					song->data[4] = data_read & 0xFF;					
 					
-					sendToGroup(song->data, data_read + 1);
+					sendToGroup(song->data, data_read + 5);
 				}
+
+				stopSending = false;
 			}
-			else {
+			else
+			{
 				cout << "Error: RIFF file but not a wave file\n";
 			}
 		}
-		else {
+		else 
+		{
 			cout << "Error: not a RIFF file\n";
 		}
 	}
 
 	fclose(fp);
-    */
 }
 
 void Server::disconnect()
@@ -284,4 +292,9 @@ void Server::disconnect()
 		closesocket(TCPConnections[i].sock);
 	}
 	numTCPConnections = 0;
+}
+
+void Server::stopSong()
+{
+	stopSending = true;
 }

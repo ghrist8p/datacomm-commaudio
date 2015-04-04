@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <iostream>
+#include "../common.h"
 using namespace std;
 
 #define MULTICAST_ADDRESS "239.255.255.240"
@@ -40,14 +41,19 @@ public:
     
     bool startUDP();
     void sendToGroup( const char * buf, int len );
+	
 	void sendWave(char* fname, WavSong *ret, int speed);
+	void stopSong();
 
 	void disconnect();
+
 	
     friend DWORD WINAPI WorkerThread( LPVOID lpParam );
 private:
     unsigned short tcpPort;
     SOCKET listenSocket;
+
+	bool stopSending;
     
     WSAEVENT newConnectionEvent;
     
