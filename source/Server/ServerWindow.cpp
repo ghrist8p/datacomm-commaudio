@@ -138,10 +138,89 @@ void ServerWindow::createLabelFont()
 	SendMessage(udpPortLabel->getHWND(), WM_SETFONT, (WPARAM)labelFont, TRUE);
 }
 
-void ServerWindow::newConnHandler( TCPConnection * server, void * data )
+typedef struct 
+{
+    WSAOVERLAPPED   overlapped;
+    WSABUF        * buf;
+    ServerWindow  * window;
+    TCPConnection * connection;
+}
+BLAH;
+
+void CALLBACK ServerWindow::CompletionROUTINE( IN DWORD dwError
+                                             , IN DWORD cbTransferred
+                                             , IN LPWSAOVERLAPPED lpOverlapped
+                                             , IN DWORD dwFlags )
+{
+    BLAH * blah = (BLAH *) lpOverlapped;
+
+    
+    wchar_t * error_msg = new wchar_t[ 90 ];
+    wsprintf( error_msg, L"error: %d\nbytesTransfered: %d\n", dwError, cbTransferred );
+    OutputDebugString( error_msg );
+    delete [] error_msg;
+
+    blah->window->connectedClients->addItem( L"Client said: ", -1 );
+    size_t newsize = strlen( blah->buf->buf ) + 1;
+
+    wchar_t * wcstring = new wchar_t[ newsize ];
+
+    // Convert char* string to a wchar_t* string.
+    size_t convertedChars = 0;
+    mbstowcs_s( &convertedChars, wcstring, newsize, blah->buf->buf, _TRUNCATE );
+
+    blah->window->connectedClients->addItem( wcstring, -1 );
+
+    DWORD flags = 0;
+
+    memset( &blah->overlapped, 0, sizeof( WSAOVERLAPPED ) );
+    memset( blah->buf->buf, 0, 90 );
+    
+    WSARecv( blah->connection->sock     // _In_   SOCKET s,
+           , blah->buf                 //_Inout_ LPWSABUF lpBuffers,
+           , 1                    //_In_    DWORD dwBufferCount,
+           , NULL                 //_Out_   LPDWORD lpNumberOfBytesRecvd,
+           , &flags               //_Inout_ LPDWORD lpFlags,
+           , &blah->overlapped    //_In_    LPWSAOVERLAPPED lpOverlapped,
+           , CompletionROUTINE ); //_In_    LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
+}
+
+void ServerWindow::newConnHandler( TCPConnection * connection, void * data )
 {
 	ServerWindow *serverWindow = (ServerWindow*) data;
 	serverWindow->connectedClients->addItem(L"New Connection!", -1);
+
+    WSABUF * buf = new WSABUF;
+    buf->len = 90;
+    buf->buf = (char *)malloc( 90 );
+    memset( buf->buf, 0, 90 );
+    DWORD flags = 0;
+
+    BLAH * blah = new BLAH;
+
+    memset( &blah->overlapped,0, sizeof( WSAOVERLAPPED ) );
+    blah->buf = buf;
+    blah->window = serverWindow;
+    blah->connection = connection;
+
+    int retval = WSARecv( blah->connection->sock     // _In_   SOCKET s,
+                        , buf                 //_Inout_ LPWSABUF lpBuffers,
+                        , 1                    //_In_    DWORD dwBufferCount,
+                        , NULL                 //_Out_   LPDWORD lpNumberOfBytesRecvd,
+                        , &flags               //_Inout_ LPDWORD lpFlags,
+                        , &blah->overlapped    //_In_    LPWSAOVERLAPPED lpOverlapped,
+                        , CompletionROUTINE ); //_In_    LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
+
+    if( retval )
+    {
+        wchar_t * error_msg = new wchar_t[ 90 ];
+        wsprintf( error_msg, L"error: %d\n", WSAGetLastError() );
+        OutputDebugString( error_msg );
+        delete [] error_msg;
+    }
+
+	
+
 }
 
 bool ServerWindow::toggleConnection(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)

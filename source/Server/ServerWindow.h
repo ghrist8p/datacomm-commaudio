@@ -36,6 +36,11 @@ private:
 
 	void createLabelFont();
 
+    
+static void CALLBACK CompletionROUTINE( IN DWORD dwError
+                               , IN DWORD cbTransferred
+                               , IN LPWSAOVERLAPPED lpOverlapped
+                               , IN DWORD dwFlags );
 	static bool toggleConnection(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval);
     static void newConnHandler( TCPConnection * server, void * data );
 };
