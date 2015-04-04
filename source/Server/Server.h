@@ -24,6 +24,7 @@ struct WavSong
 typedef struct _TCPConnection
 {
     SOCKET sock;
+    WSAEVENT signal;
     // add more connection data at will
 } TCPConnection;
 
@@ -36,7 +37,7 @@ public:
     Server( unsigned short _tcpPort, newConnectionHandler _handler, void * _data, unsigned long groupIP, unsigned short udpPort );
     virtual ~Server();
     bool startTCP();
-    void submitCompletionRoutine( PAPCFUNC lpCompletionRoutine, TCPConnection * to );
+    void submitCompletionRoutine( PAPCFUNC lpCompletionRoutine, void * to );
     friend newConnectionHandler;
     
     bool startUDP();

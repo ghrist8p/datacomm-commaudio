@@ -1,6 +1,8 @@
 #ifndef _PACKET_TYPE_H_
 #define _PACKET_TYPE_H_
 
+#include <cstdint>
+
 #define DATA_BUFSIZE 8192
 
 #define STR_LEN 128
@@ -26,5 +28,13 @@ struct RequestPacket
 };
 
 typedef struct RequestPacket RequestPacket;
+
+struct MessageHeader
+{
+    uint32_t size;
+    uint8_t type;
+};
+
+typedef struct MessageHeader MessageHeader;
 
 #endif
