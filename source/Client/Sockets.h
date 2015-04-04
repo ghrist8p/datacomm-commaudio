@@ -4,12 +4,12 @@
 #include <wS2tcpip.h>
 #include <stdio.h>
 #include "../Buffer/MessageQueue.h"
+#include "../protocol.h"
 
 #pragma warning(disable:4996)
 #pragma comment(lib,"ws2_32.lib")
 
 #define GETLENGTH	4
-#define DATA_BUFSIZE 8192
 
 typedef struct _SOCKET_INFORMATION {
 	OVERLAPPED Overlapped;

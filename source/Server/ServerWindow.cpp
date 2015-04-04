@@ -18,6 +18,16 @@ ServerWindow::ServerWindow(HINSTANCE hInst)
 	bottomPanelBrush = CreateSolidBrush(RGB(255, 0, 0));
 	pen = CreatePen(0, 2, RGB(0, 0, 255));
 	connected = false;
+	hFind = NULL;
+
+	sDir = L"C:\\Users\\Eric\\Documents\\Visual Studio 2012\\Projects\\commaudio\\Debug\\music\\*.wav";
+	hFind = FindFirstFile(sDir, &ffd);
+	if (INVALID_HANDLE_VALUE == hFind)
+	{
+        int err = GetLastError();
+		MessageBeep(1);
+		return;
+	}
 }
 
 
@@ -125,6 +135,25 @@ void ServerWindow::onCreate()
 	connectionButton->setText(L"Start");
 	layoutProps.weight = 1;
 	layout->addComponent(connectionButton, &layoutProps);
+
+    // reading all files in the music folder
+	do
+	{
+		if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+		{
+			//_tprintf(TEXT("  %s   <DIR>\n"), ffd.cFileName);
+		}
+		else
+		{
+			filesize.LowPart = ffd.nFileSizeLow;
+			filesize.HighPart = ffd.nFileSizeHigh;
+            WCHAR info[256];
+            wsprintf(info,L"%s size: %d",ffd.cFileName,filesize.QuadPart);
+			this->connectedClients->addItem(info, -1);
+		}
+	} while (FindNextFile(hFind, &ffd) != 0);
+
+	FindClose(hFind);
 }
 
 void ServerWindow::createLabelFont()
