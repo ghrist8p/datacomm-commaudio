@@ -3,6 +3,7 @@
 struct Node
 {
     int type;
+    int len;
     void* data;
 };
 
@@ -90,11 +91,12 @@ void MessageQueue::enqueue(int type, void* src, int len)
 {
     // allocate a node
     Node* n = (Node*) malloc(sizeof(Node));
-    void* data = malloc(elementSize);
+    void* data = malloc(len);
 
     // put the data into a node
     memoryCopy(data,src,len);
     n->type = type;
+    n->len  = len;
     n->data = data;
 
     // obtain synchronization objects
@@ -138,6 +140,37 @@ void MessageQueue::enqueue(int type, void* src, int len)
  */
 void MessageQueue::dequeue(int* type, void* dest)
 {
+    int useless;
+    dequeue(type,dest,&useless);
+}
+
+
+/**
+ * removes an element from the {MessageQueue}, and copies the data from the
+ *   queue into {dest}.
+ *
+ * @function   MessageQueue::dequeue
+ *
+ * @date       2015-03-18
+ *
+ * @revision   none
+ *
+ * @designer   Eric Tsang
+ *
+ * @programmer Eric Tsang
+ *
+ * @note       none
+ *
+ * @signature  void MessageQueue::dequeue(int* type, void* dest)
+ *
+ * @param      type pointer to an integer that will be assigned a number
+ *   indicating what kind of an element was taken out from the queue.
+ * @param      dest pointer to the location to copy the data from the
+ *   {MessageQueue} into.
+ * @param      len pointer to an integer that will be assigned a number indicating how big the dequeued element is.
+ */
+void MessageQueue::dequeue(int* type, void* dest, int* len)
+{
     // obtain synchronization objects
     WaitForSingleObject(canDequeue,INFINITE);
     WaitForSingleObject(access,INFINITE);
@@ -160,6 +193,7 @@ void MessageQueue::dequeue(int* type, void* dest)
     // get the data from the element
     memoryCopy(dest,n->data,elementSize);
     *type = n->type;
+    *len  = n->len;
 
     // deallocate the element
     free(n);

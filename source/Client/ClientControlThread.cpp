@@ -215,7 +215,9 @@ DWORD WINAPI ClientControlThread::_threadRoutine(void* params)
     ClientControlThread* dis = (ClientControlThread*) params;
 
     // connect to the remote host
-    dis->tcpSock = new TCPSocket(dis->ipAddress,dis->port,&dis->_sockMsgq);
+    dis->tcpSock = new UDPSocket(dis->port,&dis->_sockMsgq);
+    dis->tcpSock->setGroup(MULTICAST_ADDR);
+    // dis->tcpSock = new TCPSocket(dis->ipAddress,dis->port,&dis->_sockMsgq);
 
     // perform the thread routine
     int breakLoop = FALSE;
@@ -269,21 +271,21 @@ void ClientControlThread::_handleMsgqMsg(ClientControlThread* dis)
     {
         StringPacket packet;
         memoryCopy(packet.string,element.string,STR_LEN);
-        dis->tcpSock->Send(REQUEST_DOWNLOAD,&packet,sizeof(packet));
+        dis->tcpSock->Send(REQUEST_DOWNLOAD,&packet,sizeof(packet),dis->ipAddress,dis->port);
         break;
     }
     case CANCEL_DOWNLOAD:
     {
         StringPacket packet;
         memoryCopy(packet.string,element.string,STR_LEN);
-        dis->tcpSock->Send(CANCEL_DOWNLOAD,&packet,sizeof(packet));
+        dis->tcpSock->Send(CANCEL_DOWNLOAD,&packet,sizeof(packet),dis->ipAddress,dis->port);
         break;
     }
     case CHANGE_STREAM:
     {
         StringPacket packet;
         memoryCopy(packet.string,element.string,STR_LEN);
-        dis->tcpSock->Send(CHANGE_STREAM,&packet,sizeof(packet));
+        dis->tcpSock->Send(CHANGE_STREAM,&packet,sizeof(packet),dis->ipAddress,dis->port);
         break;
     }
     default:

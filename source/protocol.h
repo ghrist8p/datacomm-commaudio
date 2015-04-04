@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+#define MULTICAST_ADDR "224.0.0.1"
+
 #define DATA_BUFSIZE 1024
 
 #define STR_LEN 128

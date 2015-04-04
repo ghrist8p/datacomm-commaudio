@@ -1,5 +1,7 @@
 #include "Sockets.h"
 
+#define RUN_TEST
+
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: UDPSocket
 --
@@ -24,9 +26,7 @@
 UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 {
 	int error;
-	struct hostent	*hp = nullptr;
 	struct sockaddr_in server;
-	char** pptr;
 	WSADATA WSAData;
 	WORD wVersionRequested;
 
@@ -66,8 +66,6 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 		perror("Can't bind name to socket");
 		exit(1);
 	}
-
-	pptr = hp->h_addr_list;
 
 	if ((ThreadHandle = CreateThread(NULL, 0, UDPThread, (void*)this, 0, &ThreadId)) == NULL)
 	{
@@ -261,15 +259,16 @@ DWORD UDPSocket::ThreadStart(void)
 
 	SocketInfo->Socket = sd;
 	ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));
-	SocketInfo->DataBuf.len = DATA_BUFSIZE;
 	SocketInfo->DataBuf.buf = SocketInfo->Buffer;
 	SocketInfo->mqueue = msgqueue;
 	Flags = 0;
 
 	while (true)
 	{
+    	SocketInfo->DataBuf.len = DATA_BUFSIZE;
+
 		if (WSARecvFrom(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags, (sockaddr*)&source,
-			&length, &(SocketInfo->Overlapped), 0) == SOCKET_ERROR)
+			&length, 0, 0) == SOCKET_ERROR)
 		{
 			if (WSAGetLastError() != WSA_IO_PENDING)
 			{
@@ -305,9 +304,15 @@ DWORD UDPSocket::ThreadStart(void)
 
 void UDPSocket::setGroup(char* group_address)
 {
+    memset(&mreq,0,sizeof(mreq));
 	mreq.imr_multiaddr.s_addr = inet_addr(group_address);
-	setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
-	setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char*)&mreq, sizeof(mreq));
+    int result1;
+    int result2;
+	result1 = setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
+    int err1 = GetLastError();
+	result2 = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char*)&mreq, sizeof(mreq));
+    int err2 = GetLastError();
+    OutputDebugString(L"gasfgdsj");
 }
 
 int UDPSocket::sendtoGroup(char type, void* data, int length)
@@ -330,7 +335,7 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 
 	if (WaitResult = WAIT_OBJECT_0)
 	{
-		if ((SocketInfo = (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
+		if ((SocketInfo == (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
 			sizeof(SOCKET_INFORMATION))) == NULL)
 		{
 			printf("GlobalAlloc() failed with error %d\n", GetLastError());
