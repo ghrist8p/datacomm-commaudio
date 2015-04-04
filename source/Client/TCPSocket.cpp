@@ -271,7 +271,7 @@ int TCPSocket::Send(void* data, int length)
 
 	WaitResult = WaitForSingleObject( mutex, INFINITE);
 
-	if (WaitResult = WAIT_OBJECT_0)
+	if (WaitResult == WAIT_OBJECT_0)
 	{
 		if ((SocketInfo = (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
 			sizeof(SOCKET_INFORMATION))) == NULL)
@@ -302,7 +302,8 @@ int TCPSocket::Send(void* data, int length)
 	}
 	else
 	{
-		printf("Error in the mutex");
+		printf("Error in the mutex: %d\n",GetLastError());
+        int err = GetLastError();
 		return 0;
 	}
 

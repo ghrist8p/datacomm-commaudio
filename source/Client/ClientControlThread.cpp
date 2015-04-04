@@ -14,8 +14,9 @@
 // TODO: parse packet, and fill in callback parameters
 
 #include "ClientControlThread.h"
-#include "../handlerHelper.h"
 #include "Sockets.h"
+#include "../handlerHelper.h"
+#include "../protocol.h"
 
 // TODO: be able to include the "../Net/TCPSocket.h", and use the DATA_BUFSIZE
 // from that header file instead of this one
@@ -37,28 +38,6 @@
 //////////////////////
 // type definitions //
 //////////////////////
-
-/*
- * message queue element types
- */
-enum class MsgqType
-{
-    REQUEST_PACKET,
-    REQUEST_DOWNLOAD,
-    CANCEL_DOWNLOAD,
-    CHANGE_STREAM
-};
-
-/*
- * socket message queue element types
- */
-// TODO: this should be defined elsewhere, because its part of a protocol
-enum class SockMsgqType
-{
-    DOWNLOAD_PACKET,
-    RETRANSMISSION_PACKET,
-    CHANGE_STREAM
-};
 
 /**
  * element that is put into the message queue.
@@ -149,7 +128,7 @@ void ClientControlThread::requestPacketRetransmission(int index)
     element.index = index;
 
     // insert the element into the message queue
-    _msgq.enqueue((int)MsgqType::REQUEST_PACKET,&element);
+    _msgq.enqueue((int)PacketType::REQUEST_PACKET,&element);
 }
 
 /**
@@ -169,7 +148,7 @@ void ClientControlThread::requestDownload(char* file)
     memcpy(&element.string,file,STR_LEN);
 
     // insert the element into the message queue
-    _msgq.enqueue((int)MsgqType::REQUEST_DOWNLOAD,&element);
+    _msgq.enqueue((int)PacketType::REQUEST_DOWNLOAD,&element);
 }
 
 void ClientControlThread::cancelDownload(char* file)
@@ -179,7 +158,7 @@ void ClientControlThread::cancelDownload(char* file)
     memcpy(&element.string,file,STR_LEN);
 
     // insert the element into the message queue
-    _msgq.enqueue((int)MsgqType::CANCEL_DOWNLOAD,&element);
+    _msgq.enqueue((int)PacketType::CANCEL_DOWNLOAD,&element);
 }
 
 void ClientControlThread::requestChangeStream(char* file)
@@ -189,7 +168,7 @@ void ClientControlThread::requestChangeStream(char* file)
     memcpy(&element.string,file,STR_LEN);
 
     // insert the element into the message queue
-    _msgq.enqueue((int)MsgqType::CHANGE_STREAM,&element);
+    _msgq.enqueue((int)PacketType::CHANGE_STREAM,&element);
 }
 
 void ClientControlThread::connect(char* ipAddress, unsigned short port)
@@ -306,7 +285,7 @@ void ClientControlThread::_handleMsgqMsg(ClientControlThread* dis)
     TCHAR s[256];
 
     // allocate memory to hold message queue message
-    MsgqType msgType;
+    PacketType msgType;
     MsgqElement element;
 
     // get the message queue message
@@ -315,24 +294,24 @@ void ClientControlThread::_handleMsgqMsg(ClientControlThread* dis)
     // process the message queue message according to its type
     switch(msgType)
     {
-    case MsgqType::REQUEST_PACKET:
-        OutputDebugString(L"MsgqType::REQUEST_PACKET\n");
-        // TODO: TCPSocket->send blahblahblah
+    case PacketType::REQUEST_PACKET:
+        OutputDebugString(L"PacketType::REQUEST_PACKET\n");
+        dis->tcpSock->Send("PacketType::REQUEST_PACKET",strlen("PacketType::REQUEST_PACKET")+1);
         break;
-    case MsgqType::REQUEST_DOWNLOAD:
-        swprintf_s(s,L"MsgqType::REQUEST_DOWNLOAD: %S\n",element.string);
+    case PacketType::REQUEST_DOWNLOAD:
+        swprintf_s(s,L"PacketType::REQUEST_DOWNLOAD: %S\n",element.string);
         OutputDebugString(s);
-        // TODO: TCPSocket->send blahblahblah
+        dis->tcpSock->Send("PacketType::REQUEST_DOWNLOAD",strlen("PacketType::REQUEST_DOWNLOAD")+1);
         break;
-    case MsgqType::CANCEL_DOWNLOAD:
-        swprintf_s(s,L"MsgqType::CANCEL_DOWNLOAD: %S\n",element.string);
+    case PacketType::CANCEL_DOWNLOAD:
+        swprintf_s(s,L"PacketType::CANCEL_DOWNLOAD: %S\n",element.string);
         OutputDebugString(s);
-        // TODO: TCPSocket->send blahblahblah
+        dis->tcpSock->Send("PacketType::CANCEL_DOWNLOAD",strlen("PacketType::CANCEL_DOWNLOAD")+1);
         break;
-    case MsgqType::CHANGE_STREAM:
-        swprintf_s(s,L"MsgqType::CHANGE_STREAM: %S\n",element.string);
+    case PacketType::CHANGE_STREAM:
+        swprintf_s(s,L"PacketType::CHANGE_STREAM: %S\n",element.string);
         OutputDebugString(s);
-        // TODO: TCPSocket->send blahblahblah
+        dis->tcpSock->Send("PacketType::CHANGE_STREAM",strlen("PacketType::CHANGE_STREAM")+1);
         break;
     default:
         fprintf(stderr,"WARNING: received unknown message type: %d\n",msgType);
@@ -343,7 +322,7 @@ void ClientControlThread::_handleMsgqMsg(ClientControlThread* dis)
 void ClientControlThread::_handleSockMsgqMsg(ClientControlThread* dis)
 {
     // allocate memory to hold message queue message
-    SockMsgqType msgType;
+    PacketType msgType;
     MsgqElement element;
 
     // get the message queue message
@@ -352,18 +331,18 @@ void ClientControlThread::_handleSockMsgqMsg(ClientControlThread* dis)
     // process the message queue message according to its type
     switch(msgType)
     {
-    case SockMsgqType::DOWNLOAD_PACKET:
-        OutputDebugString(L"SockMsgqType::DOWNLOAD_PACKET\n");
+    case PacketType::DOWNLOAD_PACKET:
+        OutputDebugString(L"PacketType::DOWNLOAD_PACKET\n");
         // TODO: parse packet, and fill in callback parameters
         dis->onDownloadPacket(0,0,0);
         break;
-    case SockMsgqType::RETRANSMISSION_PACKET:
-        OutputDebugString(L"SockMsgqType::RETRANSMISSION_PACKET\n");
+    case PacketType::RETRANSMISSION_PACKET:
+        OutputDebugString(L"PacketType::RETRANSMISSION_PACKET\n");
         // TODO: parse packet, and fill in callback parameters
         dis->onRetransmissionPacket(0,0,0);
         break;
-    case SockMsgqType::CHANGE_STREAM:
-        OutputDebugString(L"SockMsgqType::CHANGE_STREAM\n");
+    case PacketType::CHANGE_STREAM:
+        OutputDebugString(L"PacketType::CHANGE_STREAM\n");
         // TODO: parse packet, and fill in callback parameters
         dis->onChangeStream(0);
         break;

@@ -18,6 +18,16 @@ ServerWindow::ServerWindow(HINSTANCE hInst)
 	bottomPanelBrush = CreateSolidBrush(RGB(255, 0, 0));
 	pen = CreatePen(0, 2, RGB(0, 0, 255));
 	connected = false;
+	hFind = NULL;
+
+	sDir = L"C:\\Users\\Eric\\Documents\\Visual Studio 2012\\Projects\\commaudio\\Debug\\music\\*.wav";
+	hFind = FindFirstFile(sDir, &ffd);
+	if (INVALID_HANDLE_VALUE == hFind)
+	{
+        int err = GetLastError();
+		MessageBeep(1);
+		return;
+	}
 }
 
 
@@ -26,7 +36,7 @@ ServerWindow::~ServerWindow()
 	DeleteObject(labelFont);
 	DeleteObject(bottomPanelBrush);
 	DeleteObject(pen);
-	
+
 	delete connectedClients;
 	delete bottomPanel;
 	delete leftPaddingPanel;
@@ -125,6 +135,25 @@ void ServerWindow::onCreate()
 	connectionButton->setText(L"Start");
 	layoutProps.weight = 1;
 	layout->addComponent(connectionButton, &layoutProps);
+
+    // reading all files in the music folder
+	do
+	{
+		if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+		{
+			//_tprintf(TEXT("  %s   <DIR>\n"), ffd.cFileName);
+		}
+		else
+		{
+			filesize.LowPart = ffd.nFileSizeLow;
+			filesize.HighPart = ffd.nFileSizeHigh;
+            WCHAR info[256];
+            wsprintf(info,L"%s size: %d",ffd.cFileName,filesize.QuadPart);
+			this->connectedClients->addItem(info, -1);
+		}
+	} while (FindNextFile(hFind, &ffd) != 0);
+
+	FindClose(hFind);
 }
 
 void ServerWindow::createLabelFont()
@@ -133,12 +162,12 @@ void ServerWindow::createLabelFont()
 	memset(&logFont, 0, sizeof(logFont));
 	logFont.lfHeight = -15; // see PS
 	labelFont = CreateFontIndirect(&logFont);
-    
+
 	SendMessage(tcpPortLabel->getHWND(), WM_SETFONT, (WPARAM)labelFont, TRUE);
 	SendMessage(udpPortLabel->getHWND(), WM_SETFONT, (WPARAM)labelFont, TRUE);
 }
 
-void ServerWindow::newConnHandler( Server * server, void * data )
+void ServerWindow::newConnHandler( TCPConnection * server, void * data )
 {
 	ServerWindow *serverWindow = (ServerWindow*) data;
 	serverWindow->connectedClients->addItem(L"New Connection!", -1);
@@ -146,7 +175,7 @@ void ServerWindow::newConnHandler( Server * server, void * data )
 
 bool ServerWindow::toggleConnection(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
 {
-    
+
 	ServerWindow *serverWindow = (ServerWindow*) pThis;
 
 	/**
