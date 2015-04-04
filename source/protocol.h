@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-#define DATA_BUFSIZE 8192
+#define DATA_BUFSIZE 1024
 
 #define STR_LEN 128
 

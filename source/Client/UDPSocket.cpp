@@ -160,7 +160,7 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 		Flags = 0;
 
 		destination.sin_addr.s_addr = inet_addr(dest_ip);
-		if (destination.sin_addr.s_addr == INADDR_NONE) 
+		if (destination.sin_addr.s_addr == INADDR_NONE)
 		{
 			MessageBox(NULL, L"The target ip address entered must be a legal IPv4 address", L"ERROR", MB_ICONERROR);
 			return 0;
@@ -168,7 +168,7 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 
 		destination.sin_port = htons((u_short)dest_port);
 
-		if (destination.sin_port == 0) 
+		if (destination.sin_port == 0)
 		{
 			MessageBox(NULL, L"The targetport must be a legal UDP port number", L"ERROR", MB_ICONERROR);
 			return 0;
@@ -281,12 +281,12 @@ DWORD UDPSocket::ThreadStart(void)
 		{
 			len = (SocketInfo->Buffer[1] << 24) | (SocketInfo->Buffer[2] << 16) | (SocketInfo->Buffer[3] << 8) | (SocketInfo->Buffer[4]);
 			CHAR* dataReceived = (char*)malloc(sizeof(char) * len);
-			memcpy(dataReceived, SocketInfo->Buffer+5, len);
+			memoryCopy(dataReceived, SocketInfo->Buffer+5, len);
 			char* sourceaddr = inet_ntoa(source.sin_addr);
 
 			switch (SocketInfo->Buffer[0])
 			{
-				case MUSICSTREAM:				
+				case MUSICSTREAM:
 					SocketInfo->mqueue->enqueue(MUSICSTREAM, dataReceived);
 					break;
 

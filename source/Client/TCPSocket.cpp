@@ -66,7 +66,7 @@ TCPSocket::TCPSocket(char* host, int port, MessageQueue* mqueue)
 	}
 
 	// Copy the server address
-	memcpy((char *)&server.sin_addr, hp->h_addr, hp->h_length);
+	memoryCopy((char *)&server.sin_addr, hp->h_addr, hp->h_length);
 
 	// Connecting to the server
 	if (connect(sd, (struct sockaddr *)&server, sizeof(server)) == -1)
@@ -132,7 +132,7 @@ DWORD WINAPI TCPSocket::TCPThread(LPVOID lpParameter)
 DWORD TCPSocket::ThreadStart(void)
 {
 	DWORD Flags;
-	LPSOCKET_INFORMATION SocketInfo;	
+	LPSOCKET_INFORMATION SocketInfo;
 	DWORD RecvBytes;
 	int length;
 
@@ -146,13 +146,14 @@ DWORD TCPSocket::ThreadStart(void)
 
 		SocketInfo->Socket = sd;
 		ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));
-		SocketInfo->DataBuf.len = GETLENGTH;
 		SocketInfo->DataBuf.buf = SocketInfo->Buffer;
 		SocketInfo->mqueue = msgqueue;
 		Flags = 0;
 
 		while (true)
 		{
+    		SocketInfo->DataBuf.len = GETLENGTH;
+
 			if (WSARecv(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags,
 				0, 0) == SOCKET_ERROR)
 			{
@@ -179,26 +180,8 @@ DWORD TCPSocket::ThreadStart(void)
 			else
 			{
 				char* dataReceived = (char*)malloc(sizeof(char) * length);
-				memcpy(dataReceived, SocketInfo->Buffer + 1, length);
-
-				switch (SocketInfo->Buffer[0])
-				{
-					case NEW_SONG:
-						SocketInfo->mqueue->enqueue(NEW_SONG, dataReceived, length);
-						break;
-
-					case CHANGE_STREAM:
-						SocketInfo->mqueue->enqueue(CHANGE_STREAM, dataReceived, length);
-						break;
-
-					case DOWNLOAD:
-						SocketInfo->mqueue->enqueue(DOWNLOAD, dataReceived, length);
-						break;
-
-					default:
-						MessageBox(NULL, L"Unknown Type of Message Received", L"ERROR", MB_ICONERROR);
-				}
-
+				memoryCopy(dataReceived, SocketInfo->Buffer + 1, length);
+                SocketInfo->mqueue->enqueue(SocketInfo->Buffer[0], dataReceived, length);
 				free(dataReceived);
 			}
 		}
@@ -308,7 +291,7 @@ int TCPSocket::Send(char type, void* data, int length)
 	DWORD bytesSent;
 	DWORD WaitResult;
 	char* data_send = (char*) malloc(sizeof(char) * (length + 5));
-	
+
 	data_send[0] = type;
 
 	//message len
@@ -317,7 +300,7 @@ int TCPSocket::Send(char type, void* data, int length)
 	data_send[3] = (length >> 8) & 0xFF;
 	data_send[4] = length & 0xFF;
 
-	memcpy(data_send + 5, (char*)data, length);
+	memoryCopy(data_send + 5, (char*)data, length);
 
 	WaitResult = WaitForSingleObject( mutex, INFINITE);
 

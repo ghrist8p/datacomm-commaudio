@@ -93,7 +93,7 @@ void MessageQueue::enqueue(int type, void* src, int len)
     void* data = malloc(elementSize);
 
     // put the data into a node
-    memcpy(data,src,len);
+    memoryCopy(data,src,len);
     n->type = type;
     n->data = data;
 
@@ -158,7 +158,7 @@ void MessageQueue::dequeue(int* type, void* dest)
     ReleaseSemaphore(canEnqueue,1,NULL);
 
     // get the data from the element
-    memcpy(dest,n->data,elementSize);
+    memoryCopy(dest,n->data,elementSize);
     *type = n->type;
 
     // deallocate the element

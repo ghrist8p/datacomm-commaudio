@@ -116,7 +116,7 @@ void ClientControlThread::requestDownload(char* file)
 {
     // prepare the element for insertion into the message queue
     MsgqElement element;
-    memcpy(&element.string,file,STR_LEN);
+    memoryCopy(&element.string,file,STR_LEN);
 
     // insert the element into the message queue
     _msgq.enqueue((int)REQUEST_DOWNLOAD,&element);
@@ -126,7 +126,7 @@ void ClientControlThread::cancelDownload(char* file)
 {
     // prepare the element for insertion into the message queue
     MsgqElement element;
-    memcpy(&element.string,file,STR_LEN);
+    memoryCopy(&element.string,file,STR_LEN);
 
     // insert the element into the message queue
     _msgq.enqueue((int)CANCEL_DOWNLOAD,&element);
@@ -136,7 +136,7 @@ void ClientControlThread::requestChangeStream(char* file)
 {
     // prepare the element for insertion into the message queue
     MsgqElement element;
-    memcpy(&element.string,file,STR_LEN);
+    memoryCopy(&element.string,file,STR_LEN);
 
     // insert the element into the message queue
     _msgq.enqueue((int)CHANGE_STREAM,&element);
@@ -145,7 +145,7 @@ void ClientControlThread::requestChangeStream(char* file)
 void ClientControlThread::connect(char* ipAddress, unsigned short port)
 {
     // copy connection parameters into the object
-    memcpy(this->ipAddress,ipAddress,IP_ADDR_LEN);
+    memoryCopy(this->ipAddress,ipAddress,IP_ADDR_LEN);
     this->port = port;
 
     // start the threaded routine
@@ -268,21 +268,21 @@ void ClientControlThread::_handleMsgqMsg(ClientControlThread* dis)
     case REQUEST_DOWNLOAD:
     {
         StringPacket packet;
-        memcpy(packet.string,element.string,STR_LEN);
+        memoryCopy(packet.string,element.string,STR_LEN);
         dis->tcpSock->Send(REQUEST_DOWNLOAD,&packet,sizeof(packet));
         break;
     }
     case CANCEL_DOWNLOAD:
     {
         StringPacket packet;
-        memcpy(packet.string,element.string,STR_LEN);
+        memoryCopy(packet.string,element.string,STR_LEN);
         dis->tcpSock->Send(CANCEL_DOWNLOAD,&packet,sizeof(packet));
         break;
     }
     case CHANGE_STREAM:
     {
         StringPacket packet;
-        memcpy(packet.string,element.string,STR_LEN);
+        memoryCopy(packet.string,element.string,STR_LEN);
         dis->tcpSock->Send(CHANGE_STREAM,&packet,sizeof(packet));
         break;
     }
@@ -296,7 +296,7 @@ void ClientControlThread::_handleSockMsgqMsg(ClientControlThread* dis)
 {
     // allocate memory to hold message queue message
     int msgType;
-    MsgqElement element;
+    SockMsgqElement element;
 
     // get the message queue message
     dis->_sockMsgq.dequeue((int*)&msgType,&element);
