@@ -11,6 +11,7 @@
 
 #define GETLENGTH	4
 
+
 typedef struct _SOCKET_INFORMATION {
 	OVERLAPPED Overlapped;
 	SOCKET Socket;
@@ -33,7 +34,8 @@ private:
 public:
 	UDPSocket(int port, MessageQueue* mqueue);
 	~UDPSocket();
-	int Send(void* data, int length, char* dest_ip, int dest_port);
+	int Send(char type, void* data, int length, char* dest_ip, int dest_port);
+	int sendtoGroup(char type, void* data, int length);
 	static DWORD WINAPI UDPThread(LPVOID lpParameter);	
 	void setGroup(char* group_address);
 

@@ -167,7 +167,7 @@ void ServerWindow::createLabelFont()
 	SendMessage(udpPortLabel->getHWND(), WM_SETFONT, (WPARAM)labelFont, TRUE);
 }
 
-typedef struct 
+typedef struct
 {
     WSAOVERLAPPED   overlapped;
     WSABUF          wsabuf;
@@ -196,7 +196,7 @@ void CALLBACK ServerWindow::receive( IN DWORD dwError
 
         memset( &receiver->overlapped, 0, sizeof( WSAOVERLAPPED ) );
         memset( receiver->wsabuf.buf, 0, receiver->wsabuf.len );
-        
+
         WSARecv( receiver->connection->sock // _In_   SOCKET s,
                , &receiver->wsabuf          //_Inout_ LPWSABUF lpBuffers,
                , 1                          //_In_    DWORD dwBufferCount,
@@ -229,10 +229,10 @@ uint8_t * ServerWindow::receiveMessage( TCPConnection * from )
 
     // submit to server
     server->submitCompletionRoutine( receiveCallback, receiver );
-    
+
     WSAEVENT   eventArray[1];
     eventArray[0] = from->signal;
-    
+
     DWORD retval;
 
     // wait for compleition
@@ -241,7 +241,7 @@ uint8_t * ServerWindow::receiveMessage( TCPConnection * from )
                                          , FALSE        // _In_ BOOL             fWaitAll
                                          , WSA_INFINITE // _In_ DWORD            dwTimeout
                                          , TRUE );      // _In_ BOOL             fAlertable
-        
+
     // On error
     if( retval == WSA_WAIT_FAILED )
     {
@@ -257,17 +257,17 @@ uint8_t * ServerWindow::receiveMessage( TCPConnection * from )
     memset( receiver->buf + sizeof( MessageHeader ), 0, ((MessageHeader *) receiver->buf)->size );
     receiver->bytesToRead = ((MessageHeader *) receiver->buf)->size;
     receiver->cursor      = sizeof( MessageHeader );
-    
+
     // submit to server
     server->submitCompletionRoutine( receiveCallback, receiver );
-    
+
     // wait for compleition
     retval = WSAWaitForMultipleEvents( 1            // _In_ DWORD            cEvents
                                          , eventArray   // _In_ const WSAEVENT * lphEvents
                                          , FALSE        // _In_ BOOL             fWaitAll
                                          , WSA_INFINITE // _In_ DWORD            dwTimeout
                                          , TRUE );      // _In_ BOOL             fAlertable
-        
+
     // On error
     if( retval == WSA_WAIT_FAILED )
     {

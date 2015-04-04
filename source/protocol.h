@@ -3,7 +3,11 @@
 
 #include <cstdint>
 
-#define DATA_BUFSIZE 8192
+#define MULTICAST_ADDR "224.0.0.1"
+
+#define MULTICAST_PORT 7515
+
+#define DATA_BUFSIZE 1024
 
 #define STR_LEN 128
 
