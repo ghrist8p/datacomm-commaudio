@@ -215,9 +215,9 @@ DWORD WINAPI ClientControlThread::_threadRoutine(void* params)
     ClientControlThread* dis = (ClientControlThread*) params;
 
     // connect to the remote host
-    dis->tcpSock = new UDPSocket(dis->port,&dis->_sockMsgq);
-    dis->tcpSock->setGroup(MULTICAST_ADDR);
-    // dis->tcpSock = new TCPSocket(dis->ipAddress,dis->port,&dis->_sockMsgq);
+    // dis->tcpSock = new UDPSocket(dis->port,&dis->_sockMsgq);
+    // dis->tcpSock->setGroup(MULTICAST_ADDR);
+    dis->tcpSock = new TCPSocket(dis->ipAddress,dis->port,&dis->_sockMsgq);
 
     // perform the thread routine
     int breakLoop = FALSE;
