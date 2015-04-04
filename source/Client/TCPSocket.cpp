@@ -1,5 +1,10 @@
 #include "Sockets.h"
 
+TCPSocket(SOCKET socket, MessageQueue* mqueue)
+{
+	// hi
+}
+
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: TCPSocket
 --
@@ -132,7 +137,7 @@ DWORD WINAPI TCPSocket::TCPThread(LPVOID lpParameter)
 DWORD TCPSocket::ThreadStart(void)
 {
 	DWORD Flags;
-	LPSOCKET_INFORMATION SocketInfo;	
+	LPSOCKET_INFORMATION SocketInfo;
 	DWORD RecvBytes;
 	int length;
 
@@ -146,25 +151,29 @@ DWORD TCPSocket::ThreadStart(void)
 
 		SocketInfo->Socket = sd;
 		ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));
-		SocketInfo->DataBuf.len = GETLENGTH;
 		SocketInfo->DataBuf.buf = SocketInfo->Buffer;
 		SocketInfo->mqueue = msgqueue;
 		Flags = 0;
 
 		while (true)
 		{
+    		SocketInfo->DataBuf.len = sizeof(int)+1;
+            char type;
+
 			if (WSARecv(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags,
 				0, 0) == SOCKET_ERROR)
 			{
-				if (WSAGetLastError() != WSA_IO_PENDING)
+                int err;
+				if ((err = WSAGetLastError()) != WSA_IO_PENDING)
 				{
 					MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
 					return FALSE;
 				}
 			}
 
-			length = (SocketInfo->Buffer[3] << 24) | (SocketInfo->Buffer[2] << 16) | (SocketInfo->Buffer[1] << 8) | (SocketInfo->Buffer[0]);
-			SocketInfo->DataBuf.len = length + 1;
+            type = SocketInfo->Buffer[0];
+			length = (SocketInfo->Buffer[1] << 24) | (SocketInfo->Buffer[2] << 16) | (SocketInfo->Buffer[3] << 8) | (SocketInfo->Buffer[4]);
+			SocketInfo->DataBuf.len = length;
 
 			if (WSARecv(SocketInfo->Socket, &SocketInfo->DataBuf, 1, &RecvBytes, &Flags,
 				0, 0) == SOCKET_ERROR)
@@ -172,32 +181,14 @@ DWORD TCPSocket::ThreadStart(void)
 				if (WSAGetLastError() != WSA_IO_PENDING)
 				{
 					MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
-					return;
+					return 0;
 				}
 			}
 			else
 			{
-				CHAR* dataReceived = (char*)malloc(sizeof(char) * length);
-				memcpy(dataReceived, SocketInfo->Buffer + 1, length);
-
-				switch (SocketInfo->Buffer[0])
-				{
-					case NEW_SONG:
-						SocketInfo->mqueue->enqueue(NEW_SONG, dataReceived);
-						break;
-
-					case CHANGE_STREAM:
-						SocketInfo->mqueue->enqueue(CHANGE_STREAM, dataReceived);
-						break;
-
-					case DOWNLOAD:
-						SocketInfo->mqueue->enqueue(DOWNLOAD, dataReceived);
-						break;
-
-					default:
-						MessageBox(NULL, L"Unknown Type of Message Received", L"ERROR", MB_ICONERROR);
-				}
-
+				char* dataReceived = (char*)malloc(sizeof(char) * length);
+				memcpy(dataReceived, SocketInfo->Buffer, length);
+                SocketInfo->mqueue->enqueue(type, dataReceived, length);
 				free(dataReceived);
 			}
 		}
@@ -250,6 +241,7 @@ DWORD TCPSocket::ThreadStart(void)
 //		int type = SocketInfo->Buffer[0];
 //		SocketInfo->mqueue->enqueue(type, SocketInfo->Buffer);
 //	}
+//
 //
 //
 //}
@@ -306,7 +298,7 @@ int TCPSocket::Send(char type, void* data, int length)
 	DWORD bytesSent;
 	DWORD WaitResult;
 	char* data_send = (char*) malloc(sizeof(char) * (length + 5));
-	
+
 	data_send[0] = type;
 
 	//message len
@@ -339,7 +331,7 @@ int TCPSocket::Send(char type, void* data, int length)
 		{
 			if (WSAGetLastError() != WSA_IO_PENDING)
 			{
-				MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
+				MessageBox(NULL, L"WSASend() failed with error", L"ERROR", MB_ICONERROR);
 				return 0;
 			}
 		}

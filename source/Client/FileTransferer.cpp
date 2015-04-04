@@ -4,14 +4,14 @@
 
 FileTransferer::FileTransferer()
 {
-	
+
 }
 
 FileTransferer::~FileTransferer()
 {
-	
+
 }
-		
+
 void FileTransferer::sendFile(int socket, char *file)
 {
     FileTransferInfo info = {0};

@@ -9,8 +9,6 @@
 #pragma warning(disable:4996)
 #pragma comment(lib,"ws2_32.lib")
 
-#define GETLENGTH	4
-
 typedef struct _SOCKET_INFORMATION {
 	OVERLAPPED Overlapped;
 	SOCKET Socket;
@@ -29,13 +27,13 @@ private:
 	DWORD ThreadStart(void);
 	static void CALLBACK UDPRoutine(DWORD Error, DWORD BytesTransferred,
 		LPWSAOVERLAPPED Overlapped, DWORD InFlags);
+	static DWORD WINAPI UDPThread(LPVOID lpParameter);
 
 public:
 	UDPSocket(int port, MessageQueue* mqueue);
 	~UDPSocket();
 	int Send(char type, void* data, int length, char* dest_ip, int dest_port);
 	int sendtoGroup(char type, void* data, int length);
-	static DWORD WINAPI UDPThread(LPVOID lpParameter);	
 	void setGroup(char* group_address);
 
 };
@@ -52,6 +50,7 @@ private:
 		LPWSAOVERLAPPED Overlapped, DWORD InFlags);
 
 public:
+	TCPSocket(SOCKET socket);
 	TCPSocket(char* host, int port, MessageQueue* mqueue);
 	~TCPSocket();
 	int Send(char type, void* data, int length);

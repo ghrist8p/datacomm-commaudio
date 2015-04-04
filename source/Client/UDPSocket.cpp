@@ -1,5 +1,7 @@
 #include "Sockets.h"
 
+#define RUN_TEST
+
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: UDPSocket
 --
@@ -24,9 +26,7 @@
 UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 {
 	int error;
-	struct hostent	*hp = nullptr;
 	struct sockaddr_in server;
-	char** pptr;
 	WSADATA WSAData;
 	WORD wVersionRequested;
 
@@ -56,7 +56,7 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 	// Initialize and set up the address structure
 	memset((char *)&server, 0, sizeof(struct sockaddr_in));
 	server.sin_family = AF_INET;
-	server.sin_port = htons(port);
+	server.sin_port = htons(MULTICAST_PORT);
 	server.sin_addr.s_addr = htonl(INADDR_ANY);
 	// Copy the server address
 
@@ -66,8 +66,6 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 		perror("Can't bind name to socket");
 		exit(1);
 	}
-
-	pptr = hp->h_addr_list;
 
 	if ((ThreadHandle = CreateThread(NULL, 0, UDPThread, (void*)this, 0, &ThreadId)) == NULL)
 	{
@@ -144,7 +142,7 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 
 	WaitResult = WaitForSingleObject(mutex, INFINITE);
 
-	if (WaitResult = WAIT_OBJECT_0)
+	if (WaitResult == WAIT_OBJECT_0)
 	{
 		if ((SocketInfo = (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
 			sizeof(SOCKET_INFORMATION))) == NULL)
@@ -159,26 +157,30 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 		SocketInfo->DataBuf.buf = data_send;
 		Flags = 0;
 
+		memset(&destination,0,destsize);
+
+		destination.sin_family = AF_INET;
 		destination.sin_addr.s_addr = inet_addr(dest_ip);
-		if (destination.sin_addr.s_addr == INADDR_NONE) 
+		if (destination.sin_addr.s_addr == INADDR_NONE)
 		{
 			MessageBox(NULL, L"The target ip address entered must be a legal IPv4 address", L"ERROR", MB_ICONERROR);
 			return 0;
 		}
 
-		destination.sin_port = htons((u_short)dest_port);
+		destination.sin_port = htons(dest_port);
 
-		if (destination.sin_port == 0) 
+		if (destination.sin_port == 0)
 		{
 			MessageBox(NULL, L"The targetport must be a legal UDP port number", L"ERROR", MB_ICONERROR);
 			return 0;
 		}
 
 		if (WSASendTo(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &SendBytes, Flags, (SOCKADDR*)&destination, destsize,
-			&(SocketInfo->Overlapped), 0) == SOCKET_ERROR)
+			0, 0) == SOCKET_ERROR)
 		{
 			if (WSAGetLastError() != WSA_IO_PENDING)
 			{
+				int err = GetLastError();
 				MessageBox(NULL, L"WSASend() failed with error", L"ERROR", MB_ICONERROR);
 				return 0;
 			}
@@ -261,17 +263,19 @@ DWORD UDPSocket::ThreadStart(void)
 
 	SocketInfo->Socket = sd;
 	ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));
-	SocketInfo->DataBuf.len = DATA_BUFSIZE;
 	SocketInfo->DataBuf.buf = SocketInfo->Buffer;
 	SocketInfo->mqueue = msgqueue;
 	Flags = 0;
 
 	while (true)
 	{
+		SocketInfo->DataBuf.len = DATA_BUFSIZE;
+
 		if (WSARecvFrom(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags, (sockaddr*)&source,
-			&length, &(SocketInfo->Overlapped), 0) == SOCKET_ERROR)
+			&length, 0, 0) == SOCKET_ERROR)
 		{
-			if (WSAGetLastError() != WSA_IO_PENDING)
+			int err;
+			if ((err = WSAGetLastError()) != WSA_IO_PENDING)
 			{
 				MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
 				return FALSE;
@@ -280,23 +284,12 @@ DWORD UDPSocket::ThreadStart(void)
 		else
 		{
 			len = (SocketInfo->Buffer[1] << 24) | (SocketInfo->Buffer[2] << 16) | (SocketInfo->Buffer[3] << 8) | (SocketInfo->Buffer[4]);
+			len = -len;
 			CHAR* dataReceived = (char*)malloc(sizeof(char) * len);
 			memcpy(dataReceived, SocketInfo->Buffer+5, len);
 			char* sourceaddr = inet_ntoa(source.sin_addr);
 
-			switch (SocketInfo->Buffer[0])
-			{
-				case MUSICSTREAM:				
-					SocketInfo->mqueue->enqueue(MUSICSTREAM, dataReceived);
-					break;
-
-				case MICSTREAM:
-					SocketInfo->mqueue->enqueue(MICSTREAM, dataReceived);
-					break;
-
-				default:
-					MessageBox(NULL, L"Unknown Type of Message Received", L"ERROR", MB_ICONERROR);
-			}
+			SocketInfo->mqueue->enqueue(SocketInfo->Buffer[0], dataReceived, len);
 
 			free(dataReceived);
 		}
@@ -305,6 +298,7 @@ DWORD UDPSocket::ThreadStart(void)
 
 void UDPSocket::setGroup(char* group_address)
 {
+	memset(&mreq,0,sizeof(mreq));
 	mreq.imr_multiaddr.s_addr = inet_addr(group_address);
 	setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
 	setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char*)&mreq, sizeof(mreq));
@@ -328,7 +322,7 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 
 	WaitResult = WaitForSingleObject(mutex, INFINITE);
 
-	if (WaitResult = WAIT_OBJECT_0)
+	if (WaitResult == WAIT_OBJECT_0)
 	{
 		if ((SocketInfo = (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
 			sizeof(SOCKET_INFORMATION))) == NULL)
@@ -343,10 +337,17 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 		SocketInfo->DataBuf.buf = data_send;
 		Flags = 0;
 
-		if (WSASendTo(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &SendBytes, Flags, (struct sockaddr*)&mreq, sizeof(mreq),
-			&(SocketInfo->Overlapped), 0) == SOCKET_ERROR)
+		sockaddr_in address;
+		memset(&address,0,sizeof(address));
+		address.sin_family = AF_INET;
+		address.sin_port   = htons(MULTICAST_PORT);
+		memcpy(&address.sin_addr,&mreq.imr_multiaddr,sizeof(struct in_addr));
+
+		if (WSASendTo(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &SendBytes, Flags, (struct sockaddr*)&address, sizeof(address),
+			0, 0) == SOCKET_ERROR)
 		{
-			if (WSAGetLastError() != WSA_IO_PENDING)
+			int err;
+			if ((err = WSAGetLastError()) != WSA_IO_PENDING)
 			{
 				MessageBox(NULL, L"WSASend() failed with error", L"ERROR", MB_ICONERROR);
 				return 0;

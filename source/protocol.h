@@ -1,33 +1,44 @@
 #ifndef _PACKET_TYPE_H_
 #define _PACKET_TYPE_H_
 
-#define DATA_BUFSIZE 8192
+#include <cstdint>
 
-/*
- * packet types sent between clients and servers.
- */
-enum class PacketType
-{
-    REQUEST_DOWNLOAD,
-    CANCEL_DOWNLOAD,
-    DOWNLOAD_PACKET,
-    RETRANSMISSION_PACKET,
-    CHANGE_STREAM
-};
+#define MULTICAST_ADDR "224.0.0.1"
+
+#define MULTICAST_PORT 7515
+
+#define DATA_BUFSIZE 1024
+
+#define STR_LEN 128
 
 struct DataPacket
 {
-    PacketType type;
+    int index;
     char data[DATA_BUFSIZE];
 };
 
 typedef struct DataPacket DataPacket;
 
-struct CommandPacket
+struct StringPacket
 {
-    PacketType type;
+    char string[STR_LEN];
 };
 
-typedef struct CommandPacket CommandPacket;
+typedef struct DataPacket DataPacket;
+
+struct RequestPacket
+{
+    int index;
+};
+
+typedef struct RequestPacket RequestPacket;
+
+struct MessageHeader
+{
+    uint32_t size;
+    uint8_t type;
+};
+
+typedef struct MessageHeader MessageHeader;
 
 #endif

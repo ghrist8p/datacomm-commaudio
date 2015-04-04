@@ -3,6 +3,7 @@
 
 #include <winsock2.h>
 #include <windows.h>
+#include "synchronizationHelper.h"
 
 #pragma warning(disable:4996)
 

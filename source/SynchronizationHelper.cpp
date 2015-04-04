@@ -5,7 +5,7 @@
 ///////////////////////////
 
 static DWORD WINAPI delayedSetEventRoutine(LPVOID params);
-static HANDLE access = CreateMutex(NULL, FALSE, NULL);;
+static HANDLE delayedSetEventAccess = CreateMutex(NULL, FALSE, NULL);;
 
 struct DelayedSetEventParams
 {
@@ -22,7 +22,7 @@ typedef struct DelayedSetEventParams DelayedSetEventParams;
 void delayedSetEvent(HANDLE event, long milliseconds)
 {
     // obtain synchronization objects
-    WaitForSingleObject(access,INFINITE);
+    WaitForSingleObject(delayedSetEventAccess,INFINITE);
 
     // prepare thread parameters
     DelayedSetEventParams* params;
@@ -35,7 +35,7 @@ void delayedSetEvent(HANDLE event, long milliseconds)
     CreateThread(0,0,delayedSetEventRoutine,params,0,&useless);
 
     // release synchronization objects
-    ReleaseMutex(access);
+    ReleaseMutex(delayedSetEventAccess);
 }
 
 static DWORD WINAPI delayedSetEventRoutine(LPVOID params)

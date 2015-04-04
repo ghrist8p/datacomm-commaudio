@@ -18,7 +18,7 @@
 #include "PlayWave.h"
 
 #define MIC_SAMPLE_RATE 44100
-#define MIC_RECORD_INTERVAL 1
+#define MIC_RECORD_INTERVAL 0.2
 
 ClientWindow::ClientWindow(HINSTANCE hInst)
 	: GuiWindow(hInst)
@@ -41,7 +41,7 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	micMQueue = new MessageQueue(100, MicReader::calculateBufferSize(MIC_SAMPLE_RATE, MIC_RECORD_INTERVAL));
 
     PlayWave* p = new PlayWave(1000,micMQueue);
-    p->startPlaying(MIC_SAMPLE_RATE,8,1);
+	p->startPlaying(MIC_SAMPLE_RATE, MIC_BITS_PER_SAMPLE, NUM_MIC_CHANNELS);
 }
 
 

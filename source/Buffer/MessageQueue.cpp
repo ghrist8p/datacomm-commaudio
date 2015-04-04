@@ -3,6 +3,7 @@
 struct Node
 {
     int type;
+    int len;
     void* data;
 };
 
@@ -59,13 +60,43 @@ MessageQueue::MessageQueue(int capacity, int elementSize)
  */
 void MessageQueue::enqueue(int type, void* src)
 {
+    enqueue(type,src,elementSize);
+}
+
+/**
+ * appends the passed data to the message queue. if the queue is full, the
+ *   function may block until there is room to store the element into the queue.
+ *
+ * @function   MessageQueue::enqueue
+ *
+ * @date       2015-03-18
+ *
+ * @revision   none
+ *
+ * @designer   Eric Tsang
+ *
+ * @programmer Eric Tsang
+ *
+ * @note       none
+ *
+ * @signature  void MessageQueue::enqueue(int type, void* src)
+ *
+ * @param      type number indicating what kind of an element is being put into
+ *   the queue.
+ * @param      src pointer to the data that is being copied into the message
+ *   queue.
+ * @param      len number of bytes to copy from {src} ino the buffer
+ */
+void MessageQueue::enqueue(int type, void* src, int len)
+{
     // allocate a node
     Node* n = (Node*) malloc(sizeof(Node));
-    void* data = malloc(elementSize);
+    void* data = malloc(len);
 
     // put the data into a node
-    memcpy(data,src,elementSize);
+    memcpy(data,src,len);
     n->type = type;
+    n->len  = len;
     n->data = data;
 
     // obtain synchronization objects
@@ -109,6 +140,37 @@ void MessageQueue::enqueue(int type, void* src)
  */
 void MessageQueue::dequeue(int* type, void* dest)
 {
+    int useless;
+    dequeue(type,dest,&useless);
+}
+
+
+/**
+ * removes an element from the {MessageQueue}, and copies the data from the
+ *   queue into {dest}.
+ *
+ * @function   MessageQueue::dequeue
+ *
+ * @date       2015-03-18
+ *
+ * @revision   none
+ *
+ * @designer   Eric Tsang
+ *
+ * @programmer Eric Tsang
+ *
+ * @note       none
+ *
+ * @signature  void MessageQueue::dequeue(int* type, void* dest)
+ *
+ * @param      type pointer to an integer that will be assigned a number
+ *   indicating what kind of an element was taken out from the queue.
+ * @param      dest pointer to the location to copy the data from the
+ *   {MessageQueue} into.
+ * @param      len pointer to an integer that will be assigned a number indicating how big the dequeued element is.
+ */
+void MessageQueue::dequeue(int* type, void* dest, int* len)
+{
     // obtain synchronization objects
     WaitForSingleObject(canDequeue,INFINITE);
     WaitForSingleObject(access,INFINITE);
@@ -131,6 +193,7 @@ void MessageQueue::dequeue(int* type, void* dest)
     // get the data from the element
     memcpy(dest,n->data,elementSize);
     *type = n->type;
+    *len  = n->len;
 
     // deallocate the element
     free(n);

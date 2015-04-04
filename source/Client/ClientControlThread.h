@@ -11,7 +11,6 @@ class ClientControlThread
 {
 public:
     static ClientControlThread* getInstance();
-    void requestPacketRetransmission(int index);
     void requestDownload(char* file);
     void cancelDownload(char* file);
     void requestChangeStream(char* file);
@@ -21,8 +20,8 @@ protected:
     ClientControlThread();
     ~ClientControlThread();
     void onDownloadPacket(int index, void* data, int len);
-    void onRetransmissionPacket(int index, void* data, int len);
-    void onChangeStream(char* file);
+    void onChangeStream(int index, void* data, int len);
+    void onNewSong(char* file);
 private:
     int _startRoutine(HANDLE* thread, HANDLE stopEvent,
         LPTHREAD_START_ROUTINE routine, void* params);
