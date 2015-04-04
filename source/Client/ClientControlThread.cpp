@@ -272,6 +272,7 @@ void ClientControlThread::_handleMsgqMsg(ClientControlThread* dis)
         StringPacket packet;
         memoryCopy(packet.string,element.string,STR_LEN);
         dis->tcpSock->Send(REQUEST_DOWNLOAD,&packet,sizeof(packet),dis->ipAddress,dis->port);
+        dis->tcpSock->sendtoGroup(CANCEL_DOWNLOAD,&packet,sizeof(packet));
         break;
     }
     case CANCEL_DOWNLOAD:

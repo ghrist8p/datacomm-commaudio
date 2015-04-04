@@ -142,7 +142,7 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 
 	WaitResult = WaitForSingleObject(mutex, INFINITE);
 
-	if (WaitResult = WAIT_OBJECT_0)
+	if (WaitResult == WAIT_OBJECT_0)
 	{
 		if ((SocketInfo = (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
 			sizeof(SOCKET_INFORMATION))) == NULL)
@@ -177,6 +177,7 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 		{
 			if (WSAGetLastError() != WSA_IO_PENDING)
 			{
+                int err = GetLastError();
 				MessageBox(NULL, L"WSASend() failed with error", L"ERROR", MB_ICONERROR);
 				return 0;
 			}
@@ -333,9 +334,9 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 
 	WaitResult = WaitForSingleObject(mutex, INFINITE);
 
-	if (WaitResult = WAIT_OBJECT_0)
+	if (WaitResult == WAIT_OBJECT_0)
 	{
-		if ((SocketInfo == (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
+		if ((SocketInfo = (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
 			sizeof(SOCKET_INFORMATION))) == NULL)
 		{
 			printf("GlobalAlloc() failed with error %d\n", GetLastError());
@@ -351,7 +352,8 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 		if (WSASendTo(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &SendBytes, Flags, (struct sockaddr*)&mreq, sizeof(mreq),
 			&(SocketInfo->Overlapped), 0) == SOCKET_ERROR)
 		{
-			if (WSAGetLastError() != WSA_IO_PENDING)
+            int err;
+			if ((err = WSAGetLastError()) != WSA_IO_PENDING)
 			{
 				MessageBox(NULL, L"WSASend() failed with error", L"ERROR", MB_ICONERROR);
 				return 0;
