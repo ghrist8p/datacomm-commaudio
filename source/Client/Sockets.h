@@ -11,6 +11,7 @@
 
 #define GETLENGTH	4
 
+
 typedef struct _SOCKET_INFORMATION {
 	OVERLAPPED Overlapped;
 	SOCKET Socket;

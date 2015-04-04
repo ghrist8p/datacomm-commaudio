@@ -173,7 +173,7 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 		}
 
 		if (WSASendTo(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &SendBytes, Flags, (SOCKADDR*)&destination, destsize,
-			&(SocketInfo->Overlapped), 0) == SOCKET_ERROR)
+			0, 0) == SOCKET_ERROR)
 		{
 			if (WSAGetLastError() != WSA_IO_PENDING)
 			{
@@ -280,6 +280,7 @@ DWORD UDPSocket::ThreadStart(void)
 		else
 		{
 			len = (SocketInfo->Buffer[1] << 24) | (SocketInfo->Buffer[2] << 16) | (SocketInfo->Buffer[3] << 8) | (SocketInfo->Buffer[4]);
+            len = -len;
 			CHAR* dataReceived = (char*)malloc(sizeof(char) * len);
 			memcpy(dataReceived, SocketInfo->Buffer+5, len);
 			char* sourceaddr = inet_ntoa(source.sin_addr);
@@ -352,7 +353,7 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
         sockaddr_in address;
         memset(&address,0,sizeof(address));
         address.sin_family = AF_INET;
-        address.sin_port   = MULTICAST_PORT;
+        address.sin_port   = htons(MULTICAST_PORT);
         memcpy(&address.sin_addr,&mreq.imr_multiaddr,sizeof(struct in_addr));
 
 		if (WSASendTo(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &SendBytes, Flags, (struct sockaddr*)&address, sizeof(address),
