@@ -3,13 +3,14 @@
 
 #include <wS2tcpip.h>
 #include <stdio.h>
-#include "../Buffer/MessageQueue.h"
 #include "../protocol.h"
 
 #pragma warning(disable:4996)
 #pragma comment(lib,"ws2_32.lib")
 
-typedef struct _SOCKET_INFORMATION {
+class MessageQueue;
+
+typedef struct {
 	OVERLAPPED Overlapped;
 	SOCKET Socket;
 	CHAR Buffer[DATA_BUFSIZE];
@@ -50,6 +51,7 @@ private:
 		LPWSAOVERLAPPED Overlapped, DWORD InFlags);
 
 public:
+	TCPSocket(SOCKET socket, MessageQueue* mqueue);
 	TCPSocket(char* host, int port, MessageQueue* mqueue);
 	~TCPSocket();
 	int Send(char type, void* data, int length);

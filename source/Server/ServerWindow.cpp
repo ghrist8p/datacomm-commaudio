@@ -7,6 +7,11 @@
 #include "../GuiLibrary/GuiButton.h"
 #include "../GuiLibrary/GuiLinearLayout.h"
 #include "resource.h"
+#include "../Common.h"
+#include "Server.h"
+#include "../Buffer/MessageQueue.h"
+
+#define MCAPA	30
 
 ServerWindow::ServerWindow(HINSTANCE hInst)
 	: GuiWindow(hInst)
@@ -310,18 +315,21 @@ void ServerWindow::newConnHandler( TCPConnection * connection, void * data )
 	ServerWindow *serverWindow = (ServerWindow*) data;
 	serverWindow->connectedClients->addItem(L"New Connection!", -1);
 
-    // send playlist
-    while( true )
-    {
-        // WSASend( blah->connection->sock   // _In_   SOCKET s
-        //            ,    // _In_   LPWSABUF lpBuffers
-        //            ,    // _In_   DWORD dwBufferCount
-        //            ,    // _Out_  LPDWORD lpNumberOfBytesSent
-        //            ,    // _In_   DWORD dwFlags
-        //            ,    // _In_   LPWSAOVERLAPPED lpOverlapped
-        //            , ); // _In_   LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
+	MessageQueue* msgQueue = new MessageQueue(MCAPA, DATA_BUFSIZE);
+	TCPSocket*  new_client = new TCPSocket(connection->sock, msgQueue);
 
-    }
+
+    //while( true )
+    //{
+    //    // WSASend( blah->connection->sock   // _In_   SOCKET s
+    //    //            ,    // _In_   LPWSABUF lpBuffers
+    //    //            ,    // _In_   DWORD dwBufferCount
+    //    //            ,    // _Out_  LPDWORD lpNumberOfBytesSent
+    //    //            ,    // _In_   DWORD dwFlags
+    //    //            ,    // _In_   LPWSAOVERLAPPED lpOverlapped
+    //    //            , ); // _In_   LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
+
+    //}
 }
 
 bool ServerWindow::toggleConnection(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
