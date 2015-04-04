@@ -56,7 +56,7 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 	// Initialize and set up the address structure
 	memset((char *)&server, 0, sizeof(struct sockaddr_in));
 	server.sin_family = AF_INET;
-	server.sin_port = MULTICAST_PORT;//htons(port);
+	server.sin_port = htons(MULTICAST_PORT);
 	server.sin_addr.s_addr = htonl(INADDR_ANY);
 	// Copy the server address
 
