@@ -270,13 +270,12 @@ DWORD UDPSocket::ThreadStart(void)
 		}
 		else
 		{
-			int msg_type = SocketInfo->Buffer[0] - '0';
 			len = (SocketInfo->Buffer[1] << 24) | (SocketInfo->Buffer[2] << 16) | (SocketInfo->Buffer[3] << 8) | (SocketInfo->Buffer[4]);
 			CHAR* dataReceived = (char*)malloc(sizeof(char) * len);
 			memcpy(dataReceived, SocketInfo->Buffer+5, len);
 			char* sourceaddr = inet_ntoa(source.sin_addr);
 
-			switch (msg_type)
+			switch (SocketInfo->Buffer[0])
 			{
 				case MUSICSTREAM:				
 					SocketInfo->mqueue->enqueue(MUSICSTREAM, dataReceived);

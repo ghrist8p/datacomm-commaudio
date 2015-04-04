@@ -53,7 +53,7 @@ private:
 public:
 	TCPSocket(char* host, int port, MessageQueue* mqueue);
 	~TCPSocket();
-	int Send(void* data, int lenght);
+	int Send(char type, void* data, int length);
 };
 
 #endif
