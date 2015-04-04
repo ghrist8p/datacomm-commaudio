@@ -12,6 +12,10 @@ Server::Server( unsigned short _tcpPort, newConnectionHandler _handler, void * _
     
     newConnectionEvent = WSACreateEvent();
 
+	channels = 0;
+	bitrate = 0;
+	sampling = 0;
+
     memset( &group, 0, sizeof( group ) );
     group.sin_family      = AF_INET;
     group.sin_addr.s_addr = groupIP;
@@ -205,9 +209,14 @@ void Server::sendToGroup( const char * buf, int len )
     }
 }
 
-void Server::sendWave(char* fname, WavSong *song, int speed)
+void Server::sendWave(SongName songloc, int speed)
 {
-	FILE* fp = fopen(fname, "rb");
+	FILE* fp = fopen(songloc.filepath, "rb");
+	struct SongStream songInfo;
+	char* sendSong;
+	int deflen = SIZE_INDEX;
+	char* song;
+
 	if (fp) {
 
 		char id[5];
@@ -236,7 +245,19 @@ void Server::sendWave(char* fname, WavSong *song, int speed)
 				fread(&bits_per_sample, sizeof(short), 1, fp);
 				fread(id, sizeof(char), 4, fp);
 				fread(&data_size, sizeof(unsigned long), 1, fp);
+								
+				sendSong = (char*) malloc(sizeof(char) * STREAM_PACKET);
 
+				sendSong[0] = CHANGE_STREAM;
+				sendSong[1] = (deflen >> 24) & 0xFF;
+				sendSong[2] = (deflen >> 16) & 0xFF;
+				sendSong[3] = (deflen >> 8) & 0xFF;
+				sendSong[4] = deflen & 0xFF;
+				sendSong[5] = (songloc.index >> 24) & 0xFF;
+				sendSong[6] = (songloc.index >> 16) & 0xFF;
+				sendSong[7] = (songloc.index >> 8) & 0xFF;
+				sendSong[8] = songloc.index & 0xFF;
+								
 				song->data = (char*)malloc(speed + 5);
 
 				//read chunks of data from the file based on the speed selected and send it
@@ -244,8 +265,6 @@ void Server::sendWave(char* fname, WavSong *song, int speed)
 				{
 					if (stopSending)
 					{
-						song->data[0] = CHANGE_STREAM;
-						sendToGroup(song->data, 1);
 						return;
 					}
 

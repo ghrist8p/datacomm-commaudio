@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "../protocol.h"
 
+
 #pragma warning(disable:4996)
 #pragma comment(lib,"ws2_32.lib")
 
@@ -25,6 +26,7 @@ private:
 	MessageQueue* msgqueue;
 	HANDLE mutex;
 	ip_mreq mreq;
+	int stopSending;
 	DWORD ThreadStart(void);
 	static void CALLBACK UDPRoutine(DWORD Error, DWORD BytesTransferred,
 		LPWSAOVERLAPPED Overlapped, DWORD InFlags);
@@ -35,7 +37,9 @@ public:
 	~UDPSocket();
 	int Send(char type, void* data, int length, char* dest_ip, int dest_port);
 	int sendtoGroup(char type, void* data, int length);
-	void setGroup(char* group_address);
+	void setGroup(char* group_address, int mem_flag);
+	void stopSong();
+	void sendWave(SongName songloc, int speed, std::vector<TCPSocket*> sockets);
 
 };
 
