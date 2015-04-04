@@ -4,6 +4,11 @@
 #define DATA_BUFSIZE 8192
 
 /*
+ * length of a string
+ */
+#define STR_LEN 128
+
+/*
  * packet types sent between clients and servers.
  */
 enum class PacketType
@@ -18,17 +23,30 @@ enum class PacketType
 
 struct DataPacket
 {
-    PacketType type;
+    int index;
     char data[DATA_BUFSIZE];
+};
+
+typedef struct DataPacket DataPacket;
+
+struct StringPacket
+{
+    char string[STR_LEN];
 };
 
 typedef struct DataPacket DataPacket;
 
 struct CommandPacket
 {
-    PacketType type;
 };
 
 typedef struct CommandPacket CommandPacket;
+
+struct RequestPacket
+{
+    int index;
+};
+
+typedef struct RequestPacket RequestPacket;
 
 #endif

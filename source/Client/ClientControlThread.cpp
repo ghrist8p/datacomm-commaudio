@@ -18,10 +18,6 @@
 #include "../handlerHelper.h"
 #include "../protocol.h"
 
-// TODO: be able to include the "../Net/TCPSocket.h", and use the DATA_BUFSIZE
-// from that header file instead of this one
-#define DATA_BUFSIZE 8192
-
 /*
  * message queue constructor parameters
  */
@@ -29,11 +25,6 @@
 #define MSGQ_ELEM_SIZE sizeof(MsgqElement)
 #define SOCK_MSGQ_CAPACITY 1000
 #define SOCK_MSGQ_ELEM_SIZE sizeof(SockMsgqElement)
-
-/*
- * length of a string
- */
-#define STR_LEN 128
 
 //////////////////////
 // type definitions //
@@ -295,24 +286,33 @@ void ClientControlThread::_handleMsgqMsg(ClientControlThread* dis)
     switch(msgType)
     {
     case PacketType::REQUEST_PACKET:
-        OutputDebugString(L"PacketType::REQUEST_PACKET\n");
-        dis->tcpSock->Send("PacketType::REQUEST_PACKET",strlen("PacketType::REQUEST_PACKET")+1);
+    {
+        RequestPacket packet;
+        packet.index = element.index;
+        dis->tcpSock->Send((char)PacketType::REQUEST_PACKET,&packet,sizeof(packet));
         break;
+    }
     case PacketType::REQUEST_DOWNLOAD:
-        swprintf_s(s,L"PacketType::REQUEST_DOWNLOAD: %S\n",element.string);
-        OutputDebugString(s);
-        dis->tcpSock->Send("PacketType::REQUEST_DOWNLOAD",strlen("PacketType::REQUEST_DOWNLOAD")+1);
+    {
+        StringPacket packet;
+        memcpy(packet.string,element.string,STR_LEN);
+        dis->tcpSock->Send((char)PacketType::REQUEST_DOWNLOAD,&packet,sizeof(packet));
         break;
+    }
     case PacketType::CANCEL_DOWNLOAD:
-        swprintf_s(s,L"PacketType::CANCEL_DOWNLOAD: %S\n",element.string);
-        OutputDebugString(s);
-        dis->tcpSock->Send("PacketType::CANCEL_DOWNLOAD",strlen("PacketType::CANCEL_DOWNLOAD")+1);
+    {
+        StringPacket packet;
+        memcpy(packet.string,element.string,STR_LEN);
+        dis->tcpSock->Send((char)PacketType::CANCEL_DOWNLOAD,&packet,sizeof(packet));
         break;
+    }
     case PacketType::CHANGE_STREAM:
-        swprintf_s(s,L"PacketType::CHANGE_STREAM: %S\n",element.string);
-        OutputDebugString(s);
-        dis->tcpSock->Send("PacketType::CHANGE_STREAM",strlen("PacketType::CHANGE_STREAM")+1);
+    {
+        StringPacket packet;
+        memcpy(packet.string,element.string,STR_LEN);
+        dis->tcpSock->Send((char)PacketType::CHANGE_STREAM,&packet,sizeof(packet));
         break;
+    }
     default:
         fprintf(stderr,"WARNING: received unknown message type: %d\n",msgType);
         break;
