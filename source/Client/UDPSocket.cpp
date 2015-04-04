@@ -41,7 +41,7 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 
 	if (error != 0) //No usable DLL
 	{
-		printf("DLL not fount- Read Help guide for more information");
+		MessageBox(NULL, L"GlobalAlloc() failed with error", L"ERROR", MB_ICONERROR);
 		return;
 	}
 
@@ -153,7 +153,7 @@ int UDPSocket::Send(void* data, int length, char* dest_ip, int dest_port)
 		destination.sin_addr.s_addr = inet_addr(dest_ip);
 		if (destination.sin_addr.s_addr == INADDR_NONE) 
 		{
-			printf("The target ip address entered must be a legal IPv4 address\n");
+			MessageBox(NULL, L"The target ip address entered must be a legal IPv4 address", L"ERROR", MB_ICONERROR);
 			return 0;
 		}
 
@@ -161,7 +161,7 @@ int UDPSocket::Send(void* data, int length, char* dest_ip, int dest_port)
 
 		if (destination.sin_port == 0) 
 		{
-			printf("The targetport must be a legal UDP port number\n");
+			MessageBox(NULL, L"The targetport must be a legal UDP port number", L"ERROR", MB_ICONERROR);
 			return 0;
 		}
 
@@ -170,7 +170,7 @@ int UDPSocket::Send(void* data, int length, char* dest_ip, int dest_port)
 		{
 			if (WSAGetLastError() != WSA_IO_PENDING)
 			{
-				printf("WSASend() failed with error %d\n", WSAGetLastError());
+				MessageBox(NULL, L"WSASend() failed with error", L"ERROR", MB_ICONERROR);
 				return 0;
 			}
 		}
@@ -181,7 +181,7 @@ int UDPSocket::Send(void* data, int length, char* dest_ip, int dest_port)
 	}
 	else
 	{
-		printf("Error in the mutex");
+		MessageBox(NULL, L"Error in the mutex", L"ERROR", MB_ICONERROR);
 		return 0;
 	}
 
@@ -237,12 +237,16 @@ DWORD UDPSocket::ThreadStart(void)
 	LPSOCKET_INFORMATION SocketInfo;
 	DWORD RecvBytes;
 	int flag = 0;
+	int msg_type = 0;
+	int len = 0;
+	struct sockaddr_in source;
+	int length = sizeof(struct sockaddr_in);
 
 
 	if ((SocketInfo = (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
 		sizeof(SOCKET_INFORMATION))) == NULL)
 	{
-		printf("GlobalAlloc() failed with error %d\n", GetLastError());
+		MessageBox(NULL, L"GlobalAlloc() failed with error", L"ERROR", MB_ICONERROR);
 		return FALSE;
 	}
 
@@ -255,30 +259,44 @@ DWORD UDPSocket::ThreadStart(void)
 
 	while (true)
 	{
-		if (WSARecvFrom(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags, 0,
-			0, &(SocketInfo->Overlapped), 0) == SOCKET_ERROR)
+		if (WSARecvFrom(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags, (sockaddr*)&source,
+			&length, &(SocketInfo->Overlapped), 0) == SOCKET_ERROR)
 		{
 			if (WSAGetLastError() != WSA_IO_PENDING)
 			{
-				printf("WSARecv() failed with error %d\n", WSAGetLastError());
+				MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
 				return FALSE;
 			}
 		}
 		else
 		{
-			switch (flag)
+			int msg_type = SocketInfo->Buffer[0] - '0';
+			len = (SocketInfo->Buffer[1] << 24) | (SocketInfo->Buffer[2] << 16) | (SocketInfo->Buffer[3] << 8) | (SocketInfo->Buffer[4]);
+			CHAR* dataReceived = (char*)malloc(sizeof(char) * len);
+			memcpy(dataReceived, SocketInfo->Buffer+5, len);
+			char* sourceaddr = inet_ntoa(source.sin_addr);
+
+			switch (msg_type)
 			{
-			case 1:
-				mreq.imr_multiaddr.s_addr = inet_addr(SocketInfo->Buffer);
-				flag += 1;
-			case 2:
-				mreq.imr_sourceaddr.s_addr = inet_addr(SocketInfo->Buffer);
-				setsockopt(SocketInfo->Socket, IPPROTO_IP, IP_ADD_SOURCE_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
-				flag += 1;
-			default:
-				int type = SocketInfo->Buffer[0];
-				SocketInfo->mqueue->enqueue(type, SocketInfo->Buffer);
+				case MUSICSTREAM:				
+					SocketInfo->mqueue->enqueue(MUSICSTREAM, dataReceived);
+					break;
+
+				case MICSTREAM:
+					SocketInfo->mqueue->enqueue(MICSTREAM, dataReceived);
+					break;
+
+				default:
+					MessageBox(NULL, L"Unknown Type of Message Received", L"ERROR", MB_ICONERROR);
 			}
+
+			free(dataReceived);
 		}
 	}
+}
+
+void UDPSocket::setGroup(char* group_address)
+{
+	mreq.imr_multiaddr.s_addr = inet_addr(group_address);
+	setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
 }
