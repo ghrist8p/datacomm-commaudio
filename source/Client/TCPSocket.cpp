@@ -153,14 +153,35 @@ DWORD TCPSocket::ThreadStart(void)
 		while (true)
 		{
 			if (WSARecv(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags,
-				&(SocketInfo->Overlapped), TCPRoutine) == SOCKET_ERROR)
+				0, 0) == SOCKET_ERROR)
 			{
-				if (WSAGetLastError() != WSA_IO_PENDING)
+                int err;
+				if ((err = WSAGetLastError()) != WSA_IO_PENDING)
 				{
 					MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
 					return FALSE;
 				}
 			}		
+
+            
+	        int length = (SocketInfo->Buffer[0] << 24) | (SocketInfo->Buffer[1] << 16) | (SocketInfo->Buffer[2] << 8) | (SocketInfo->Buffer[3]);
+	        SocketInfo->DataBuf.len = length + 1;
+
+	        if (WSARecv(SocketInfo->Socket, &SocketInfo->DataBuf, 1, &RecvBytes, &Flags,
+		        0, 0) == SOCKET_ERROR)
+	        {
+                int err;
+		        if ((err = WSAGetLastError()) != WSA_IO_PENDING)
+		        {
+			        MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
+			        return 0;
+		        }
+	        }
+	        else
+	        {
+		        char type = SocketInfo->Buffer[0];
+		        //SocketInfo->mqueue->enqueue(type, SocketInfo->Buffer);
+	        }
 		}
 }
 /*------------------------------------------------------------------------------------------------------------------
@@ -186,34 +207,35 @@ DWORD TCPSocket::ThreadStart(void)
 --  This function will read the data based on the length received earlier and will store it to the message
 --  queue based on type.
 ----------------------------------------------------------------------------------------------------------------------*/
-void CALLBACK TCPSocket::TCPRoutine(DWORD Error, DWORD BytesTransferred,
-	LPWSAOVERLAPPED Overlapped, DWORD InFlags)
-{
-	DWORD Flags;
-	DWORD RecvBytes;
-
-	LPSOCKET_INFORMATION SocketInfo = (LPSOCKET_INFORMATION)Overlapped;
-
-	int length = (SocketInfo->Buffer[3] << 24) | (SocketInfo->Buffer[2] << 16) | (SocketInfo->Buffer[1] << 8) | (SocketInfo->Buffer[0]);
-	SocketInfo->DataBuf.len = length + 1;
-
-	if (WSARecv(SocketInfo->Socket, &SocketInfo->DataBuf, 1, &RecvBytes, &Flags,
-		Overlapped, TCPRoutine) == SOCKET_ERROR)
-	{
-		if (WSAGetLastError() != WSA_IO_PENDING)
-		{
-			MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
-			return;
-		}
-	}
-	else
-	{
-		int type = SocketInfo->Buffer[0];
-		SocketInfo->mqueue->enqueue(type, SocketInfo->Buffer);
-	}
-
-
-}
+//void CALLBACK TCPSocket::TCPRoutine(DWORD Error, DWORD BytesTransferred,
+//	LPWSAOVERLAPPED Overlapped, DWORD InFlags)
+//{
+//	DWORD Flags;
+//	DWORD RecvBytes;
+//
+//	LPSOCKET_INFORMATION SocketInfo = (LPSOCKET_INFORMATION)Overlapped;
+//
+//	int length = (SocketInfo->Buffer[3] << 24) | (SocketInfo->Buffer[2] << 16) | (SocketInfo->Buffer[1] << 8) | (SocketInfo->Buffer[0]);
+//	SocketInfo->DataBuf.len = length + 1;
+//
+//	if (WSARecv(SocketInfo->Socket, &SocketInfo->DataBuf, 1, &RecvBytes, &Flags,
+//		Overlapped, TCPRoutine) == SOCKET_ERROR)
+//	{
+//        int err;
+//		if ((err = WSAGetLastError()) != WSA_IO_PENDING)
+//		{
+//			MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
+//			return;
+//		}
+//	}
+//	else
+//	{
+//		int type = SocketInfo->Buffer[0];
+//		SocketInfo->mqueue->enqueue(type, SocketInfo->Buffer);
+//	}
+//
+//
+//}
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: ~TCPSocket
@@ -291,7 +313,7 @@ int TCPSocket::Send(char type, void* data, int length)
 
 		SocketInfo->Socket = sd;
 		ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));
-		SocketInfo->DataBuf.len = length;
+		SocketInfo->DataBuf.len = length + 5;
 		SocketInfo->DataBuf.buf = data_send;
 		Flags = 0;
 
@@ -300,7 +322,7 @@ int TCPSocket::Send(char type, void* data, int length)
 		{
 			if (WSAGetLastError() != WSA_IO_PENDING)
 			{
-				MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
+				MessageBox(NULL, L"WSASend() failed with error", L"ERROR", MB_ICONERROR);
 				return 0;
 			}
 		}
