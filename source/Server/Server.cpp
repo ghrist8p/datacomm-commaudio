@@ -249,11 +249,13 @@ void Server::sendWave(char* fname, WavSong *song, int speed)
 				{
 					if (stopSending)
 					{
-						break;
+						song->data[0] = CHANGE_STREAM;
+						sendToGroup(song->data, 1);
+						return;
 					}
 
 					//type of message
-					song->data[0] = MUSICSTREAMS;
+					song->data[0] = MUSICSTREAM;
 
 					//message len
 					song->data[1] = (data_read >> 24) & 0xFF;

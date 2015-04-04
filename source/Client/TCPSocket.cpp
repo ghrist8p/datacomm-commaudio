@@ -260,12 +260,23 @@ TCPSocket::~TCPSocket()
 --	NOTES:
 --  This will send the desired data to the server.
 ----------------------------------------------------------------------------------------------------------------------*/
-int TCPSocket::Send(void* data, int length)
+int TCPSocket::Send(char type, void* data, int length)
 {
 	DWORD Flags;
 	LPSOCKET_INFORMATION SocketInfo;
 	DWORD RecvBytes;
 	DWORD WaitResult;
+	char* data_send = (char*) malloc(sizeof(char) * (length + 5));
+	
+	data_send[0] = type;
+
+	//message len
+	data_send[1] = (length >> 24) & 0xFF;
+	data_send[2] = (length >> 16) & 0xFF;
+	data_send[3] = (length >> 8) & 0xFF;
+	data_send[4] = length & 0xFF;
+
+	memcpy(data_send + 5, (char*)data, length);
 
 	WaitResult = WaitForSingleObject( mutex, INFINITE);
 
@@ -281,7 +292,7 @@ int TCPSocket::Send(void* data, int length)
 		SocketInfo->Socket = sd;
 		ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));
 		SocketInfo->DataBuf.len = length;
-		SocketInfo->DataBuf.buf = (char*)data;
+		SocketInfo->DataBuf.buf = data_send;
 		Flags = 0;
 
 		if (WSASend(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, Flags,

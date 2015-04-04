@@ -8,7 +8,6 @@
  */
 enum class PacketType
 {
-    REQUEST_PACKET,
     REQUEST_DOWNLOAD,
     CANCEL_DOWNLOAD,
     DOWNLOAD_PACKET,
