@@ -20,7 +20,8 @@ HWND GuiListBox::create(HINSTANCE hInstance, HWND parent)
 
 void GuiListBox::addItem(LPWSTR text, int position)
 {
-	SendMessage(hwnd, LB_INSERTSTRING, (WPARAM) position, (LPARAM)text);
+
+    SendMessage(hwnd, LB_INSERTSTRING, (WPARAM) position, (LPARAM)text);
 }
 
 void GuiListBox::removeItem(int n)
