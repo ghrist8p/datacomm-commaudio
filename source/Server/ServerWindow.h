@@ -3,6 +3,9 @@
 
 #include "../GuiLibrary/GuiWindow.h"
 #include "Server.h"
+#include "../protocol.h"
+
+#define BUFSIZE 64
 
 class GuiListBox;
 class GuiPanel;
@@ -35,17 +38,20 @@ private:
     HANDLE hFind;
     wchar_t* sDir;
     LARGE_INTEGER filesize;
+    
+	void createLabelFont();
 
     Server * server;
 	bool connected;
 
-	void createLabelFont();
+    uint8_t * receiveMessage(  TCPConnection * from );
 
-    
-static void CALLBACK CompletionROUTINE( IN DWORD dwError
-                               , IN DWORD cbTransferred
-                               , IN LPWSAOVERLAPPED lpOverlapped
-                               , IN DWORD dwFlags );
+    static void CALLBACK receiveCallback( ULONG_PTR param );
+    static void CALLBACK receive( DWORD dwError
+                                , DWORD cbTransferred
+                                , LPWSAOVERLAPPED lpOverlapped
+                                , DWORD dwFlags );
+
 	static bool toggleConnection(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval);
     static void newConnHandler( TCPConnection * server, void * data );
 };

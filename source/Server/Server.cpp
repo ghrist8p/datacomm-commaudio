@@ -160,7 +160,7 @@ DWORD WINAPI Server::WorkerThread( LPVOID lpParam )
     }
 }
 
-void Server::submitCompletionRoutine( PAPCFUNC lpCompletionRoutine, TCPConnection * to )
+void Server::submitCompletionRoutine( PAPCFUNC lpCompletionRoutine, void * to )
 {
     QueueUserAPC( lpCompletionRoutine // _In_  PAPCFUNC pfnAPC,
                 , hWorkerThread       // _In_  HANDLE hThread,

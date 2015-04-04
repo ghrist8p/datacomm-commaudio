@@ -170,48 +170,139 @@ void ServerWindow::createLabelFont()
 typedef struct 
 {
     WSAOVERLAPPED   overlapped;
-    WSABUF        * buf;
+    WSABUF          wsabuf;
+    DWORD           bytesToRead;
+    DWORD           cursor;
+    uint8_t       * buf;
     ServerWindow  * window;
     TCPConnection * connection;
 }
-BLAH;
+RECEIVER;
 
-void CALLBACK ServerWindow::CompletionROUTINE( IN DWORD dwError
-                                             , IN DWORD cbTransferred
-                                             , IN LPWSAOVERLAPPED lpOverlapped
-                                             , IN DWORD dwFlags )
+void CALLBACK ServerWindow::receive( IN DWORD dwError
+                                   , IN DWORD cbTransferred
+                                   , IN LPWSAOVERLAPPED lpOverlapped
+                                   , IN DWORD dwFlags )
 {
-    BLAH * blah = (BLAH *) lpOverlapped;
+    RECEIVER * receiver = (RECEIVER *) lpOverlapped;
 
+    memcpy( receiver->buf + receiver->cursor, receiver->wsabuf.buf, cbTransferred );
+    receiver->cursor += cbTransferred;
+    receiver->bytesToRead -= cbTransferred;
+
+    if( cbTransferred > 0 )
+    {
+        DWORD flags = 0;
+
+        memset( &receiver->overlapped, 0, sizeof( WSAOVERLAPPED ) );
+        memset( receiver->wsabuf.buf, 0, receiver->wsabuf.len );
+        
+        WSARecv( receiver->connection->sock // _In_   SOCKET s,
+               , &receiver->wsabuf          //_Inout_ LPWSABUF lpBuffers,
+               , 1                          //_In_    DWORD dwBufferCount,
+               , NULL                       //_Out_   LPDWORD lpNumberOfBytesRecvd,
+               , &flags                     //_Inout_ LPDWORD lpFlags,
+               , &receiver->overlapped      //_In_    LPWSAOVERLAPPED lpOverlapped,
+               , receive );                 //_In_    LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
+    }
+    else
+    {
+        delete receiver->wsabuf.buf;
+        WSASetEvent( receiver->connection->signal );
+    }
+}
+
+uint8_t * ServerWindow::receiveMessage( TCPConnection * from )
+{
+    // setup receiver structure to receive the header
+    RECEIVER * receiver   = new RECEIVER;
+    memset( receiver, 0, sizeof( WSAOVERLAPPED ) );
+    receiver->wsabuf.len  = BUFSIZE;
+    receiver->wsabuf.buf  = new char[ BUFSIZE ];
+    memset( receiver->wsabuf.buf, 0, BUFSIZE );
+    receiver->bytesToRead = sizeof( MessageHeader );
+    receiver->cursor      = 0;
+    receiver->buf         = (uint8_t *) malloc( sizeof( MessageHeader ) );
+    memset( receiver->buf, 0, sizeof( MessageHeader ) );
+    receiver->window      = this;
+    receiver->connection  = from;
+
+    // submit to server
+    server->submitCompletionRoutine( receiveCallback, receiver );
     
-    wchar_t * error_msg = new wchar_t[ 90 ];
-    wsprintf( error_msg, L"error: %d\nbytesTransfered: %d\n", dwError, cbTransferred );
-    OutputDebugString( error_msg );
-    delete [] error_msg;
+    WSAEVENT   eventArray[1];
+    eventArray[0] = from->signal;
+    
+    DWORD retval;
 
-    blah->window->connectedClients->addItem( L"Client said: ", -1 );
-    size_t newsize = strlen( blah->buf->buf ) + 1;
+    // wait for compleition
+    retval = WSAWaitForMultipleEvents( 1            // _In_ DWORD            cEvents
+                                         , eventArray   // _In_ const WSAEVENT * lphEvents
+                                         , FALSE        // _In_ BOOL             fWaitAll
+                                         , WSA_INFINITE // _In_ DWORD            dwTimeout
+                                         , TRUE );      // _In_ BOOL             fAlertable
+        
+    // On error
+    if( retval == WSA_WAIT_FAILED )
+    {
+        wchar_t errorStr[256] = {0};
+        swprintf( errorStr, 256, L"WSAWaitForMultipleEvents() failed: %d", WSAGetLastError() );
+        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
+    }
 
-    wchar_t * wcstring = new wchar_t[ newsize ];
+    WSAResetEvent( from->signal );
 
-    // Convert char* string to a wchar_t* string.
-    size_t convertedChars = 0;
-    mbstowcs_s( &convertedChars, wcstring, newsize, blah->buf->buf, _TRUNCATE );
+    // setup receiver structure to receive the data
+    receiver->buf = (uint8_t *) realloc( receiver->buf, sizeof( MessageHeader ) + ((MessageHeader *) receiver->buf)->size );
+    memset( receiver->buf + sizeof( MessageHeader ), 0, ((MessageHeader *) receiver->buf)->size );
+    receiver->bytesToRead = ((MessageHeader *) receiver->buf)->size;
+    receiver->cursor      = sizeof( MessageHeader );
+    
+    // submit to server
+    server->submitCompletionRoutine( receiveCallback, receiver );
+    
+    // wait for compleition
+    retval = WSAWaitForMultipleEvents( 1            // _In_ DWORD            cEvents
+                                         , eventArray   // _In_ const WSAEVENT * lphEvents
+                                         , FALSE        // _In_ BOOL             fWaitAll
+                                         , WSA_INFINITE // _In_ DWORD            dwTimeout
+                                         , TRUE );      // _In_ BOOL             fAlertable
+        
+    // On error
+    if( retval == WSA_WAIT_FAILED )
+    {
+        wchar_t errorStr[256] = {0};
+        swprintf( errorStr, 256, L"WSAWaitForMultipleEvents() failed: %d", WSAGetLastError() );
+        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
+    }
 
-    blah->window->connectedClients->addItem( wcstring, -1 );
+    WSAResetEvent( from->signal );
+
+    // extract data
+    uint8_t * toReturn = receiver->buf;
+
+    // cleanup
+    delete [] receiver->wsabuf.buf;
+    delete receiver;
+
+    //return data
+    return toReturn;
+}
+
+void ServerWindow::receiveCallback( ULONG_PTR param )
+{
+    RECEIVER * receiver = (RECEIVER *) param;
 
     DWORD flags = 0;
 
-    memset( &blah->overlapped, 0, sizeof( WSAOVERLAPPED ) );
-    memset( blah->buf->buf, 0, 90 );
-    
-    WSARecv( blah->connection->sock     // _In_   SOCKET s,
-           , blah->buf                 //_Inout_ LPWSABUF lpBuffers,
-           , 1                    //_In_    DWORD dwBufferCount,
-           , NULL                 //_Out_   LPDWORD lpNumberOfBytesRecvd,
-           , &flags               //_Inout_ LPDWORD lpFlags,
-           , &blah->overlapped    //_In_    LPWSAOVERLAPPED lpOverlapped,
-           , CompletionROUTINE ); //_In_    LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
+    WSARecv( receiver->connection->sock // _In_   SOCKET s,
+           , &receiver->wsabuf          //_Inout_ LPWSABUF lpBuffers,
+           , 1                          //_In_    DWORD dwBufferCount,
+           , NULL                       //_Out_   LPDWORD lpNumberOfBytesRecvd,
+           , &flags                     //_Inout_ LPDWORD lpFlags,
+           , &receiver->overlapped      //_In_    LPWSAOVERLAPPED lpOverlapped,
+           , receive );                 //_In_    LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
+
 }
 
 void ServerWindow::newConnHandler( TCPConnection * connection, void * data )
@@ -219,37 +310,18 @@ void ServerWindow::newConnHandler( TCPConnection * connection, void * data )
 	ServerWindow *serverWindow = (ServerWindow*) data;
 	serverWindow->connectedClients->addItem(L"New Connection!", -1);
 
-    WSABUF * buf = new WSABUF;
-    buf->len = 90;
-    buf->buf = (char *)malloc( 90 );
-    memset( buf->buf, 0, 90 );
-    DWORD flags = 0;
-
-    BLAH * blah = new BLAH;
-
-    memset( &blah->overlapped,0, sizeof( WSAOVERLAPPED ) );
-    blah->buf = buf;
-    blah->window = serverWindow;
-    blah->connection = connection;
-
-    int retval = WSARecv( blah->connection->sock     // _In_   SOCKET s,
-                        , buf                 //_Inout_ LPWSABUF lpBuffers,
-                        , 1                    //_In_    DWORD dwBufferCount,
-                        , NULL                 //_Out_   LPDWORD lpNumberOfBytesRecvd,
-                        , &flags               //_Inout_ LPDWORD lpFlags,
-                        , &blah->overlapped    //_In_    LPWSAOVERLAPPED lpOverlapped,
-                        , CompletionROUTINE ); //_In_    LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
-
-    if( retval )
+    // send playlist
+    while( true )
     {
-        wchar_t * error_msg = new wchar_t[ 90 ];
-        wsprintf( error_msg, L"error: %d\n", WSAGetLastError() );
-        OutputDebugString( error_msg );
-        delete [] error_msg;
+        // WSASend( blah->connection->sock   // _In_   SOCKET s
+        //            ,    // _In_   LPWSABUF lpBuffers
+        //            ,    // _In_   DWORD dwBufferCount
+        //            ,    // _Out_  LPDWORD lpNumberOfBytesSent
+        //            ,    // _In_   DWORD dwFlags
+        //            ,    // _In_   LPWSAOVERLAPPED lpOverlapped
+        //            , ); // _In_   LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
+
     }
-
-	
-
 }
 
 bool ServerWindow::toggleConnection(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
