@@ -11,8 +11,6 @@
 #include "../common.h"
 using namespace std;
 
-#define MULTICAST_ADDRESS "239.255.255.240"
-
 class Server;
 
 struct WavSong
@@ -21,12 +19,12 @@ struct WavSong
 	unsigned long len;
 };
 
-typedef struct _TCPConnection
+struct TCPConnection
 {
     SOCKET sock;
     WSAEVENT signal;
     // add more connection data at will
-} TCPConnection;
+};
 
 typedef void (*newConnectionHandler)( TCPConnection *, void * );
 
