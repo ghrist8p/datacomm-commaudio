@@ -157,6 +157,9 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 		SocketInfo->DataBuf.buf = data_send;
 		Flags = 0;
 
+        memset(&destination,0,destsize);
+
+        destination.sin_family = AF_INET;
 		destination.sin_addr.s_addr = inet_addr(dest_ip);
 		if (destination.sin_addr.s_addr == INADDR_NONE)
 		{
@@ -164,7 +167,7 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 			return 0;
 		}
 
-		destination.sin_port = htons((u_short)dest_port);
+		destination.sin_port = htons(dest_port);
 
 		if (destination.sin_port == 0)
 		{
@@ -271,7 +274,8 @@ DWORD UDPSocket::ThreadStart(void)
 		if (WSARecvFrom(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags, (sockaddr*)&source,
 			&length, 0, 0) == SOCKET_ERROR)
 		{
-			if (WSAGetLastError() != WSA_IO_PENDING)
+            int err;
+			if ((err = WSAGetLastError()) != WSA_IO_PENDING)
 			{
 				MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
 				return FALSE;
@@ -308,13 +312,8 @@ void UDPSocket::setGroup(char* group_address)
 {
     memset(&mreq,0,sizeof(mreq));
 	mreq.imr_multiaddr.s_addr = inet_addr(group_address);
-    int result1;
-    int result2;
-	result1 = setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
-    int err1 = GetLastError();
-	result2 = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char*)&mreq, sizeof(mreq));
-    int err2 = GetLastError();
-    OutputDebugString(L"gasfgdsj");
+	setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
+	setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char*)&mreq, sizeof(mreq));
 }
 
 int UDPSocket::sendtoGroup(char type, void* data, int length)
