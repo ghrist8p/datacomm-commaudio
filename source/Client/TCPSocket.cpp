@@ -152,7 +152,8 @@ DWORD TCPSocket::ThreadStart(void)
 
 		while (true)
 		{
-    		SocketInfo->DataBuf.len = GETLENGTH;
+    		SocketInfo->DataBuf.len = sizeof(int)+1;
+            char type;
 
 			if (WSARecv(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags,
 				0, 0) == SOCKET_ERROR)
@@ -165,8 +166,9 @@ DWORD TCPSocket::ThreadStart(void)
 				}
 			}
 
-			length = (SocketInfo->Buffer[0] << 24) | (SocketInfo->Buffer[1] << 16) | (SocketInfo->Buffer[2] << 8) | (SocketInfo->Buffer[3]);
-			SocketInfo->DataBuf.len = length + 1;
+            type = SocketInfo->Buffer[0];
+			length = (SocketInfo->Buffer[1] << 24) | (SocketInfo->Buffer[2] << 16) | (SocketInfo->Buffer[3] << 8) | (SocketInfo->Buffer[4]);
+			SocketInfo->DataBuf.len = length;
 
 			if (WSARecv(SocketInfo->Socket, &SocketInfo->DataBuf, 1, &RecvBytes, &Flags,
 				0, 0) == SOCKET_ERROR)
@@ -180,8 +182,8 @@ DWORD TCPSocket::ThreadStart(void)
 			else
 			{
 				char* dataReceived = (char*)malloc(sizeof(char) * length);
-				memcpy(dataReceived, SocketInfo->Buffer + 1, length);
-                SocketInfo->mqueue->enqueue(SocketInfo->Buffer[0], dataReceived, length);
+				memcpy(dataReceived, SocketInfo->Buffer, length);
+                SocketInfo->mqueue->enqueue(type, dataReceived, length);
 				free(dataReceived);
 			}
 		}

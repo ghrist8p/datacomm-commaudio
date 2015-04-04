@@ -157,9 +157,9 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 		SocketInfo->DataBuf.buf = data_send;
 		Flags = 0;
 
-        memset(&destination,0,destsize);
+		memset(&destination,0,destsize);
 
-        destination.sin_family = AF_INET;
+		destination.sin_family = AF_INET;
 		destination.sin_addr.s_addr = inet_addr(dest_ip);
 		if (destination.sin_addr.s_addr == INADDR_NONE)
 		{
@@ -180,7 +180,7 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 		{
 			if (WSAGetLastError() != WSA_IO_PENDING)
 			{
-                int err = GetLastError();
+				int err = GetLastError();
 				MessageBox(NULL, L"WSASend() failed with error", L"ERROR", MB_ICONERROR);
 				return 0;
 			}
@@ -269,12 +269,12 @@ DWORD UDPSocket::ThreadStart(void)
 
 	while (true)
 	{
-    	SocketInfo->DataBuf.len = DATA_BUFSIZE;
+		SocketInfo->DataBuf.len = DATA_BUFSIZE;
 
 		if (WSARecvFrom(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags, (sockaddr*)&source,
 			&length, 0, 0) == SOCKET_ERROR)
 		{
-            int err;
+			int err;
 			if ((err = WSAGetLastError()) != WSA_IO_PENDING)
 			{
 				MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
@@ -284,24 +284,12 @@ DWORD UDPSocket::ThreadStart(void)
 		else
 		{
 			len = (SocketInfo->Buffer[1] << 24) | (SocketInfo->Buffer[2] << 16) | (SocketInfo->Buffer[3] << 8) | (SocketInfo->Buffer[4]);
-            len = -len;
+			len = -len;
 			CHAR* dataReceived = (char*)malloc(sizeof(char) * len);
 			memcpy(dataReceived, SocketInfo->Buffer+5, len);
 			char* sourceaddr = inet_ntoa(source.sin_addr);
 
-			switch (SocketInfo->Buffer[0])
-			{
-				case MUSICSTREAM:
-					SocketInfo->mqueue->enqueue(MUSICSTREAM, dataReceived);
-					break;
-
-				case MICSTREAM:
-					SocketInfo->mqueue->enqueue(MICSTREAM, dataReceived);
-					break;
-
-				default:
-					MessageBox(NULL, L"Unknown Type of Message Received", L"ERROR", MB_ICONERROR);
-			}
+			SocketInfo->mqueue->enqueue(SocketInfo->Buffer[0], dataReceived, len);
 
 			free(dataReceived);
 		}
@@ -310,7 +298,7 @@ DWORD UDPSocket::ThreadStart(void)
 
 void UDPSocket::setGroup(char* group_address)
 {
-    memset(&mreq,0,sizeof(mreq));
+	memset(&mreq,0,sizeof(mreq));
 	mreq.imr_multiaddr.s_addr = inet_addr(group_address);
 	setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
 	setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char*)&mreq, sizeof(mreq));
@@ -349,16 +337,16 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 		SocketInfo->DataBuf.buf = data_send;
 		Flags = 0;
 
-        sockaddr_in address;
-        memset(&address,0,sizeof(address));
-        address.sin_family = AF_INET;
-        address.sin_port   = htons(MULTICAST_PORT);
-        memcpy(&address.sin_addr,&mreq.imr_multiaddr,sizeof(struct in_addr));
+		sockaddr_in address;
+		memset(&address,0,sizeof(address));
+		address.sin_family = AF_INET;
+		address.sin_port   = htons(MULTICAST_PORT);
+		memcpy(&address.sin_addr,&mreq.imr_multiaddr,sizeof(struct in_addr));
 
 		if (WSASendTo(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &SendBytes, Flags, (struct sockaddr*)&address, sizeof(address),
 			0, 0) == SOCKET_ERROR)
 		{
-            int err;
+			int err;
 			if ((err = WSAGetLastError()) != WSA_IO_PENDING)
 			{
 				MessageBox(NULL, L"WSASend() failed with error", L"ERROR", MB_ICONERROR);

@@ -271,21 +271,21 @@ void ClientControlThread::_handleMsgqMsg(ClientControlThread* dis)
     {
         StringPacket packet;
         memcpy(packet.string,element.string,STR_LEN);
-        dis->tcpSock->sendtoGroup(REQUEST_DOWNLOAD,&packet,sizeof(packet));
+        dis->tcpSock->Send(REQUEST_DOWNLOAD,&packet,sizeof(packet));
         break;
     }
     case CANCEL_DOWNLOAD:
     {
         StringPacket packet;
         memcpy(packet.string,element.string,STR_LEN);
-        dis->tcpSock->Send(CANCEL_DOWNLOAD,&packet,sizeof(packet),dis->ipAddress,dis->port);
+        dis->tcpSock->Send(CANCEL_DOWNLOAD,&packet,sizeof(packet));
         break;
     }
     case CHANGE_STREAM:
     {
         StringPacket packet;
         memcpy(packet.string,element.string,STR_LEN);
-        dis->tcpSock->Send(CHANGE_STREAM,&packet,sizeof(packet),dis->ipAddress,dis->port);
+        dis->tcpSock->Send(CHANGE_STREAM,&packet,sizeof(packet));
         break;
     }
     default:
