@@ -317,6 +317,7 @@ void ServerWindow::newConnHandler( TCPConnection * connection, void * data )
 
 	MessageQueue* msgQueue = new MessageQueue(MCAPA, DATA_BUFSIZE);
 	TCPSocket*  new_client = new TCPSocket(connection->sock, msgQueue);
+    ServerControlThread::getInstance()->addConnection(new_client);
 
 
     //while( true )
@@ -355,7 +356,7 @@ bool ServerWindow::toggleConnection(GuiComponent *pThis, UINT command, UINT id, 
 	{
 		unsigned short tcpPort = _wtoi(serverWindow->tcpPortInput->getText());
 		unsigned short udpPort = _wtoi(serverWindow->udpPortInput->getText());
-		unsigned short groupAddress = inet_addr(MULTICAST_ADDRESS);
+		unsigned short groupAddress = inet_addr(MULTICAST_ADDR);
 
 		serverWindow->server = new Server(tcpPort, newConnHandler, serverWindow, groupAddress, udpPort);
 		if (serverWindow->server->startTCP())
