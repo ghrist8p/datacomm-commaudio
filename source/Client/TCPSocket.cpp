@@ -1,5 +1,10 @@
 #include "Sockets.h"
 
+TCPSocket(SOCKET socket, MessageQueue* mqueue)
+{
+	// hi
+}
+
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: TCPSocket
 --

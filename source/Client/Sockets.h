@@ -50,6 +50,7 @@ private:
 		LPWSAOVERLAPPED Overlapped, DWORD InFlags);
 
 public:
+	TCPSocket(SOCKET socket);
 	TCPSocket(char* host, int port, MessageQueue* mqueue);
 	~TCPSocket();
 	int Send(char type, void* data, int length);
