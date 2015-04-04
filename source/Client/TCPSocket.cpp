@@ -42,7 +42,7 @@ TCPSocket::TCPSocket(char* host, int port, MessageQueue* mqueue)
 
 	if (error != 0) //No usable DLL
 	{
-		printf("DLL not fount- Read Help guide for more information");
+		MessageBox(NULL, L"DLL not found- Read Help guide for more information", L"ERROR", MB_ICONERROR);
 		return;
 	}
 
@@ -50,7 +50,7 @@ TCPSocket::TCPSocket(char* host, int port, MessageQueue* mqueue)
 	if ((sd = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0,
 		WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET)
 	{
-		printf("Socket cannot be created- Read Help guide for more information");
+		MessageBox(NULL, L"Socket cannot be created- Read Help guide for more information", L"ERROR", MB_ICONERROR);
 		return;
 	}
 
@@ -61,7 +61,7 @@ TCPSocket::TCPSocket(char* host, int port, MessageQueue* mqueue)
 
 	if ((hp = gethostbyname(host)) == NULL)
 	{
-		printf("Unknown server address- Read Help guide for more information");
+		MessageBox(NULL, L"Unknown server address- Read Help guide for more information", L"ERROR", MB_ICONERROR);
 		return;
 	}
 
@@ -71,7 +71,7 @@ TCPSocket::TCPSocket(char* host, int port, MessageQueue* mqueue)
 	// Connecting to the server
 	if (connect(sd, (struct sockaddr *)&server, sizeof(server)) == -1)
 	{
-		printf("Cannot connect to server- Read Help guide for more information");
+		MessageBox(NULL, L"Cannot connect to server- Read Help guide for more information", L"ERROR", MB_ICONERROR);
 		return;
 	}
 
@@ -79,7 +79,7 @@ TCPSocket::TCPSocket(char* host, int port, MessageQueue* mqueue)
 
 	if ((ThreadHandle = CreateThread(NULL, 0, TCPThread, (void*)this, 0, &ThreadId)) == NULL)
 	{
-		printf("CreateThread failed with error %d\n", GetLastError());
+		MessageBox(NULL, L"CreateThread failed with error", L"ERROR", MB_ICONERROR);
 		return;
 	}
 }
@@ -139,7 +139,7 @@ DWORD TCPSocket::ThreadStart(void)
 		if ((SocketInfo = (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
 			sizeof(SOCKET_INFORMATION))) == NULL)
 		{
-			printf("GlobalAlloc() failed with error %d\n", GetLastError());
+			MessageBox(NULL, L"GlobalAlloc() failed with error", L"ERROR", MB_ICONERROR);
 			return FALSE;
 		}
 
@@ -152,13 +152,12 @@ DWORD TCPSocket::ThreadStart(void)
 
 		while (true)
 		{
-			printf("Waiting Now");
 			if (WSARecv(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags,
 				&(SocketInfo->Overlapped), TCPRoutine) == SOCKET_ERROR)
 			{
 				if (WSAGetLastError() != WSA_IO_PENDING)
 				{
-					printf("WSARecv() failed with error %d\n", WSAGetLastError());
+					MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
 					return FALSE;
 				}
 			}		
@@ -196,15 +195,14 @@ void CALLBACK TCPSocket::TCPRoutine(DWORD Error, DWORD BytesTransferred,
 	LPSOCKET_INFORMATION SocketInfo = (LPSOCKET_INFORMATION)Overlapped;
 
 	int length = (SocketInfo->Buffer[3] << 24) | (SocketInfo->Buffer[2] << 16) | (SocketInfo->Buffer[1] << 8) | (SocketInfo->Buffer[0]);
-	SocketInfo->DataBuf.len = length;
+	SocketInfo->DataBuf.len = length + 1;
 
-	printf("Got Data");
 	if (WSARecv(SocketInfo->Socket, &SocketInfo->DataBuf, 1, &RecvBytes, &Flags,
 		Overlapped, TCPRoutine) == SOCKET_ERROR)
 	{
 		if (WSAGetLastError() != WSA_IO_PENDING)
 		{
-			printf("WSARecv() failed with error %d\n", WSAGetLastError());
+			MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
 			return;
 		}
 	}
@@ -262,28 +260,39 @@ TCPSocket::~TCPSocket()
 --	NOTES:
 --  This will send the desired data to the server.
 ----------------------------------------------------------------------------------------------------------------------*/
-int TCPSocket::Send(void* data, int length)
+int TCPSocket::Send(char type, void* data, int length)
 {
 	DWORD Flags;
 	LPSOCKET_INFORMATION SocketInfo;
 	DWORD RecvBytes;
 	DWORD WaitResult;
+	char* data_send = (char*) malloc(sizeof(char) * (length + 5));
+	
+	data_send[0] = type;
+
+	//message len
+	data_send[1] = (length >> 24) & 0xFF;
+	data_send[2] = (length >> 16) & 0xFF;
+	data_send[3] = (length >> 8) & 0xFF;
+	data_send[4] = length & 0xFF;
+
+	memcpy(data_send + 5, (char*)data, length);
 
 	WaitResult = WaitForSingleObject( mutex, INFINITE);
 
-	if (WaitResult = WAIT_OBJECT_0)
+	if (WaitResult == WAIT_OBJECT_0)
 	{
 		if ((SocketInfo = (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
 			sizeof(SOCKET_INFORMATION))) == NULL)
 		{
-			printf("GlobalAlloc() failed with error %d\n", GetLastError());
+			MessageBox(NULL, L"GlobalAlloc() failed with error", L"ERROR", MB_ICONERROR);
 			return 0;
 		}
 
 		SocketInfo->Socket = sd;
 		ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));
 		SocketInfo->DataBuf.len = length;
-		SocketInfo->DataBuf.buf = (char*)data;
+		SocketInfo->DataBuf.buf = data_send;
 		Flags = 0;
 
 		if (WSASend(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, Flags,
@@ -291,7 +300,7 @@ int TCPSocket::Send(void* data, int length)
 		{
 			if (WSAGetLastError() != WSA_IO_PENDING)
 			{
-				printf("WSASend() failed with error %d\n", WSAGetLastError());
+				MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
 				return 0;
 			}
 		}
@@ -302,7 +311,8 @@ int TCPSocket::Send(void* data, int length)
 	}
 	else
 	{
-		printf("Error in the mutex");
+		MessageBox(NULL, L"Error in the mutex", L"ERROR", MB_ICONERROR);
+        int err = GetLastError();
 		return 0;
 	}
 

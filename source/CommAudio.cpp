@@ -1,5 +1,3 @@
-#ifndef _COMMAUDIO_CPP_
-#define _COMMAUDIO_CPP_
 /*-------------------------------------------------------------------------------------------------
 -- SOURCE FILE: CommAudio.cpp - An application that implements a client/server model where
 --				mulitple clients may connect to the server and audio is multicast from the server
@@ -48,6 +46,8 @@
 // The version of Windows Sockets required.
 const DWORD WSA_VERSION = 0x0202;
 
+#ifndef _COMMAUDIO_CPP_
+#define _COMMAUDIO_CPP_
 /*-------------------------------------------------------------------------------------------------
 -- FUNCTION: WinMain
 --
@@ -86,7 +86,7 @@ int CALLBACK WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int 
 	}
 
 	// Create the Server or Client based on preprocessor defines
-	#if BUILD_TARGET == APP_CLIENT
+	#if BUILD_TARGET == APP_SERVER
 		window = new ServerWindow(hInst);
 	#else
 		window = new ConnectionWindow(hInst);
