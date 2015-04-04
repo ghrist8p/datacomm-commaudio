@@ -356,7 +356,7 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
         memcpy(&address.sin_addr,&mreq.imr_multiaddr,sizeof(struct in_addr));
 
 		if (WSASendTo(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &SendBytes, Flags, (struct sockaddr*)&address, sizeof(address),
-			&(SocketInfo->Overlapped), 0) == SOCKET_ERROR)
+			0, 0) == SOCKET_ERROR)
 		{
             int err;
 			if ((err = WSAGetLastError()) != WSA_IO_PENDING)
