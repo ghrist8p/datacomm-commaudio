@@ -209,7 +209,7 @@ void Server::sendToGroup( const char * buf, int len )
     }
 }
 
-void Server::sendWave(SongName songloc, int speed)
+void Server::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets)
 {
 	FILE* fp = fopen(songloc.filepath, "rb");
 	struct SongStream songInfo;
@@ -258,10 +258,16 @@ void Server::sendWave(SongName songloc, int speed)
 				sendSong[7] = (songloc.index >> 8) & 0xFF;
 				sendSong[8] = songloc.index & 0xFF;
 								
-				song->data = (char*)malloc(speed + 5);
+				//for every client
+				for (int i = 0; i < sockets.size(), i++)
+				{
+					send()
+				}
+
+				song = (char*)malloc(speed + 5);
 
 				//read chunks of data from the file based on the speed selected and send it
-				while (data_read = fread(song->data + 5, 1, speed, fp) > 0)
+				while (data_read = fread(song + 5, 1, speed, fp) > 0)
 				{
 					if (stopSending)
 					{
@@ -269,15 +275,15 @@ void Server::sendWave(SongName songloc, int speed)
 					}
 
 					//type of message
-					song->data[0] = MUSICSTREAM;
+					song[0] = MUSICSTREAM;
 
 					//message len
-					song->data[1] = (data_read >> 24) & 0xFF;
-					song->data[2] = (data_read >> 16) & 0xFF;
-					song->data[3] = (data_read >> 8) & 0xFF;
-					song->data[4] = data_read & 0xFF;					
+					song[1] = (data_read >> 24) & 0xFF;
+					song[2] = (data_read >> 16) & 0xFF;
+					song[3] = (data_read >> 8) & 0xFF;
+					song[4] = data_read & 0xFF;
 					
-					sendToGroup(song->data, data_read + 5);
+					sendToGroup(song, data_read + 5);
 				}
 
 				stopSending = false;
