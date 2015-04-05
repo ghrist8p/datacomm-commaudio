@@ -44,8 +44,8 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	micMQueue = new MessageQueue(100, MicReader::calculateBufferSize(MIC_SAMPLE_RATE, MIC_RECORD_INTERVAL));
 
     MessageQueue* q2 = new MessageQueue(500,60);
-	udpSock = new UDPSocket(7000,q2);
-	udpSock->setGroup(MULTICAST_ADDR,0);
+	udpSock = new UDPSocket(MULTICAST_PORT,q2);
+	udpSock->setGroup(MULTICAST_ADDR,1);
 
 	JitterBuffer* musicJitBuf = new JitterBuffer(5000,3000,60,100,5);
 	ReceiveThread* recvThread = new ReceiveThread(udpSock,musicJitBuf);
