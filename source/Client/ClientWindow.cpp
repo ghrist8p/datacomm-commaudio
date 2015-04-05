@@ -33,6 +33,9 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	playButtonUp = LoadBitmap(hInst, L"IMG_PLAY_BUTTON_UP");
 	playButtonDown = LoadBitmap(hInst, L"IMG_PLAY_BUTTON_DOWN");
 
+	stopButtonUp = LoadBitmap(hInst, L"IMG_STOP_BUTTON_UP");
+	stopButtonDown = LoadBitmap(hInst, L"IMG_STOP_BUTTON_DOWN");
+
 	darkBackground = (HBRUSH) CreateSolidBrush(RGB(15, 15, 15));
 	lightBackground = (HBRUSH) CreateSolidBrush(RGB(30, 30, 30));;
 	accentBrush = (HBRUSH) CreateSolidBrush(RGB(0, 162, 232));
@@ -100,9 +103,12 @@ ClientWindow::~ClientWindow()
 	delete buttonSpacer2;
 	delete bottomSpacer;
 	delete playButton;
+	delete stopButton;
 
 	DeleteObject(playButtonUp);
 	DeleteObject(playButtonDown);
+	DeleteObject(stopButtonUp);
+	DeleteObject(stopButtonDown);
 	DeleteObject(nullPen);
 	DeleteObject(darkBackground);
 	DeleteObject(lightBackground);
@@ -112,7 +118,7 @@ ClientWindow::~ClientWindow()
 
 void ClientWindow::addRemoteFile(LPWSTR filename)
 {
-	fileContainerPanel->addItem(new FileListItem(this, hInst, filename));
+	fileContainerPanel->addItem(new FileListItem(fileContainerPanel, this, hInst, filename));
 }
 
 void ClientWindow::onCreate()
@@ -132,6 +138,7 @@ void ClientWindow::onCreate()
 	statusBar = new GuiStatusBar(hInst, this);
 	trackerPanel = new PlaybackTrackerPanel(hInst, this);
 	playButton = new ButtonPanel(hInst, seekPanel, playButtonUp, playButtonDown);
+	stopButton = new ButtonPanel(hInst, seekPanel, stopButtonUp, stopButtonDown);
 	buttonSpacer1 = new GuiPanel(hInst, seekPanel);
 	buttonSpacer2 = new GuiPanel(hInst, seekPanel);
 	bottomSpacer = new GuiPanel(hInst, this);
@@ -206,6 +213,13 @@ void ClientWindow::onCreate()
 	playButton->enableCustomDrawing(true);
 	playButton->setBackgroundBrush(darkBackground);
 
+	// Create Stop Button
+	stopButton->init();
+	stopButton->setClickListener(ClientWindow::onClickStop);
+	stopButton->setPreferredSize(64, 64);
+	stopButton->enableCustomDrawing(true);
+	stopButton->setBackgroundBrush(darkBackground);
+
 	// Create Button Spacers
 	buttonSpacer1->init();
 	buttonSpacer1->enableCustomDrawing(true);
@@ -223,12 +237,18 @@ void ClientWindow::onCreate()
 
 	layout->addComponent(buttonSpacer1);
 	layout->addComponent(playButton);
+	layout->addComponent(stopButton);
 	layout->addComponent(buttonSpacer2);
 }
 
 void ClientWindow::onClickPlay(void*)
 {
 	MessageBox(NULL, L"CLICKED PLAY!", L"YAY!", MB_ICONINFORMATION);
+}
+
+void ClientWindow::onClickStop(void*)
+{
+	MessageBox(NULL, L"CLICKED STOP!", L"BOO!", MB_ICONINFORMATION);
 }
 
 bool ClientWindow::onClickMic(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)

@@ -27,6 +27,7 @@ public:
 
 private:
 	static void onClickPlay(void*);
+	static void onClickStop(void*);
 	static bool onClickMic(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval);
 	static bool onMicStop(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval);
 	static DWORD WINAPI MicThread(LPVOID lpParameter);
@@ -39,6 +40,8 @@ private:
 
 	HBITMAP playButtonUp;
 	HBITMAP playButtonDown;
+	HBITMAP stopButtonUp;
+	HBITMAP stopButtonDown;
 	HBRUSH darkBackground;
 	HBRUSH lightBackground;
 	HBRUSH accentBrush;
@@ -58,6 +61,7 @@ private:
 	GuiPanel *buttonSpacer2;
 	GuiPanel *bottomSpacer;
 	ButtonPanel *playButton;
+	ButtonPanel *stopButton;
 
 	UDPSocket* udpSock;
 };

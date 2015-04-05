@@ -1,14 +1,18 @@
 #include "FileListItem.h"
 #include "ClientControlThread.h"
+#include "../GuiLibrary/GuiScrollList.h"
 
-FileListItem::FileListItem(ClientWindow *clientWindow, HINSTANCE hInst, LPWSTR filename)
+FileListItem::FileListItem(GuiScrollList *list, ClientWindow *clientWindow, HINSTANCE hInst, LPWSTR filename)
+	: GuiScrollListItem(list)
 {
 	this->clientWindow = clientWindow;
 	this->setHeight(64);
 	this->filename = filename;
+	this->downloading = true;
 	background = (HBRUSH)CreateSolidBrush(RGB(20, 20, 20));
 
 	save = LoadBitmap(hInst, L"IMG_SAVE");
+	cancelSave = LoadBitmap(hInst, L"IMG_CANCEL_SAVE");
 	stream = LoadBitmap(hInst, L"IMG_STREAM");
 	this->hoverCursor = LoadCursor(NULL, IDC_HAND);
 	this->arrowCursor = LoadCursor(NULL, IDC_ARROW);
@@ -62,7 +66,10 @@ void FileListItem::paint(HDC hdc, LPRECT drawingArea)
 	SelectObject(buffer, oldBitmap);
 
 	// Draw Save Button
-	oldBitmap = SelectObject(buffer, save);
+	if (downloading)
+		oldBitmap = SelectObject(buffer, save);
+	else
+		oldBitmap = SelectObject(buffer, cancelSave);
 
 	GetObject(stream, sizeof(bitmap), &bitmap);
 	BitBlt(hdc, drawingArea->right - 56, drawingArea->top + 14, bitmap.bmWidth, bitmap.bmHeight, buffer, 0, 0, SRCCOPY);
@@ -92,7 +99,16 @@ void FileListItem::onClick(int x, int y)
 	else if (pointInSaveButton(x, y))
 	{
 		// request song download
-		ClientControlThread::getInstance()->requestDownload(cFilename);
+		if (downloading)
+		{
+			ClientControlThread::getInstance()->cancelDownload(cFilename);
+			markAsDownloadingStopped();
+		}
+		else
+		{
+			ClientControlThread::getInstance()->requestDownload(cFilename);
+			markAsDownloading();
+		}
 	}
 
 	// free c style filename string
@@ -109,6 +125,18 @@ void FileListItem::onMouseMove(int x, int y)
 	{
 		SetCursor(arrowCursor);
 	}
+}
+
+void FileListItem::markAsDownloading()
+{
+	downloading = true;
+	InvalidateRect(list->getHWND(), NULL, true);
+}
+
+void FileListItem::markAsDownloadingStopped()
+{
+	downloading = false;
+	InvalidateRect(list->getHWND(), NULL, true);
 }
 
 bool FileListItem::pointInSaveButton(int x, int y)
