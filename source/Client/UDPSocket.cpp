@@ -301,9 +301,11 @@ void UDPSocket::setGroup(char* group_address, int mem_flag)
 	mreq.imr_multiaddr.s_addr = inet_addr(group_address);
 	if (mem_flag)
 	{
+        char loop = 0;
+        setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
 		setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
 	}
-	setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char*)&mreq, sizeof(mreq));
+	//setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char*)&mreq, sizeof(mreq));
 }
 
 int UDPSocket::sendtoGroup(char type, void* data, int length)
