@@ -29,6 +29,8 @@ private:
 	static void onClickPlay(void*);
 	static bool onClickMic(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval);
 	static bool onMicStop(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval);
+	static DWORD WINAPI MicThread(LPVOID lpParameter);
+	DWORD ThreadStart(void);
 
 	bool recording;
 	bool requestingRecorderStop;
