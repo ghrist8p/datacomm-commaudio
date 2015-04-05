@@ -20,8 +20,9 @@
 #include "MicReader.h"
 #include "PlayWave.h"
 
-#define MIC_SAMPLE_RATE 44100
-#define MIC_RECORD_INTERVAL 0.2
+#define MIC_SAMPLE_RATE (44100/2)
+//#define MIC_RECORD_INTERVAL 0.740
+#define MIC_BUFFER_LENGTH DATA_LEN
 
 ClientWindow::ClientWindow(HINSTANCE hInst)
 	: GuiWindow(hInst)
@@ -44,18 +45,19 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 
 	recording = false;
 	requestingRecorderStop = false;
-	micMQueue = new MessageQueue(100, MicReader::calculateBufferSize(MIC_SAMPLE_RATE, MIC_RECORD_INTERVAL));
+	micMQueue = new MessageQueue(1000,MIC_BUFFER_LENGTH);
 
-    MessageQueue* q2 = new MessageQueue(500,60);
-	udpSock = new UDPSocket(7000,q2);
-	udpSock->setGroup(MULTICAST_ADDR,0);
+    MessageQueue* q2 = new MessageQueue(1500,sizeof(DataPacket));
+	udpSock = new UDPSocket(MULTICAST_PORT,q2);
+	udpSock->setGroup(MULTICAST_ADDR,1);
 
-	JitterBuffer* musicJitBuf = new JitterBuffer(5000,3000,60,100,5);
-	ReceiveThread* recvThread = new ReceiveThread(udpSock,musicJitBuf);
+	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,MIC_BUFFER_LENGTH,50,50);
+	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q2);
 	recvThread->start();
-	MessageQueue* q1 = new MessageQueue(500,60);
+	MessageQueue* q1 = new MessageQueue(1500,MIC_BUFFER_LENGTH);
 	VoiceBufferer* voiceBufferer = new VoiceBufferer(q1,musicJitBuf);
-	PlayWave* p = new PlayWave(1000,q1);
+    voiceBufferer->start();
+	PlayWave* p = new PlayWave(50,q1);
 
 }
 
@@ -69,12 +71,15 @@ DWORD ClientWindow::ThreadStart(void)
 {
 	int type;
 	int length;
-	char* mic_dat = (char*)malloc(sizeof(char) * micMQueue->elementSize);
+
+    DataPacket packet;
+    packet.index = 0;
 
 	while (true)
 	{
-		micMQueue->dequeue(&type, mic_dat, &length);
-		udpSock->sendtoGroup(type, mic_dat, length);
+        ++(packet.index);
+		micMQueue->dequeue(&type, packet.data, &length);
+		udpSock->sendtoGroup(MUSICSTREAM, &packet, sizeof(DataPacket));
 	}
 
 }
@@ -115,7 +120,7 @@ void ClientWindow::onCreate()
 {
 	setTitle(L"CommAudio Client");
 	setSize(700, 325);
-	micReader = new MicReader(MIC_SAMPLE_RATE, MIC_RECORD_INTERVAL, micMQueue, getHWND());
+	micReader = new MicReader(MIC_SAMPLE_RATE, MIC_BUFFER_LENGTH, micMQueue, getHWND());
 	this->addMessageListener(WM_MIC_STOPPED_READING, onMicStop, this);
 
 	// Create Elements

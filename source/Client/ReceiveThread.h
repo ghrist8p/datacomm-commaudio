@@ -3,22 +3,22 @@
 
 #include "../common.h"
 
-class UDPSocket;
+class MessageQueue;
 class JitterBuffer;
 
 class ReceiveThread
 {
 public:
     ReceiveThread(
-        UDPSocket* udpSocket,
-        JitterBuffer* musicJitterBuffer);
+        JitterBuffer* musicJitterBuffer,
+        MessageQueue* sockMsgQueue);
     ~ReceiveThread();
     void start();
     void stop();
 private:
     static DWORD WINAPI threadRoutine(void* params);
     static void handleMsgqMsg(ReceiveThread* dis);
-    UDPSocket* udpSocket;
+    MessageQueue* sockMsgQueue;
     JitterBuffer* musicJitterBuffer;
     HANDLE thread;
     HANDLE threadStopEv;

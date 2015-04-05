@@ -7,6 +7,7 @@
 
 class Playlist
 {
+    friend class ServerControlThread;
 public:
     Playlist( wchar_t * _dir );
     ~Playlist();

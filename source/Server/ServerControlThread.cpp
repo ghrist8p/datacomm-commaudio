@@ -82,6 +82,9 @@ void ServerControlThread::addConnection( TCPSocket * connection )
     WaitForSingleObject(access,INFINITE);
     _socks.emplace_back( connection );
     _sockHandles.emplace_back( connection->getMessageQueue()->hasMessage );
+    QueueUserAPC( _sendPlaylistToOne        // _In_  PAPCFUNC pfnAPC,
+                , _thread                   // _In_  HANDLE hThread,
+                , (ULONG_PTR) connection ); // _In_  ULONG_PTR dwData
     ReleaseMutex(access);
 }
 
@@ -103,11 +106,14 @@ DWORD WINAPI ServerControlThread::_threadRoutine( void * params )
     while(!breakLoop)
     {
         int handleNum = 0;
-        switch( handleNum = WaitForMultipleObjects(  thiz->_sockHandles.size()
-                                                  , &thiz->_sockHandles[ 0 ]
-                                                  , FALSE
-                                                  , INFINITE ) )
+        switch( handleNum = WaitForMultipleObjectsEx(  thiz->_sockHandles.size()
+                                                    , &thiz->_sockHandles[ 0 ]
+                                                    , FALSE
+                                                    , INFINITE
+                                                    , TRUE ) )
         {
+        case WAIT_IO_COMPLETION:
+            break;
         case WAIT_OBJECT_0+0:   // stop event triggered
             breakLoop = TRUE;
             break;
@@ -160,6 +166,37 @@ void ServerControlThread::_handleMsgDisconnect( int client )
     _socks.erase( _socks.begin() + client );
     _sockHandles.erase( _sockHandles.begin() + client );
     ReleaseMutex( access );
+}
+
+void ServerControlThread::sendPlaylistToAll( void )
+{
+    QueueUserAPC( _sendPlaylistToAllRoutine // _In_  PAPCFUNC pfnAPC,
+                , _thread                   // _In_  HANDLE hThread,
+                , NULL );                   // _In_  ULONG_PTR dwData
+}
+
+VOID CALLBACK ServerControlThread::_sendPlaylistToAllRoutine( ULONG_PTR )
+{
+    ServerControlThread * thiz = ServerControlThread::getInstance();
+    for( std::vector< TCPSocket * >::iterator sockit = thiz->_socks.begin()
+        ; sockit != thiz->_socks.end()
+        ; ++sockit )
+    {
+        _sendPlaylistToOne( (ULONG_PTR) *sockit );
+    }
+}
+
+VOID CALLBACK ServerControlThread::_sendPlaylistToOne( ULONG_PTR data )
+{
+    ServerControlThread * thiz = ServerControlThread::getInstance();
+    TCPSocket * sock = (TCPSocket *) data;
+
+    for( std::vector< SongName >::iterator songit = thiz->playlist->playlist.begin()
+       ; songit != thiz->playlist->playlist.end()
+       ; ++songit )
+    {
+        sock->Send( NEW_SONG, &(*songit), sizeof( SongName ) );
+    }
 }
 
 DWORD WINAPI ServerControlThread::_multicastRoutine( void * params )

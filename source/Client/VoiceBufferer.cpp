@@ -1,5 +1,6 @@
 #include "VoiceBufferer.h"
 #include "../Buffer/JitterBuffer.h"
+#include "../Buffer/MessageQueue.h"
 #include "Sockets.h"
 
 // static function forward declarations
@@ -42,6 +43,7 @@ DWORD WINAPI VoiceBufferer::_threadRoutine(void* params)
     // parse thread parameters
     VoiceBufferer* dis = (VoiceBufferer*) params;
 
+    // allocate data to hold parameters
     char* element = (char*) malloc(dis->voiceJitterBuffer->getElementSize());
 
     // perform the thread routine
@@ -52,18 +54,25 @@ DWORD WINAPI VoiceBufferer::_threadRoutine(void* params)
             dis->threadStopEv,
             dis->voiceJitterBuffer->canGet
         };
-        switch(WaitForMultipleObjects(3,handles,FALSE,INFINITE))
+        switch(WaitForMultipleObjects(2,handles,FALSE,INFINITE))
         {
         case WAIT_OBJECT_0+0:   // stop event triggered
             breakLoop = TRUE;
             break;
         case WAIT_OBJECT_0+1:   // jitter buffer has data
+        {
+            dis->voiceJitterBuffer->get(element);
+            dis->speakerQueue->enqueue(1,element);
             break;
+        }
         default:
             OutputDebugString(L"VoiceBufferer::_threadRoutine WaitForMultipleObjects");
             break;
         }
     }
+
+    // deallocate data
+    free(element);
 
     // return...
     #ifdef DEBUG

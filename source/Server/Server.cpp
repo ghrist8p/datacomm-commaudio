@@ -192,48 +192,6 @@ bool Server::startUDP()
 	//makes the socket multicast and adds it to the group.
 	setsockopt( multicastSocket, IPPROTO_IP, IP_MULTICAST_IF, (char*)&group, sizeof(group));
 }
-//
-//void Server::sendToGroup( const char * buf, int len )
-//{
-//    if( sendto( multicastSocket            //_In_ SOCKET                  s
-//              , buf                        //_In_ const char            * buf
-//              , len                        //_In_ int                     len
-//              , 0                          //_In_ int                     flags
-//              , (struct sockaddr *) &group //_In_ const struct sockaddr * to
-//              , sizeof( group ) )          //_In_ int                     tolen
-//        < 0 )
-//    {
-//        wchar_t errorStr[256] = {0};
-//        swprintf( errorStr, 256, L"sendto() failed: %d", WSAGetLastError() );
-//        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
-//    }
-//}
-
-/*
-	struct SongStream songInfo;
-	char* sendSong;
-	int deflen = SIZE_INDEX;
-	char* song;
-
-
-				sendSong[0] = CHANGE_STREAM;
-				sendSong[1] = (deflen >> 24) & 0xFF;
-				sendSong[2] = (deflen >> 16) & 0xFF;
-				sendSong[3] = (deflen >> 8) & 0xFF;
-				sendSong[4] = deflen & 0xFF;
-				sendSong[5] = (songloc.id >> 24) & 0xFF;
-				sendSong[6] = (songloc.id >> 16) & 0xFF;
-				sendSong[7] = (songloc.id >> 8) & 0xFF;
-				sendSong[8] = songloc.id & 0xFF;
-								
-				//for every client
-				for (int i = 0; i < sockets.size(); i++)
-				{
-					send();
-				}
-
-				song = (char*)malloc(speed + 5);
-*/
 void Server::disconnect()
 {
 	closesocket(listenSocket);

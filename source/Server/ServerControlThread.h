@@ -16,6 +16,7 @@ public:
     void start();
     void stop();
     void setPlaylist( Playlist * );
+    void sendPlaylistToAll( void );
     void setUDPSocket( UDPSocket * );
 protected:
     ServerControlThread();
@@ -27,6 +28,8 @@ private:
     void _handleMsgRequestDownload( RequestPacket * );
     void _handleMsgCancelDownload( RequestPacket * );
     void _handleMsgDisconnect( int clientIndex );
+    static VOID CALLBACK _sendPlaylistToAllRoutine( ULONG_PTR );
+    static VOID CALLBACK _sendPlaylistToOne( ULONG_PTR tcpSock );
     //static void _handleSockMsgqMsg(ServerControlThread* dis);
     /**
      * pointer to the UDPSocket owned by the control thread.

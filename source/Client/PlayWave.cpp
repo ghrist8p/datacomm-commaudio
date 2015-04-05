@@ -1,7 +1,7 @@
 #ifndef _PLAY_WAVE_CPP_
 #define _PLAY_WAVE_CPP_
 
-//#define DEBUG
+#define DEBUG
 //#define RUN_TEST
 
 #include "PlayWave.h"
@@ -24,7 +24,7 @@
  * interval of time to wait between checks to free allocated audio packets to
  *   play.
  */
-#define CHECK_FOR_FREEING_INTERVAL 50
+#define CHECK_FOR_FREEING_INTERVAL 100
 
 using namespace std;
 
@@ -364,7 +364,7 @@ void PlayWave::startCleanupRoutine(PlayWave* dis, WAVEHDR* audioPacket)
 DWORD WINAPI PlayWave::cleanupRoutine(void* params)
 {
 	#ifdef DEBUG
-	printf("cleanup thread started\n");
+	OutputDebugString(L"cleanup thread started\n");
 	#endif
 	// parse thread parameters
 	CrParams* p = (CrParams*) params;
@@ -377,7 +377,7 @@ DWORD WINAPI PlayWave::cleanupRoutine(void* params)
 		while(!(p->audioPacket->dwFlags&WHDR_DONE))
 		{
 			#ifdef DEBUG
-			printf("cleanup thread waiting\n");
+			OutputDebugString(L"cleanup thread waiting\n");
 			#endif
 			Sleep(CHECK_FOR_FREEING_INTERVAL);
 		}
@@ -392,7 +392,9 @@ DWORD WINAPI PlayWave::cleanupRoutine(void* params)
 		// unprepare the audio header, free the audio header and free the
 		// payload
 		#ifdef DEBUG
-		printf("cleanup thread freeing packet %p\n",p->audioPacket);
+        char output[256];
+		wsprintf((LPWSTR)output,L"cleanup thread freeing packet %p\n",p->audioPacket);
+        OutputDebugString((LPWSTR)output);
 		#endif
 		waveOutUnprepareHeader(p->dis->speakers,p->audioPacket,sizeof(WAVEHDR));
 		free(p->audioPacket->lpData);
@@ -416,8 +418,9 @@ DWORD WINAPI PlayWave::cleanupRoutine(void* params)
 
 	// free thread parameters & return
 	#ifdef DEBUG
-	printf("cleanup thread stopped\n");
+	OutputDebugString(L"cleanup thread stopped\n");
 	#endif
+	stopRoutine(&p->dis->cleanupThread,0);
 	free(p);
 	return 0;
 }
@@ -454,7 +457,10 @@ int stopRoutine(HANDLE* thread, HANDLE stopEvent)
 
 	// set the stop event to stop the thread
 	SetEvent(stopEvent);
-	WaitForSingleObject(*thread,INFINITE);
+    if(GetCurrentThreadId() != GetThreadId(*thread))
+    {
+	    WaitForSingleObject(*thread,INFINITE);
+    }
 
 	// invalidate thread handle, so we know it's terminated
 	*thread = INVALID_HANDLE_VALUE;

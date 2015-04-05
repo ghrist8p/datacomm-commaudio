@@ -8,18 +8,20 @@
 
 #define MULTICAST_PORT 7515
 
-#define DATA_BUFSIZE 1024
+#define DATA_BUFSIZE 8196
 
 #define SIZE_INDEX	4
 
 #define STREAM_PACKET 9
 
-#define STR_LEN 256
+#define DATA_LEN 60
+
+#define STR_LEN 128
 
 struct DataPacket
 {
     int index;
-    char data[DATA_BUFSIZE];
+    char data[DATA_LEN];
 };
 
 typedef struct DataPacket DataPacket;
@@ -60,7 +62,7 @@ typedef struct SongStream SongStream;
 struct SongName
 {
 	int  id;
-	char filepath[STR_LEN];	
+	char filepath[STR_LEN];
 };
 
 typedef struct SongName SongName;

@@ -209,5 +209,6 @@ void MessageQueue::dequeue(int* type, void* dest, int* len)
     *len  = n->len;
 
     // deallocate the element
+    free(n->data);
     free(n);
 }

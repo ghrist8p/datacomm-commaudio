@@ -300,20 +300,7 @@ void ServerWindow::newConnHandler( TCPConnection * connection, void * data )
 
 	MessageQueue* msgQueue = new MessageQueue(MCAPA, DATA_BUFSIZE);
 	TCPSocket*  new_client = new TCPSocket(connection->sock, msgQueue);
-    //ServerControlThread::getInstance()->addConnection(new_client);
-
-
-    //while( true )
-    //{
-    //    // WSASend( blah->connection->sock   // _In_   SOCKET s
-    //    //            ,    // _In_   LPWSABUF lpBuffers
-    //    //            ,    // _In_   DWORD dwBufferCount
-    //    //            ,    // _Out_  LPDWORD lpNumberOfBytesSent
-    //    //            ,    // _In_   DWORD dwFlags
-    //    //            ,    // _In_   LPWSAOVERLAPPED lpOverlapped
-    //    //            , ); // _In_   LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
-
-    //}
+    ServerControlThread::getInstance()->addConnection( new_client );
 }
 
 bool ServerWindow::toggleConnection(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
@@ -344,10 +331,9 @@ bool ServerWindow::toggleConnection(GuiComponent *pThis, UINT command, UINT id, 
 		serverWindow->server = new Server(tcpPort, newConnHandler, serverWindow, groupAddress, udpPort);
 		if (serverWindow->server->startTCP())
 		{
-            ServerControlThread::getInstance()->setUDPSocket( new UDPSocket( udpPort
-                                                                           , new MessageQueue( MSGQ_CAPACITY
-                                                                                             , MSGQ_ELEM_SIZE ) ) );
-            ServerControlThread::getInstance()->start();
+            ServerControlThread * sct = ServerControlThread::getInstance();
+            sct->setUDPSocket( new UDPSocket( udpPort, new MessageQueue( MSGQ_CAPACITY, MSGQ_ELEM_SIZE ) ) );
+            sct->start();
 
 		    serverWindow->tcpPortInput->setEnabled(false);
 		    serverWindow->udpPortInput->setEnabled(false);
