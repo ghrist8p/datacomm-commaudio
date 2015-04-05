@@ -139,11 +139,19 @@ int JitterBuffer::get(void* dest)
 
     // reset the canGet event, and set it after
     // interval
-    if(Heap::size() < himark)
+    if(Heap::size() == 0)
     {
         ResetEvent(canGet);
-        delayedSetEvent(canGet,interval);
+        delayedSetEvent(canGet,delay);
     }
+    //if(Heap::size() < himark)
+    //{
+    //    ResetEvent(canGet);
+    //    else
+    //    {
+    //        delayedSetEvent(canGet,interval);
+    //    }
+    //}
 
     // release synchronization objects
     ReleaseMutex(access);

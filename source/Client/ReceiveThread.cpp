@@ -10,9 +10,9 @@ static int stopRoutine(HANDLE* thread, HANDLE stopEvent);
 
 // receive thread implementation
 
-ReceiveThread::ReceiveThread(UDPSocket* udpSocket, JitterBuffer* musicJitterBuffer)
+ReceiveThread::ReceiveThread(MessageQueue* sockMsgQueue, JitterBuffer* musicJitterBuffer)
 {
-    this->udpSocket         = udpSocket;
+    this->sockMsgQueue      = sockMsgQueue;
     this->musicJitterBuffer = musicJitterBuffer;
     this->thread            = INVALID_HANDLE_VALUE;
     this->threadStopEv      = CreateEvent(NULL,TRUE,FALSE,NULL);
@@ -48,9 +48,9 @@ DWORD WINAPI ReceiveThread::threadRoutine(void* params)
     {
         HANDLE handles[] = {
             dis->threadStopEv,
-            dis->udpSocket->getMessageQueue()->hasMessage
+            dis->sockMsgQueue->hasMessage
         };
-        switch(WaitForMultipleObjects(3,handles,FALSE,INFINITE))
+        switch(WaitForMultipleObjects(2,handles,FALSE,INFINITE))
         {
         case WAIT_OBJECT_0+0:   // stop event triggered
             breakLoop = TRUE;
@@ -59,6 +59,7 @@ DWORD WINAPI ReceiveThread::threadRoutine(void* params)
             ReceiveThread::handleMsgqMsg(dis);
             break;
         default:
+            int err = GetLastError();
             OutputDebugString(L"ReceiveThread::_threadRoutine WaitForMultipleObjects");
             break;
         }
@@ -73,22 +74,20 @@ DWORD WINAPI ReceiveThread::threadRoutine(void* params)
 
 void ReceiveThread::handleMsgqMsg(ReceiveThread* dis)
 {
-    TCHAR s[256];
-
     // allocate memory to hold message queue message
     int msgType;
-    char* element = (char*) malloc(dis->udpSocket->getMessageQueue()->elementSize);
+    char* element = (char*) malloc(dis->sockMsgQueue->elementSize);
 
     // get the message queue message
-    dis->udpSocket->getMessageQueue()->dequeue(&msgType,element);
+    dis->sockMsgQueue->dequeue(&msgType,element);
 
     // process the message queue message according to its type
     switch(msgType)
     {
     case MUSICSTREAM:
     {
-        DataPacket* packet = (DataPacket*) &element;
-        dis->musicJitterBuffer->put(packet->index,&packet->data);
+        DataPacket* packet = (DataPacket*) element;
+        dis->musicJitterBuffer->put(packet->index,packet->data);
         break;
     }
     case MICSTREAM:
@@ -101,6 +100,9 @@ void ReceiveThread::handleMsgqMsg(ReceiveThread* dis)
         fprintf(stderr,"WARNING: received unknown message type: %d\n",msgType);
         break;
     }
+
+    // deallocate the allocated memory
+    free(element);
 }
 
 // static function implementations
