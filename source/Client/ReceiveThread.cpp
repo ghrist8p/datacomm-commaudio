@@ -10,7 +10,7 @@ static int stopRoutine(HANDLE* thread, HANDLE stopEvent);
 
 // receive thread implementation
 
-ReceiveThread::ReceiveThread(MessageQueue* sockMsgQueue, JitterBuffer* musicJitterBuffer)
+ReceiveThread::ReceiveThread(JitterBuffer* musicJitterBuffer, MessageQueue* sockMsgQueue)
 {
     this->sockMsgQueue      = sockMsgQueue;
     this->musicJitterBuffer = musicJitterBuffer;
@@ -92,8 +92,9 @@ void ReceiveThread::handleMsgqMsg(ReceiveThread* dis)
     }
     case MICSTREAM:
     {
-        // DataPacket packet;
-        // memcpy(packet.string,element.string,STR_LEN);
+        // TODO: make a new audio wave thing or use an existing one
+        DataPacket* packet = (DataPacket*) element;
+        dis->musicJitterBuffer->put(packet->index,packet->data);
         break;
     }
     default:
