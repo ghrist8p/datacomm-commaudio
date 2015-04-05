@@ -317,6 +317,7 @@ void ServerWindow::newConnHandler( TCPConnection * connection, void * data )
 
 	MessageQueue* msgQueue = new MessageQueue(MCAPA, DATA_BUFSIZE);
 	TCPSocket*  new_client = new TCPSocket(connection->sock, msgQueue);
+    //ServerControlThread::getInstance()->addConnection(new_client);
 
 
     //while( true )

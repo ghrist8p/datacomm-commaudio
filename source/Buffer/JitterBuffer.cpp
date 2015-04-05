@@ -174,3 +174,8 @@ int JitterBuffer::size()
 {
     return Heap::size();
 }
+
+int JitterBuffer::getElementSize()
+{
+    return Heap::getElementSize();
+}
