@@ -132,7 +132,6 @@ int JitterBuffer::get(void* dest)
     if(Heap::size() == 0)
     {
         ResetEvent(canGet);
-        delayedSetEvent(canGet,delay);
     }
 
     // release synchronization objects
