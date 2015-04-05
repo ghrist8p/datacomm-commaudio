@@ -1,3 +1,6 @@
+#ifndef _VOICE_BUFFERER_H_
+#define _VOICE_BUFFERER_H_
+
 #include "../common.h"
 
 class UDPSocket;
@@ -19,3 +22,5 @@ private:
     HANDLE thread;
     HANDLE threadStopEv;
 };
+
+#endif

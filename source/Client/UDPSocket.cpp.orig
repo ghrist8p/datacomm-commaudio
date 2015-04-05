@@ -33,7 +33,11 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 
 	HANDLE ThreadHandle;
 	DWORD ThreadId;
+<<<<<<< HEAD
+=======
+	msgqueue = mqueue;
 	stopSending = false;
+>>>>>>> bdbdedf73c35c10f9b0dea2c988e17031a5a381f
 
 	mutex = CreateMutex(NULL, FALSE, NULL);
 
@@ -369,11 +373,12 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 
 }
 
+<<<<<<< HEAD
 MessageQueue* UDPSocket::getMessageQueue()
 {
     return msgqueue;
 }
-
+=======
 void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets)
 {
 	FILE* fp = fopen(songloc.filepath, "rb");
@@ -457,3 +462,4 @@ void UDPSocket::stopSong()
 {
 	stopSending = true;
 }
+>>>>>>> bdbdedf73c35c10f9b0dea2c988e17031a5a381f

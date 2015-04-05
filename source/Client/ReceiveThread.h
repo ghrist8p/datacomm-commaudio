@@ -1,3 +1,6 @@
+#ifndef _RECEIVE_THREAD_H_
+#define _RECEIVE_THREAD_H_
+
 #include "../common.h"
 
 class UDPSocket;
@@ -20,3 +23,5 @@ private:
     HANDLE thread;
     HANDLE threadStopEv;
 };
+
+#endif
