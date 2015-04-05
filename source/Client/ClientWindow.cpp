@@ -45,7 +45,7 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 
 	recording = false;
 	requestingRecorderStop = false;
-	micMQueue = new MessageQueue(100,MIC_BUFFER_LENGTH);
+	micMQueue = new MessageQueue(1000,MIC_BUFFER_LENGTH);
 
     MessageQueue* q2 = new MessageQueue(100,sizeof(DataPacket));
 	udpSock = new UDPSocket(MULTICAST_PORT,q2);
@@ -57,7 +57,7 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	MessageQueue* q1 = new MessageQueue(100,MIC_BUFFER_LENGTH);
 	VoiceBufferer* voiceBufferer = new VoiceBufferer(q1,musicJitBuf);
     voiceBufferer->start();
-	PlayWave* p = new PlayWave(100,q1);
+	PlayWave* p = new PlayWave(1000,q1);
 
 	p->startPlaying(MIC_SAMPLE_RATE, MIC_BITS_PER_SAMPLE, NUM_MIC_CHANNELS);
 

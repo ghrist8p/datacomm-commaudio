@@ -264,8 +264,11 @@ void MicReader::readIn()
 	}
 	else
 	{
-		// Add an initial buffer to start with
-		addBuffer();
+		// Add an initial buffers to start with
+		for(int i = 0; i < 10; ++i)
+		{
+			addBuffer();
+		}
 
 		if (result)
 		{
