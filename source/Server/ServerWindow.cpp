@@ -355,7 +355,7 @@ bool ServerWindow::toggleConnection(GuiComponent *pThis, UINT command, UINT id, 
 	{
 		unsigned short tcpPort = _wtoi(serverWindow->tcpPortInput->getText());
 		unsigned short udpPort = _wtoi(serverWindow->udpPortInput->getText());
-		unsigned short groupAddress = inet_addr(MULTICAST_ADDRESS);
+		unsigned short groupAddress = inet_addr(MULTICAST_ADDR);
 
 		serverWindow->server = new Server(tcpPort, newConnHandler, serverWindow, groupAddress, udpPort);
 		if (serverWindow->server->startTCP())
