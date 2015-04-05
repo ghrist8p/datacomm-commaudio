@@ -124,31 +124,21 @@ int JitterBuffer::get(void* dest)
     WaitForSingleObject(canGet,INFINITE);
 
     // copy data from root to destination
-    int tempIndex;
-    Heap::peek(&tempIndex,dest);
-
-    if(++lastIndex == tempIndex)
-    {
-        Heap::remove();
-        ReleaseSemaphore(notFull,1,NULL);
-    }
-    else
-    {
-        ReleaseSemaphore(notEmpty,1,NULL);
-    }
+    Heap::remove(&lastIndex,dest);
+    ReleaseSemaphore(notFull,1,NULL);
 
     // reset the canGet event, and set it after
-    // interval
-    if(Heap::size() < himark)
+    // delay if we're out of data
+    if(Heap::size() == 0)
     {
         ResetEvent(canGet);
-        delayedSetEvent(canGet,interval);
+        delayedSetEvent(canGet,delay);
     }
 
     // release synchronization objects
     ReleaseMutex(access);
 
-    return lastIndex == tempIndex;
+    return 1;
 }
 
 /**

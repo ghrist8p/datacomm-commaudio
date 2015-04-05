@@ -24,7 +24,7 @@
  * interval of time to wait between checks to free allocated audio packets to
  *   play.
  */
-#define CHECK_FOR_FREEING_INTERVAL 50
+#define CHECK_FOR_FREEING_INTERVAL 100
 
 using namespace std;
 
@@ -329,7 +329,7 @@ void PlayWave::handleMsgqMsg()
 	waveOutWrite(speakers,audioPacket,sizeof(*audioPacket));
 
 	// acquire synchronization objects
-	WaitForSingleObject(canEnqueue,INFINITE);
+	//WaitForSingleObject(canEnqueue,INFINITE);
 	WaitForSingleObject(lastAudioPacketAccess,INFINITE);
 
 	// link the previous audio packet, if it has not been deallocated yet, to
@@ -347,7 +347,7 @@ void PlayWave::handleMsgqMsg()
 
 	// release synchronization objects
 	ReleaseMutex(lastAudioPacketAccess);
-	ReleaseSemaphore(canDequeue,1,NULL);
+	//ReleaseSemaphore(canDequeue,1,NULL);
 }
 
 void PlayWave::startCleanupRoutine(PlayWave* dis, WAVEHDR* audioPacket)
@@ -364,26 +364,26 @@ void PlayWave::startCleanupRoutine(PlayWave* dis, WAVEHDR* audioPacket)
 DWORD WINAPI PlayWave::cleanupRoutine(void* params)
 {
 	#ifdef DEBUG
-	printf("cleanup thread started\n");
+	OutputDebugString(L"cleanup thread started\n");
 	#endif
 	// parse thread parameters
 	CrParams* p = (CrParams*) params;
 
-	while(p->audioPacket != 0)
+	while(true)
 	{
 		// wait for the "header finished being used" flag to be set. the flag is
 		// set once the audio device has finished reading it, and playing out
 		// the speakers
-		while(!(p->audioPacket->dwFlags&WHDR_DONE))
+		while(!(p->audioPacket->dwFlags&WHDR_DONE) || p->audioPacket->dwUser == 0)
 		{
 			#ifdef DEBUG
-			printf("cleanup thread waiting\n");
+			OutputDebugString(L"cleanup thread waiting\n");
 			#endif
 			Sleep(CHECK_FOR_FREEING_INTERVAL);
 		}
 
 		// acquire synchronization objects
-		WaitForSingleObject(p->dis->canDequeue,INFINITE);
+		//WaitForSingleObject(p->dis->canDequeue,INFINITE);
 		WaitForSingleObject(p->dis->lastAudioPacketAccess,INFINITE);
 
 		// save where the next packet to deallocate is
@@ -392,7 +392,9 @@ DWORD WINAPI PlayWave::cleanupRoutine(void* params)
 		// unprepare the audio header, free the audio header and free the
 		// payload
 		#ifdef DEBUG
-		printf("cleanup thread freeing packet %p\n",p->audioPacket);
+        char output[256];
+		wsprintf((LPWSTR)output,L"cleanup thread freeing packet %p\n",p->audioPacket);
+        OutputDebugString((LPWSTR)output);
 		#endif
 		waveOutUnprepareHeader(p->dis->speakers,p->audioPacket,sizeof(WAVEHDR));
 		free(p->audioPacket->lpData);
@@ -411,12 +413,12 @@ DWORD WINAPI PlayWave::cleanupRoutine(void* params)
 
 		// release synchronization objects
 		ReleaseMutex(p->dis->lastAudioPacketAccess);
-		ReleaseSemaphore(p->dis->canEnqueue,1,NULL);
+		//ReleaseSemaphore(p->dis->canEnqueue,1,NULL);
 	}
 
 	// free thread parameters & return
 	#ifdef DEBUG
-	printf("cleanup thread stopped\n");
+	OutputDebugString(L"cleanup thread stopped\n");
 	#endif
 	free(p);
 	return 0;

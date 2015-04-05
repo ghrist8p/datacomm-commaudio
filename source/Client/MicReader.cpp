@@ -53,6 +53,28 @@ MicReader *MicReader::getInstance()
 	return instance;
 }
 
+MicReader::MicReader(int sampleRate, int buffLen, MessageQueue *queue, HWND owner)
+{
+	instance = this;
+
+	// Initialize data
+	this->mqueue = queue;
+	this->recordLength = buffLen / sampleRate;
+	this->buffLen = buffLen;
+	this->recording = false;
+	this->owner = owner;
+
+	// Create the WAV format for the MicReader
+	result = 0;
+	format.wFormatTag = WAVE_FORMAT_PCM;
+	format.wBitsPerSample = MIC_BITS_PER_SAMPLE;
+	format.nChannels = NUM_MIC_CHANNELS;
+	format.nSamplesPerSec = sampleRate;
+	format.nAvgBytesPerSec = format.nSamplesPerSec * format.nChannels * format.wBitsPerSample / MIC_BITS_PER_SAMPLE;
+	format.nBlockAlign = format.nChannels * format.wBitsPerSample / MIC_BITS_PER_SAMPLE;
+	format.cbSize = 0;
+}
+
 /*-------------------------------------------------------------------------------------------------
 -- FUNCTION: MicReader
 --
@@ -227,7 +249,7 @@ void MicReader::addBuffer()
 --
 -- RETURNS: void
 --
--- NOTES: This function attempts to open the microphone and begin reading from it into the 
+-- NOTES: This function attempts to open the microphone and begin reading from it into the
 -- readers buffers.
 -------------------------------------------------------------------------------------------------*/
 void MicReader::readIn()
@@ -242,8 +264,11 @@ void MicReader::readIn()
 	}
 	else
 	{
-		// Add an initial buffer to start with
-		addBuffer();
+		// Add an initial buffers to start with
+		for(int i = 0; i < 10; ++i)
+		{
+			addBuffer();
+		}
 
 		if (result)
 		{

@@ -284,16 +284,12 @@ DWORD UDPSocket::ThreadStart(void)
 		}
 		else
 		{
-			len = (SocketInfo->Buffer[1] << 24) | (SocketInfo->Buffer[2] << 16) | (SocketInfo->Buffer[3] << 8) | (SocketInfo->Buffer[4]);
-			len = (len > 0) ? len : -len;
             len = RecvBytes - 1;
 			CHAR* dataReceived = (char*)malloc(sizeof(char) * len);
+            DataPacket* p = (DataPacket*) dataReceived;
 			memcpy(dataReceived, SocketInfo->Buffer+1, len);
 			char* sourceaddr = inet_ntoa(source.sin_addr);
-            if (strcmp(sourceaddr, "192.168.1.106") != 0)
-            {
-			    SocketInfo->mqueue->enqueue(SocketInfo->Buffer[0], dataReceived, len);
-            }
+            SocketInfo->mqueue->enqueue(SocketInfo->Buffer[0], dataReceived, len);
 			free(dataReceived);
 		}
 	}
@@ -301,13 +297,25 @@ DWORD UDPSocket::ThreadStart(void)
 
 void UDPSocket::setGroup(char* group_address, int mem_flag)
 {
+    char loop = 0;
+    char ttl = 1;
+    in_addr interfaceAddr;
+    interfaceAddr.s_addr = INADDR_ANY;
 	memset(&mreq,0,sizeof(mreq));
 	mreq.imr_multiaddr.s_addr = inet_addr(group_address);
+    mreq.imr_interface.s_addr = INADDR_ANY;
+    int i = 0;
+    int err = 0;
 	if (mem_flag)
 	{
-		setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
+		i = setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
+        err = GetLastError();
+        i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
+        err = GetLastError();
+        i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
+        err = GetLastError();
 	}
-	setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char*)&mreq, sizeof(mreq));
+	setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char*)&interfaceAddr, sizeof(interfaceAddr));
 }
 
 int UDPSocket::sendtoGroup(char type, void* data, int length)
@@ -320,11 +328,7 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 
 	data_send[0] = type;
 
-	//message len
-	//data_send[1] = (length >> 24) & 0xFF;
-	//data_send[2] = (length >> 16) & 0xFF;
-	//data_send[3] = (length >> 8) & 0xFF;
-	//data_send[4] = length & 0xFF;
+    DataPacket* p = (DataPacket*) data;
 
     memcpy(data_send + 1, (char*)data, length);
 
@@ -341,7 +345,7 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 
 		SocketInfo->Socket = sd;
 		ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));
-		SocketInfo->DataBuf.len = length + 1;// + 5;
+		SocketInfo->DataBuf.len = length + 1;
 		SocketInfo->DataBuf.buf = data_send;
 		Flags = 0;
 

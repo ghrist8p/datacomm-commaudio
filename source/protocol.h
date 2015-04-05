@@ -14,12 +14,14 @@
 
 #define STREAM_PACKET 9
 
+#define DATA_LEN 60
+
 #define STR_LEN 128
 
 struct DataPacket
 {
     int index;
-    char data[DATA_BUFSIZE];
+    char data[DATA_LEN];
 };
 
 typedef struct DataPacket DataPacket;
@@ -60,7 +62,7 @@ typedef struct SongStream SongStream;
 struct SongName
 {
 	int index;
-	char filepath[STR_LEN];	
+	char filepath[STR_LEN];
 };
 
 typedef struct SongName SongName;
