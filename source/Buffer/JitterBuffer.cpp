@@ -127,15 +127,15 @@ int JitterBuffer::get(void* dest)
     int tempIndex;
     Heap::peek(&tempIndex,dest);
 
-    if(++lastIndex == tempIndex)
-    {
+    //if(++lastIndex == tempIndex)
+    //{
         Heap::remove();
         ReleaseSemaphore(notFull,1,NULL);
-    }
-    else
-    {
-        ReleaseSemaphore(notEmpty,1,NULL);
-    }
+    //}
+    //else
+    //{
+    //    ReleaseSemaphore(notEmpty,1,NULL);
+    //}
 
     // reset the canGet event, and set it after
     // interval
