@@ -126,7 +126,7 @@ UDPSocket::~UDPSocket()
 int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_port)
 {
 	DWORD Flags;
-	LPSOCKET_INFORMATION SocketInfo;
+	SOCKET_INFORMATION socketInfo;
 	DWORD SendBytes;
 	DWORD WaitResult;
 	struct sockaddr_in destination;
@@ -145,17 +145,11 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 
 	if (WaitResult == WAIT_OBJECT_0)
 	{
-		if ((SocketInfo = (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
-			sizeof(SOCKET_INFORMATION))) == NULL)
-		{
-			printf("GlobalAlloc() failed with error %d\n", GetLastError());
-			return 0;
-		}
 
-		SocketInfo->Socket = sd;
-		ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));
-		SocketInfo->DataBuf.len = length + 5;
-		SocketInfo->DataBuf.buf = data_send;
+		socketInfo.Socket = sd;
+		ZeroMemory(&(socketInfo.Overlapped), sizeof(WSAOVERLAPPED));
+		socketInfo.DataBuf.len = length + 5;
+		socketInfo.DataBuf.buf = data_send;
 		Flags = 0;
 
 		memset(&destination,0,destsize);
@@ -176,7 +170,7 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 			return 0;
 		}
 
-		if (WSASendTo(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &SendBytes, Flags, (SOCKADDR*)&destination, destsize,
+		if (WSASendTo(socketInfo.Socket, &(socketInfo.DataBuf), 1, &SendBytes, Flags, (SOCKADDR*)&destination, destsize,
 			0, 0) == SOCKET_ERROR)
 		{
 			if (WSAGetLastError() != WSA_IO_PENDING)
@@ -188,6 +182,7 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 		}
 		else
 		{
+			free(data_send);
 			return 1;
 		}
 	}
@@ -196,8 +191,6 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 		MessageBox(NULL, L"Error in the mutex", L"ERROR", MB_ICONERROR);
 		return 0;
 	}
-
-	free(data_send);
 
 }
 
@@ -248,7 +241,7 @@ DWORD WINAPI UDPSocket::UDPThread(LPVOID lpParameter)
 DWORD UDPSocket::ThreadStart(void)
 {
 	DWORD Flags;
-	LPSOCKET_INFORMATION SocketInfo;
+	SOCKET_INFORMATION socketInfo;
 	DWORD RecvBytes;
 	int flag = 0;
 	int msg_type = 0;
@@ -256,25 +249,17 @@ DWORD UDPSocket::ThreadStart(void)
 	struct sockaddr_in source;
 	int length = sizeof(struct sockaddr_in);
 
-
-	if ((SocketInfo = (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
-		sizeof(SOCKET_INFORMATION))) == NULL)
-	{
-		MessageBox(NULL, L"GlobalAlloc() failed with error", L"ERROR", MB_ICONERROR);
-		return FALSE;
-	}
-
-	SocketInfo->Socket = sd;
-	ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));
-	SocketInfo->DataBuf.buf = SocketInfo->Buffer;
-	SocketInfo->mqueue = msgqueue;
+	socketInfo.Socket = sd;
+	ZeroMemory(&(socketInfo.Overlapped), sizeof(WSAOVERLAPPED));
+	socketInfo.DataBuf.buf = socketInfo.Buffer;
+	socketInfo.mqueue = msgqueue;
 	Flags = 0;
 
 	while (true)
 	{
-		SocketInfo->DataBuf.len = DATA_BUFSIZE;
+		socketInfo.DataBuf.len = DATA_BUFSIZE;
 
-		if (WSARecvFrom(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags, (sockaddr*)&source,
+		if (WSARecvFrom(socketInfo.Socket, &(socketInfo.DataBuf), 1, &RecvBytes, &Flags, (sockaddr*)&source,
 			&length, 0, 0) == SOCKET_ERROR)
 		{
 			int err;
@@ -288,9 +273,9 @@ DWORD UDPSocket::ThreadStart(void)
 		{
             len = RecvBytes - 1;
 			CHAR* dataReceived = (char*)malloc(sizeof(char) * len);
-			memcpy(dataReceived, SocketInfo->Buffer+1, len);
+			memcpy(dataReceived, socketInfo.Buffer+1, len);
 			char* sourceaddr = inet_ntoa(source.sin_addr);
-            SocketInfo->mqueue->enqueue(SocketInfo->Buffer[0], dataReceived, len);
+            socketInfo.mqueue->enqueue(socketInfo.Buffer[0], dataReceived, len);
 			free(dataReceived);
 		}
 	}
@@ -322,7 +307,7 @@ void UDPSocket::setGroup(char* group_address, int mem_flag)
 int UDPSocket::sendtoGroup(char type, void* data, int length)
 {
 	DWORD Flags;
-	LPSOCKET_INFORMATION SocketInfo;
+	SOCKET_INFORMATION socketInfo;
 	DWORD SendBytes;
 	DWORD WaitResult;
 	char* data_send = (char*)malloc(sizeof(char) * (length + 1));
@@ -337,17 +322,11 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 
 	if (WaitResult == WAIT_OBJECT_0)
 	{
-		if ((SocketInfo = (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
-			sizeof(SOCKET_INFORMATION))) == NULL)
-		{
-			printf("GlobalAlloc() failed with error %d\n", GetLastError());
-			return 0;
-		}
 
-		SocketInfo->Socket = sd;
-		ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));
-		SocketInfo->DataBuf.len = length + 1;
-		SocketInfo->DataBuf.buf = data_send;
+		socketInfo.Socket = sd;
+		ZeroMemory(&(socketInfo.Overlapped), sizeof(WSAOVERLAPPED));
+		socketInfo.DataBuf.len = length + 1;
+		socketInfo.DataBuf.buf = data_send;
 		Flags = 0;
 
 		sockaddr_in address;
@@ -356,7 +335,7 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 		address.sin_port   = htons(MULTICAST_PORT);
 		memcpy(&address.sin_addr,&mreq.imr_multiaddr,sizeof(struct in_addr));
 
-		if (WSASendTo(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &SendBytes, Flags, (struct sockaddr*)&address, sizeof(address),
+		if (WSASendTo(socketInfo.Socket, &(socketInfo.DataBuf), 1, &SendBytes, Flags, (struct sockaddr*)&address, sizeof(address),
 			0, 0) == SOCKET_ERROR)
 		{
 			int err;
@@ -368,6 +347,7 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 		}
 		else
 		{
+			free(data_send);
 			return 1;
 		}
 	}
@@ -376,7 +356,6 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 		MessageBox(NULL, L"Error in the mutex", L"ERROR", MB_ICONERROR);
 	}
 
-	free(data_send);
 
 }
 
@@ -435,6 +414,8 @@ void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets
 					sockets[i]->Send(CHANGE_STREAM, sendSong, SIZE_INDEX);
 				}
 
+				free(sendSong);
+
 				song = (char*)malloc(speed + 5);
 
 				//read chunks of data from the file based on the speed selected and send it
@@ -447,6 +428,8 @@ void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets
 
 					sendtoGroup(MUSICSTREAM, song, data_read);
 				}
+
+				free(song);
 
 				stopSending = false;
 			}

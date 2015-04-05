@@ -333,7 +333,8 @@ void CALLBACK MicReader::waveInProc(HWAVEIN hwi, UINT uMsg, DWORD_PTR dwInstance
 		// Remove the used up buffer
 		if (micReader->wavHeaders.size() > 0)
 		{
-			delete (micReader->wavHeaders.front());
+			delete micReader->wavHeaders.front()->lpData;
+			free(micReader->wavHeaders.front());
 			micReader->wavHeaders.pop();
 		}
 	}
@@ -346,7 +347,8 @@ void CALLBACK MicReader::waveInProc(HWAVEIN hwi, UINT uMsg, DWORD_PTR dwInstance
 		// Free all allocated buffers
 		while (micReader->wavHeaders.size() > 0)
 		{
-			delete (micReader->wavHeaders.front());
+			delete micReader->wavHeaders.front()->lpData;
+			free(micReader->wavHeaders.front());
 			micReader->wavHeaders.pop();
 		}
 
