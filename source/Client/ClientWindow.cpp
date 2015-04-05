@@ -14,6 +14,9 @@
 #include "FileListItem.h"
 #include "ConnectionWindow.h"
 #include "../Buffer/MessageQueue.h"
+#include "../Buffer/JitterBuffer.h"
+#include "ReceiveThread.h"
+#include "VoiceBufferer.h"
 #include "MicReader.h"
 #include "PlayWave.h"
 
@@ -40,7 +43,17 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	requestingRecorderStop = false;
 	micMQueue = new MessageQueue(100, MicReader::calculateBufferSize(MIC_SAMPLE_RATE, MIC_RECORD_INTERVAL));
 
-    PlayWave* p = new PlayWave(1000,micMQueue);
+    MessageQueue* q2 = new MessageQueue(500,60);
+	udpSock = new UDPSocket(7000,q2);
+	udpSock->setGroup(MULTICAST_ADDR);
+
+	JitterBuffer* musicJitBuf = new JitterBuffer(5000,3000,60,100,5);
+	ReceiveThread* recvThread = new ReceiveThread(udpSock,musicJitBuf);
+	recvThread->start();
+	MessageQueue* q = new MessageQueue(500,60);
+	VoiceBufferer* voiceBufferer = new VoiceBufferer(q,musicJitBuf);
+
+	PlayWave* p = new PlayWave(1000,micMQueue);
 	p->startPlaying(MIC_SAMPLE_RATE, MIC_BITS_PER_SAMPLE, NUM_MIC_CHANNELS);
 }
 

@@ -161,6 +161,11 @@ int Heap::size()
     return data.size();
 }
 
+int Heap::getElementSize()
+{
+    return elementSize;
+}
+
 /**
  * reorganizes the minimum heap so that the last inserted element is moved to
  *   the right place in the minimum heap.

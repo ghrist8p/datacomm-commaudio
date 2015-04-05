@@ -23,6 +23,7 @@
 --  This is the constructor for the UDP socket, it will create the socket and will start the thread to listen for data
 ----------------------------------------------------------------------------------------------------------------------*/
 UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
+	: msgqueue(mqueue)
 {
 	int error;
 	struct sockaddr_in server;
@@ -31,7 +32,6 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 
 	HANDLE ThreadHandle;
 	DWORD ThreadId;
-	msgqueue = mqueue;
 
 	mutex = CreateMutex(NULL, FALSE, NULL);
 
@@ -362,4 +362,9 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 		MessageBox(NULL, L"Error in the mutex", L"ERROR", MB_ICONERROR);
 	}
 
+}
+
+MessageQueue* UDPSocket::getMessageQueue()
+{
+    return msgqueue;
 }

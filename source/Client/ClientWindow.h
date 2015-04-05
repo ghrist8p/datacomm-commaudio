@@ -57,7 +57,7 @@ private:
 	GuiPanel *bottomSpacer;
 	ButtonPanel *playButton;
 
-    TCPSocket * tcpSocket;
+	UDPSocket* udpSock;
 };
 
 #endif

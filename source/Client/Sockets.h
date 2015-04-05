@@ -22,13 +22,13 @@ class UDPSocket
 {
 private:
 	SOCKET sd;
-	MessageQueue* msgqueue;
 	HANDLE mutex;
 	ip_mreq mreq;
 	DWORD ThreadStart(void);
 	static void CALLBACK UDPRoutine(DWORD Error, DWORD BytesTransferred,
 		LPWSAOVERLAPPED Overlapped, DWORD InFlags);
 	static DWORD WINAPI UDPThread(LPVOID lpParameter);
+    MessageQueue* msgqueue;
 
 public:
 	UDPSocket(int port, MessageQueue* mqueue);
@@ -36,6 +36,7 @@ public:
 	int Send(char type, void* data, int length, char* dest_ip, int dest_port);
 	int sendtoGroup(char type, void* data, int length);
 	void setGroup(char* group_address);
+    MessageQueue* getMessageQueue();
 
 };
 
