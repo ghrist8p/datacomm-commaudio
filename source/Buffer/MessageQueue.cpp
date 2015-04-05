@@ -93,8 +93,6 @@ void MessageQueue::enqueue(int type, void* src, int len)
     Node* n = (Node*) malloc(sizeof(Node));
     void* data = malloc(len);
 
-    DataPacket* p = (DataPacket*) src;
-
     // put the data into a node
     memcpy(data,src,len);
     n->type = type;
@@ -197,8 +195,7 @@ void MessageQueue::dequeue(int* type, void* dest, int* len)
     *type = n->type;
     *len  = n->len;
 
-    DataPacket* p = (DataPacket*) n->data;
-
     // deallocate the element
+    free(n->data);
     free(n);
 }

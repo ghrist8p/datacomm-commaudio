@@ -57,18 +57,18 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	MessageQueue* q1 = new MessageQueue(1500,MIC_BUFFER_LENGTH);
 	VoiceBufferer* voiceBufferer = new VoiceBufferer(q1,musicJitBuf);
     voiceBufferer->start();
-	PlayWave* p = new PlayWave(50,q1);
+	PlayWave* p = new PlayWave(50,micMQueue/*q1*/);
 
 	p->startPlaying(MIC_SAMPLE_RATE, MIC_BITS_PER_SAMPLE, NUM_MIC_CHANNELS);
 
 	HANDLE ThreadHandle;
 	DWORD ThreadId;
 
-	if ((ThreadHandle = CreateThread(NULL, 0, MicThread, (void*)this, 0, &ThreadId)) == NULL)
-    {
-		MessageBox(NULL, L"CreateThread failed with error", L"ERROR", MB_ICONERROR);
-		return;
-	}
+	//if ((ThreadHandle = CreateThread(NULL, 0, MicThread, (void*)this, 0, &ThreadId)) == NULL)
+    //{
+	//	MessageBox(NULL, L"CreateThread failed with error", L"ERROR", MB_ICONERROR);
+	//	return;
+	//}
 }
 
 DWORD WINAPI ClientWindow::MicThread(LPVOID lpParameter)

@@ -197,6 +197,8 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 		return 0;
 	}
 
+	free(data_send);
+
 }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -286,7 +288,6 @@ DWORD UDPSocket::ThreadStart(void)
 		{
             len = RecvBytes - 1;
 			CHAR* dataReceived = (char*)malloc(sizeof(char) * len);
-            DataPacket* p = (DataPacket*) dataReceived;
 			memcpy(dataReceived, SocketInfo->Buffer+1, len);
 			char* sourceaddr = inet_ntoa(source.sin_addr);
             SocketInfo->mqueue->enqueue(SocketInfo->Buffer[0], dataReceived, len);
@@ -310,7 +311,7 @@ void UDPSocket::setGroup(char* group_address, int mem_flag)
 	{
 		i = setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
         err = GetLastError();
-        i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
+        //i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
         err = GetLastError();
         i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
         err = GetLastError();
@@ -374,6 +375,8 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 	{
 		MessageBox(NULL, L"Error in the mutex", L"ERROR", MB_ICONERROR);
 	}
+
+	free(data_send);
 
 }
 
@@ -440,7 +443,7 @@ void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets
 					if (stopSending)
 					{
 						return;
-					}					
+					}
 
 					sendtoGroup(MUSICSTREAM, song, data_read);
 				}
