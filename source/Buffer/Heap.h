@@ -13,6 +13,7 @@ public:
     virtual void remove();
     virtual void peek(int* index, void* dest);
     virtual int size();
+    virtual int getElementSize();
 private:
     void heapify();
     void trickleDown();

@@ -1,13 +1,18 @@
-#ifndef _PACKET_TYPE_H_
-#define _PACKET_TYPE_H_
+#ifndef _PROTOCOL_H_
+#define _PROTOCOL_H_
 
 #include <cstdint>
+#include <vector>
 
 #define MULTICAST_ADDR "224.0.0.1"
 
 #define MULTICAST_PORT 7515
 
 #define DATA_BUFSIZE 1024
+
+#define SIZE_INDEX	4
+
+#define STREAM_PACKET 9
 
 #define STR_LEN 128
 
@@ -40,5 +45,24 @@ struct MessageHeader
 };
 
 typedef struct MessageHeader MessageHeader;
+
+struct SongStream
+{
+	short channels;
+	short bps; //bit rae
+	unsigned long sample_rate;
+	int index;
+	char songname[STR_LEN];
+};
+
+typedef struct SongStream SongStream;
+
+struct SongName
+{
+	int index;
+	char filepath[STR_LEN];	
+};
+
+typedef struct SongName SongName;
 
 #endif

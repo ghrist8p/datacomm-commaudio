@@ -39,10 +39,6 @@ public:
     friend newConnectionHandler;
     
     bool startUDP();
-    void sendToGroup( const char * buf, int len );
-	
-	void sendWave(char* fname, WavSong *ret, int speed);
-	void stopSong();
 
 	void disconnect();
 
@@ -55,6 +51,9 @@ private:
 	bool stopSending;
     
     WSAEVENT newConnectionEvent;
+	short channels;
+	short bitrate;
+	unsigned long sampling;
     
     int numTCPConnections;
     TCPConnection * TCPConnections;

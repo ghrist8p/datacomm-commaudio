@@ -15,6 +15,7 @@ public:
     virtual int put(int index, void* src);
     virtual int get(void* dest);
     virtual int size();
+    virtual int getElementSize();
     /**
      * handle to event that is set when the jitter buffer allows something to be
      *   removed, unset otherwise.
