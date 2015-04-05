@@ -39,10 +39,6 @@ public:
     friend newConnectionHandler;
     
     bool startUDP();
-    void sendToGroup( const char * buf, int len );
-	
-	void sendWave(SongName songloc, int speed)
-	void stopSong();
 
 	void disconnect();
 

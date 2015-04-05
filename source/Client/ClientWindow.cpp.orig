@@ -20,9 +20,8 @@
 #include "MicReader.h"
 #include "PlayWave.h"
 
-#define MIC_SAMPLE_RATE (44100/2)
-//#define MIC_RECORD_INTERVAL 0.740
-#define MIC_BUFFER_LENGTH DATA_LEN
+#define MIC_SAMPLE_RATE 44100
+#define MIC_RECORD_INTERVAL 0.2
 
 ClientWindow::ClientWindow(HINSTANCE hInst)
 	: GuiWindow(hInst)
@@ -34,9 +33,6 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	playButtonUp = LoadBitmap(hInst, L"IMG_PLAY_BUTTON_UP");
 	playButtonDown = LoadBitmap(hInst, L"IMG_PLAY_BUTTON_DOWN");
 
-	stopButtonUp = LoadBitmap(hInst, L"IMG_STOP_BUTTON_UP");
-	stopButtonDown = LoadBitmap(hInst, L"IMG_STOP_BUTTON_DOWN");
-
 	darkBackground = (HBRUSH) CreateSolidBrush(RGB(15, 15, 15));
 	lightBackground = (HBRUSH) CreateSolidBrush(RGB(30, 30, 30));;
 	accentBrush = (HBRUSH) CreateSolidBrush(RGB(0, 162, 232));
@@ -45,30 +41,34 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 
 	recording = false;
 	requestingRecorderStop = false;
-	micMQueue = new MessageQueue(1000,MIC_BUFFER_LENGTH);
+	micMQueue = new MessageQueue(100, MicReader::calculateBufferSize(MIC_SAMPLE_RATE, MIC_RECORD_INTERVAL));
 
-    MessageQueue* q2 = new MessageQueue(1500,sizeof(DataPacket));
-	udpSock = new UDPSocket(MULTICAST_PORT,q2);
-	udpSock->setGroup(MULTICAST_ADDR,1);
+<<<<<<< HEAD
+    MessageQueue* q2 = new MessageQueue(500,60);
+	udpSock = new UDPSocket(7000,q2);
+	udpSock->setGroup(MULTICAST_ADDR);
 
-	JitterBuffer* musicJitBuf = new JitterBuffer(5000,3000,MIC_BUFFER_LENGTH,50,0);
-	ReceiveThread* recvThread = new ReceiveThread(q2,musicJitBuf);
+	JitterBuffer* musicJitBuf = new JitterBuffer(5000,3000,60,100,5);
+	ReceiveThread* recvThread = new ReceiveThread(udpSock,musicJitBuf);
 	recvThread->start();
-	MessageQueue* q1 = new MessageQueue(1500,MIC_BUFFER_LENGTH);
-	VoiceBufferer* voiceBufferer = new VoiceBufferer(q1,musicJitBuf);
-    voiceBufferer->start();
-	PlayWave* p = new PlayWave(1000,q1);
+	MessageQueue* q = new MessageQueue(500,60);
+	VoiceBufferer* voiceBufferer = new VoiceBufferer(q,musicJitBuf);
 
+	PlayWave* p = new PlayWave(1000,micMQueue);
 	p->startPlaying(MIC_SAMPLE_RATE, MIC_BITS_PER_SAMPLE, NUM_MIC_CHANNELS);
+=======
+   /* PlayWave* p = new PlayWave(1000,micMQueue);
+	p->startPlaying(MIC_SAMPLE_RATE, MIC_BITS_PER_SAMPLE, NUM_MIC_CHANNELS);*/
 
 	HANDLE ThreadHandle;
 	DWORD ThreadId;
 
 	if ((ThreadHandle = CreateThread(NULL, 0, MicThread, (void*)this, 0, &ThreadId)) == NULL)
-    {
+	{
 		MessageBox(NULL, L"CreateThread failed with error", L"ERROR", MB_ICONERROR);
 		return;
 	}
+>>>>>>> bdbdedf73c35c10f9b0dea2c988e17031a5a381f
 }
 
 DWORD WINAPI ClientWindow::MicThread(LPVOID lpParameter)
@@ -81,15 +81,12 @@ DWORD ClientWindow::ThreadStart(void)
 {
 	int type;
 	int length;
-
-    DataPacket packet;
-    packet.index = 0;
+	char* mic_dat = (char*)malloc(sizeof(char) * micMQueue->elementSize);
 
 	while (true)
-	{
-        ++(packet.index);
-		micMQueue->dequeue(&type, packet.data, &length);
-		udpSock->sendtoGroup(MUSICSTREAM, &packet, sizeof(DataPacket));
+	{		
+		micMQueue->dequeue(&type, mic_dat, &length);
+		udpSock->sendtoGroup(type, mic_dat, length);
 	}
 
 }
@@ -108,12 +105,9 @@ ClientWindow::~ClientWindow()
 	delete buttonSpacer2;
 	delete bottomSpacer;
 	delete playButton;
-	delete stopButton;
 
 	DeleteObject(playButtonUp);
 	DeleteObject(playButtonDown);
-	DeleteObject(stopButtonUp);
-	DeleteObject(stopButtonDown);
 	DeleteObject(nullPen);
 	DeleteObject(darkBackground);
 	DeleteObject(lightBackground);
@@ -123,14 +117,14 @@ ClientWindow::~ClientWindow()
 
 void ClientWindow::addRemoteFile(LPWSTR filename)
 {
-	fileContainerPanel->addItem(new FileListItem(fileContainerPanel, this, hInst, filename));
+	fileContainerPanel->addItem(new FileListItem(this, hInst, filename));
 }
 
 void ClientWindow::onCreate()
 {
 	setTitle(L"CommAudio Client");
 	setSize(700, 325);
-	micReader = new MicReader(MIC_SAMPLE_RATE, MIC_BUFFER_LENGTH, micMQueue, getHWND());
+	micReader = new MicReader(MIC_SAMPLE_RATE, MIC_RECORD_INTERVAL, micMQueue, getHWND());
 	this->addMessageListener(WM_MIC_STOPPED_READING, onMicStop, this);
 
 	// Create Elements
@@ -143,7 +137,6 @@ void ClientWindow::onCreate()
 	statusBar = new GuiStatusBar(hInst, this);
 	trackerPanel = new PlaybackTrackerPanel(hInst, this);
 	playButton = new ButtonPanel(hInst, seekPanel, playButtonUp, playButtonDown);
-	stopButton = new ButtonPanel(hInst, seekPanel, stopButtonUp, stopButtonDown);
 	buttonSpacer1 = new GuiPanel(hInst, seekPanel);
 	buttonSpacer2 = new GuiPanel(hInst, seekPanel);
 	bottomSpacer = new GuiPanel(hInst, this);
@@ -218,13 +211,6 @@ void ClientWindow::onCreate()
 	playButton->enableCustomDrawing(true);
 	playButton->setBackgroundBrush(darkBackground);
 
-	// Create Stop Button
-	stopButton->init();
-	stopButton->setClickListener(ClientWindow::onClickStop);
-	stopButton->setPreferredSize(64, 64);
-	stopButton->enableCustomDrawing(true);
-	stopButton->setBackgroundBrush(darkBackground);
-
 	// Create Button Spacers
 	buttonSpacer1->init();
 	buttonSpacer1->enableCustomDrawing(true);
@@ -242,18 +228,12 @@ void ClientWindow::onCreate()
 
 	layout->addComponent(buttonSpacer1);
 	layout->addComponent(playButton);
-	layout->addComponent(stopButton);
 	layout->addComponent(buttonSpacer2);
 }
 
 void ClientWindow::onClickPlay(void*)
 {
 	MessageBox(NULL, L"CLICKED PLAY!", L"YAY!", MB_ICONINFORMATION);
-}
-
-void ClientWindow::onClickStop(void*)
-{
-	MessageBox(NULL, L"CLICKED STOP!", L"BOO!", MB_ICONINFORMATION);
 }
 
 bool ClientWindow::onClickMic(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)

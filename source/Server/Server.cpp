@@ -192,115 +192,22 @@ bool Server::startUDP()
 	//makes the socket multicast and adds it to the group.
 	setsockopt( multicastSocket, IPPROTO_IP, IP_MULTICAST_IF, (char*)&group, sizeof(group));
 }
-
-void Server::sendToGroup( const char * buf, int len )
-{
-    if( sendto( multicastSocket            //_In_ SOCKET                  s
-              , buf                        //_In_ const char            * buf
-              , len                        //_In_ int                     len
-              , 0                          //_In_ int                     flags
-              , (struct sockaddr *) &group //_In_ const struct sockaddr * to
-              , sizeof( group ) )          //_In_ int                     tolen
-        < 0 )
-    {
-        wchar_t errorStr[256] = {0};
-        swprintf( errorStr, 256, L"sendto() failed: %d", WSAGetLastError() );
-        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
-    }
-}
-
-void Server::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets)
-{
-	FILE* fp = fopen(songloc.filepath, "rb");
-	struct SongStream songInfo;
-	char* sendSong;
-	int deflen = SIZE_INDEX;
-	char* song;
-
-	if (fp) {
-
-		char id[5];
-		unsigned long size;
-		short format_tag, channels, block_align, bits_per_sample;
-		unsigned long format_length, sample_rate, avg_bytes_sec, data_size;
-		int data_read = 0;
-
-		fread(id, sizeof(char), 4, fp);
-		id[4] = '\0';
-
-		if (!strcmp(id, "RIFF")) {
-			fread(&size, sizeof(unsigned long), 1, fp);
-			fread(id, sizeof(char), 4, fp);
-			id[4] = '\0';
-
-			if (!strcmp(id, "WAVE")) {
-				//get wave headers
-				fread(id, sizeof(char), 4, fp);
-				fread(&format_length, sizeof(unsigned long), 1, fp);
-				fread(&format_tag, sizeof(short), 1, fp);
-				fread(&channels, sizeof(short), 1, fp);
-				fread(&sample_rate, sizeof(unsigned long), 1, fp);
-				fread(&avg_bytes_sec, sizeof(unsigned long), 1, fp);
-				fread(&block_align, sizeof(short), 1, fp);
-				fread(&bits_per_sample, sizeof(short), 1, fp);
-				fread(id, sizeof(char), 4, fp);
-				fread(&data_size, sizeof(unsigned long), 1, fp);
-								
-				sendSong = (char*) malloc(sizeof(char) * STREAM_PACKET);
-
-				sendSong[0] = CHANGE_STREAM;
-				sendSong[1] = (deflen >> 24) & 0xFF;
-				sendSong[2] = (deflen >> 16) & 0xFF;
-				sendSong[3] = (deflen >> 8) & 0xFF;
-				sendSong[4] = deflen & 0xFF;
-				sendSong[5] = (songloc.index >> 24) & 0xFF;
-				sendSong[6] = (songloc.index >> 16) & 0xFF;
-				sendSong[7] = (songloc.index >> 8) & 0xFF;
-				sendSong[8] = songloc.index & 0xFF;
-								
-				//for every client
-				for (int i = 0; i < sockets.size(), i++)
-				{
-					send()
-				}
-
-				song = (char*)malloc(speed + 5);
-
-				//read chunks of data from the file based on the speed selected and send it
-				while (data_read = fread(song + 5, 1, speed, fp) > 0)
-				{
-					if (stopSending)
-					{
-						return;
-					}
-
-					//type of message
-					song[0] = MUSICSTREAM;
-
-					//message len
-					song[1] = (data_read >> 24) & 0xFF;
-					song[2] = (data_read >> 16) & 0xFF;
-					song[3] = (data_read >> 8) & 0xFF;
-					song[4] = data_read & 0xFF;
-					
-					sendToGroup(song, data_read + 5);
-				}
-
-				stopSending = false;
-			}
-			else
-			{
-				cout << "Error: RIFF file but not a wave file\n";
-			}
-		}
-		else 
-		{
-			cout << "Error: not a RIFF file\n";
-		}
-	}
-
-	fclose(fp);
-}
+//
+//void Server::sendToGroup( const char * buf, int len )
+//{
+//    if( sendto( multicastSocket            //_In_ SOCKET                  s
+//              , buf                        //_In_ const char            * buf
+//              , len                        //_In_ int                     len
+//              , 0                          //_In_ int                     flags
+//              , (struct sockaddr *) &group //_In_ const struct sockaddr * to
+//              , sizeof( group ) )          //_In_ int                     tolen
+//        < 0 )
+//    {
+//        wchar_t errorStr[256] = {0};
+//        swprintf( errorStr, 256, L"sendto() failed: %d", WSAGetLastError() );
+//        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
+//    }
+//}
 
 void Server::disconnect()
 {
@@ -312,9 +219,4 @@ void Server::disconnect()
 		closesocket(TCPConnections[i].sock);
 	}
 	numTCPConnections = 0;
-}
-
-void Server::stopSong()
-{
-	stopSending = true;
 }
