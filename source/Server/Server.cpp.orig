@@ -209,7 +209,29 @@ bool Server::startUDP()
 //    }
 //}
 
+<<<<<<< Updated upstream
+=======
+void Server::sendToGroup( const char * buf, int len )
+{
+    if( sendto( multicastSocket            //_In_ SOCKET                  s
+              , buf                        //_In_ const char            * buf
+              , len                        //_In_ int                     len
+              , 0                          //_In_ int                     flags
+              , (struct sockaddr *) &group //_In_ const struct sockaddr * to
+              , sizeof( group ) )          //_In_ int                     tolen
+        < 0 )
+    {
+        wchar_t errorStr[256] = {0};
+        swprintf( errorStr, 256, L"sendto() failed: %d", WSAGetLastError() );
+        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
+    }
+}
+
 /*
+void Server::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets)
+{
+	FILE* fp = fopen(songloc.filepath, "rb");
+>>>>>>> Stashed changes
 	struct SongStream songInfo;
 	char* sendSong;
 	int deflen = SIZE_INDEX;
@@ -233,7 +255,47 @@ bool Server::startUDP()
 				}
 
 				song = (char*)malloc(speed + 5);
+<<<<<<< Updated upstream
+=======
+
+				//read chunks of data from the file based on the speed selected and send it
+				while (data_read = fread(song + 5, 1, speed, fp) > 0)
+				{
+					if (stopSending)
+					{
+						return;
+					}
+
+					//type of message
+					song[0] = MUSICSTREAM;
+
+					//message len
+					song[1] = (data_read >> 24) & 0xFF;
+					song[2] = (data_read >> 16) & 0xFF;
+					song[3] = (data_read >> 8) & 0xFF;
+					song[4] = data_read & 0xFF;
+					
+					sendToGroup(song, data_read + 5);
+				}
+
+				stopSending = false;
+			}
+			else
+			{
+				cout << "Error: RIFF file but not a wave file\n";
+			}
+		}
+		else 
+		{
+			cout << "Error: not a RIFF file\n";
+		}
+	}
+
+	fclose(fp);
+}
 */
+
+>>>>>>> Stashed changes
 void Server::disconnect()
 {
 	closesocket(listenSocket);

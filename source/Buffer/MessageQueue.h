@@ -10,6 +10,7 @@ public:
     MessageQueue(int capacity, int elementSize);
     void enqueue(int type, void* src);
     void enqueue(int type, void* src, int len);
+    int peekLen();
     void dequeue(int* type, void* dest);
     void dequeue(int* type, void* dest, int* len);
     /**

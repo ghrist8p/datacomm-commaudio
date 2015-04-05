@@ -12,7 +12,18 @@
 #include "../Buffer/MessageQueue.h"
 #include "ServerControlThread.h"
 
+/**
+ * element that is put into the message queue.
+ */
+union MsgqElement
+{
+    int index;
+    char string[STR_LEN];
+};
+
 #define MCAPA	30
+#define MSGQ_CAPACITY 30
+#define MSGQ_ELEM_SIZE sizeof(MsgqElement)
 
 ServerWindow::ServerWindow(HINSTANCE hInst)
 	: GuiWindow(hInst)
@@ -24,16 +35,6 @@ ServerWindow::ServerWindow(HINSTANCE hInst)
 	bottomPanelBrush = CreateSolidBrush(RGB(255, 0, 0));
 	pen = CreatePen(0, 2, RGB(0, 0, 255));
 	connected = false;
-	hFind = NULL;
-
-	sDir = L"C:\\Users\\Eric\\Documents\\Visual Studio 2012\\Projects\\commaudio\\Debug\\music\\*.wav";
-	hFind = FindFirstFile(sDir, &ffd);
-	if (INVALID_HANDLE_VALUE == hFind)
-	{
-        int err = GetLastError();
-		MessageBeep(1);
-		return;
-	}
 }
 
 
@@ -141,25 +142,6 @@ void ServerWindow::onCreate()
 	connectionButton->setText(L"Start");
 	layoutProps.weight = 1;
 	layout->addComponent(connectionButton, &layoutProps);
-
-    // reading all files in the music folder
-	do
-	{
-		if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-		{
-			//_tprintf(TEXT("  %s   <DIR>\n"), ffd.cFileName);
-		}
-		else
-		{
-			filesize.LowPart = ffd.nFileSizeLow;
-			filesize.HighPart = ffd.nFileSizeHigh;
-            WCHAR info[256];
-            wsprintf(info,L"%s size: %d",ffd.cFileName,filesize.QuadPart);
-			this->connectedClients->addItem(info, -1);
-		}
-	} while (FindNextFile(hFind, &ffd) != 0);
-
-	FindClose(hFind);
 }
 
 void ServerWindow::createLabelFont()
@@ -318,7 +300,7 @@ void ServerWindow::newConnHandler( TCPConnection * connection, void * data )
 
 	MessageQueue* msgQueue = new MessageQueue(MCAPA, DATA_BUFSIZE);
 	TCPSocket*  new_client = new TCPSocket(connection->sock, msgQueue);
-    ServerControlThread::getInstance()->addConnection(new_client);
+    //ServerControlThread::getInstance()->addConnection(new_client);
 
 
     //while( true )
@@ -362,13 +344,15 @@ bool ServerWindow::toggleConnection(GuiComponent *pThis, UINT command, UINT id, 
 		serverWindow->server = new Server(tcpPort, newConnHandler, serverWindow, groupAddress, udpPort);
 		if (serverWindow->server->startTCP())
 		{
-			if (serverWindow->server->startUDP())
-			{
-				serverWindow->tcpPortInput->setEnabled(false);
-				serverWindow->udpPortInput->setEnabled(false);
-				serverWindow->connectionButton->setText(L"Close Server");
-				serverWindow->connected = true;
-			}
+            ServerControlThread::getInstance()->setUDPSocket( new UDPSocket( udpPort
+                                                                           , new MessageQueue( MSGQ_CAPACITY
+                                                                                             , MSGQ_ELEM_SIZE ) ) );
+            ServerControlThread::getInstance()->start();
+
+		    serverWindow->tcpPortInput->setEnabled(false);
+		    serverWindow->udpPortInput->setEnabled(false);
+		    serverWindow->connectionButton->setText(L"Close Server");
+		    serverWindow->connected = true;
 		}
 	}
 

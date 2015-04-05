@@ -8,7 +8,7 @@ class GuiScrollList;
 class GuiScrollListItem
 {
 public:
-	GuiScrollListItem();
+	GuiScrollListItem(GuiScrollList *parent);
 	virtual ~GuiScrollListItem();
 
 	virtual void paint(HDC hdc, LPRECT drawingArea) = 0;
@@ -20,6 +20,8 @@ public:
 
 	int getY();
 	int getHeight();
+
+	GuiScrollList *list;
 
 private:
 	int yPos;

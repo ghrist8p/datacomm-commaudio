@@ -21,8 +21,6 @@ typedef struct {
 	MessageQueue* mqueue;
 } SOCKET_INFORMATION, *LPSOCKET_INFORMATION;
 
-class TCPSocket;
-
 class UDPSocket
 {
 private:
@@ -42,7 +40,10 @@ public:
 	int Send(char type, void* data, int length, char* dest_ip, int dest_port);
 	int sendtoGroup(char type, void* data, int length);
 	void setGroup(char* group_address, int mem_flag);
+<<<<<<< HEAD
+=======
 	MessageQueue* getMessageQueue();
+>>>>>>> 1679f7335c8cde6de3c5c084b99d32a704219ec6
 	void stopSong();
 	void sendWave(SongName songloc, int speed, std::vector<TCPSocket*> sockets);
 

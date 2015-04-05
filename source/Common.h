@@ -4,7 +4,6 @@
 #include <winsock2.h>
 #include <windows.h>
 #include "synchronizationHelper.h"
-#include "protocol.h"
 #include "Client/Sockets.h"
 
 
@@ -17,6 +16,7 @@
 #define DOWNLOAD '5'
 #define REQUEST_DOWNLOAD '6'
 #define CANCEL_DOWNLOAD '7'
+#define DISCONNECT '8'
 
 
 #endif

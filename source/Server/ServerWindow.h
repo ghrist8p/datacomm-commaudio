@@ -34,11 +34,6 @@ private:
 	HFONT labelFont;
 	HBRUSH bottomPanelBrush;
 	HPEN pen;
-
-    WIN32_FIND_DATA ffd;
-    HANDLE hFind;
-    wchar_t* sDir;
-    LARGE_INTEGER filesize;
     
 	void createLabelFont();
 

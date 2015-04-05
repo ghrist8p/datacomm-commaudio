@@ -1,5 +1,5 @@
-#ifndef _PACKET_TYPE_H_
-#define _PACKET_TYPE_H_
+#ifndef _PROTOCOL_H_
+#define _PROTOCOL_H_
 
 #include <cstdint>
 #include <vector>
@@ -14,7 +14,7 @@
 
 #define STREAM_PACKET 9
 
-#define STR_LEN 128
+#define STR_LEN 256
 
 struct DataPacket
 {
@@ -51,7 +51,7 @@ struct SongStream
 	short channels;
 	short bps; //bit rae
 	unsigned long sample_rate;
-	int index;
+	int id;
 	char songname[STR_LEN];
 };
 
@@ -59,7 +59,7 @@ typedef struct SongStream SongStream;
 
 struct SongName
 {
-	int index;
+	int  id;
 	char filepath[STR_LEN];	
 };
 
