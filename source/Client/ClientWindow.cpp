@@ -20,8 +20,8 @@
 #include "MicReader.h"
 #include "PlayWave.h"
 
-#define MIC_SAMPLE_RATE 44100
-#define MIC_RECORD_INTERVAL 0.2
+#define MIC_SAMPLE_RATE (44100/2)
+#define MIC_RECORD_INTERVAL 0.1
 
 ClientWindow::ClientWindow(HINSTANCE hInst)
 	: GuiWindow(hInst)
@@ -46,16 +46,16 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	requestingRecorderStop = false;
 	micMQueue = new MessageQueue(100, MicReader::calculateBufferSize(MIC_SAMPLE_RATE, MIC_RECORD_INTERVAL));
 
-    MessageQueue* q2 = new MessageQueue(500,60);
+    MessageQueue* q2 = new MessageQueue(500,MicReader::calculateBufferSize(MIC_SAMPLE_RATE, MIC_RECORD_INTERVAL));
 	udpSock = new UDPSocket(MULTICAST_PORT,q2);
 	udpSock->setGroup(MULTICAST_ADDR,1);
 
-	JitterBuffer* musicJitBuf = new JitterBuffer(5000,3000,60,100,5);
-	ReceiveThread* recvThread = new ReceiveThread(udpSock,musicJitBuf);
-	recvThread->start();
-	MessageQueue* q1 = new MessageQueue(500,60);
-	VoiceBufferer* voiceBufferer = new VoiceBufferer(q1,musicJitBuf);
-	PlayWave* p = new PlayWave(1000,q1);
+	//JitterBuffer* musicJitBuf = new JitterBuffer(5000,3000,60,100,5);
+	//ReceiveThread* recvThread = new ReceiveThread(udpSock,musicJitBuf);
+	//recvThread->start();
+	//MessageQueue* q1 = new MessageQueue(500,60);
+	//VoiceBufferer* voiceBufferer = new VoiceBufferer(q1,musicJitBuf);
+	PlayWave* p = new PlayWave(1000,q2);
 
 	p->startPlaying(MIC_SAMPLE_RATE, MIC_BITS_PER_SAMPLE, NUM_MIC_CHANNELS);
 
@@ -63,7 +63,7 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	DWORD ThreadId;
 
 	if ((ThreadHandle = CreateThread(NULL, 0, MicThread, (void*)this, 0, &ThreadId)) == NULL)
-	{
+    {
 		MessageBox(NULL, L"CreateThread failed with error", L"ERROR", MB_ICONERROR);
 		return;
 	}
@@ -84,7 +84,7 @@ DWORD ClientWindow::ThreadStart(void)
 	while (true)
 	{
 		micMQueue->dequeue(&type, mic_dat, &length);
-		udpSock->sendtoGroup(type, mic_dat, length);
+		udpSock->sendtoGroup('1', mic_dat, length);
 	}
 
 }

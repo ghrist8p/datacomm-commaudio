@@ -285,13 +285,15 @@ DWORD UDPSocket::ThreadStart(void)
 		else
 		{
 			len = (SocketInfo->Buffer[1] << 24) | (SocketInfo->Buffer[2] << 16) | (SocketInfo->Buffer[3] << 8) | (SocketInfo->Buffer[4]);
-			len = -len;
+			len = (len > 0) ? len : -len;
+            len = RecvBytes - 1;
 			CHAR* dataReceived = (char*)malloc(sizeof(char) * len);
-			memcpy(dataReceived, SocketInfo->Buffer+5, len);
+			memcpy(dataReceived, SocketInfo->Buffer+1, len);
 			char* sourceaddr = inet_ntoa(source.sin_addr);
-
-			SocketInfo->mqueue->enqueue(SocketInfo->Buffer[0], dataReceived, len);
-
+            if (strcmp(sourceaddr, "192.168.1.106") != 0)
+            {
+			    SocketInfo->mqueue->enqueue(SocketInfo->Buffer[0], dataReceived, len);
+            }
 			free(dataReceived);
 		}
 	}
@@ -314,15 +316,17 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 	LPSOCKET_INFORMATION SocketInfo;
 	DWORD SendBytes;
 	DWORD WaitResult;
-	char* data_send = (char*)malloc(sizeof(char) * (length + 5));
+	char* data_send = (char*)malloc(sizeof(char) * (length + 1));
 
 	data_send[0] = type;
 
 	//message len
-	data_send[1] = (length >> 24) & 0xFF;
-	data_send[2] = (length >> 16) & 0xFF;
-	data_send[3] = (length >> 8) & 0xFF;
-	data_send[4] = length & 0xFF;
+	//data_send[1] = (length >> 24) & 0xFF;
+	//data_send[2] = (length >> 16) & 0xFF;
+	//data_send[3] = (length >> 8) & 0xFF;
+	//data_send[4] = length & 0xFF;
+
+    memcpy(data_send + 1, (char*)data, length);
 
 	WaitResult = WaitForSingleObject(mutex, INFINITE);
 
@@ -337,7 +341,7 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 
 		SocketInfo->Socket = sd;
 		ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));
-		SocketInfo->DataBuf.len = length + 5;
+		SocketInfo->DataBuf.len = length + 1;// + 5;
 		SocketInfo->DataBuf.buf = data_send;
 		Flags = 0;
 
