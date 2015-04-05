@@ -3,6 +3,8 @@
 
 #include "../Buffer/MessageQueue.h"
 
+
+
 class UDPSocket;
 
 #define IP_ADDR_LEN 16
@@ -10,9 +12,9 @@ class UDPSocket;
 class ServerControlThread
 {
 public:
-    static ServerControlThread* getInstance();
+    static ServerControlThread * getInstance();
     void addConnection(TCPSocket* connection);
-    void start();
+    void start( unsigned short port );
     void stop();
 protected:
     ServerControlThread();
@@ -22,13 +24,9 @@ private:
     //static void _handleMsgqMsg(ServerControlThread* dis);
     //static void _handleSockMsgqMsg(ServerControlThread* dis);
     /**
-     * reference to the one and only {ServerControlThread} instance.
-     */
-    static ServerControlThread* _instance;
-    /**
      * pointer to the UDPSocket owned by the control thread.
      */
-    UDPSocket* udpSocket;
+    UDPSocket * udpSocket;
     /**
      * pointer to IP address of the remote host
      */

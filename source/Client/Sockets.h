@@ -43,8 +43,8 @@ class TCPSocket
 {
 private:
 	SOCKET sd;
-	MessageQueue* msgqueue;
 	HANDLE mutex;
+	MessageQueue* msgqueue;
 	static DWORD WINAPI TCPThread(LPVOID lpParameter);
 	DWORD ThreadStart(void);
 	static void CALLBACK TCPRoutine(DWORD Error, DWORD BytesTransferred,
@@ -55,6 +55,8 @@ public:
 	TCPSocket(char* host, int port, MessageQueue* mqueue);
 	~TCPSocket();
 	int Send(char type, void* data, int length);
+    
+    MessageQueue * getMessageQueue( void );
 };
 
 #endif

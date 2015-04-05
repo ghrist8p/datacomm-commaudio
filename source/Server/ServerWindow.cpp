@@ -10,6 +10,7 @@
 #include "../Common.h"
 #include "Server.h"
 #include "../Buffer/MessageQueue.h"
+#include "ServerControlThread.h"
 
 #define MCAPA	30
 
