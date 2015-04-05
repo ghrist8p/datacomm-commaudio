@@ -137,6 +137,8 @@ int JitterBuffer::get(void* dest)
 
     // release synchronization objects
     ReleaseMutex(access);
+
+    return 1;
 }
 
 /**
