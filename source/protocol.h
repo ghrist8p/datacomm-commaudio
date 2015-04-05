@@ -8,7 +8,7 @@
 
 #define MULTICAST_PORT 7515
 
-#define DATA_BUFSIZE 1024
+#define DATA_BUFSIZE 8196
 
 #define SIZE_INDEX	4
 
