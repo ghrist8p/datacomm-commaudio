@@ -40,10 +40,38 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	requestingRecorderStop = false;
 	micMQueue = new MessageQueue(100, MicReader::calculateBufferSize(MIC_SAMPLE_RATE, MIC_RECORD_INTERVAL));
 
-    PlayWave* p = new PlayWave(1000,micMQueue);
-	p->startPlaying(MIC_SAMPLE_RATE, MIC_BITS_PER_SAMPLE, NUM_MIC_CHANNELS);
+   /* PlayWave* p = new PlayWave(1000,micMQueue);
+	p->startPlaying(MIC_SAMPLE_RATE, MIC_BITS_PER_SAMPLE, NUM_MIC_CHANNELS);*/
+
+	HANDLE ThreadHandle;
+	DWORD ThreadId;
+
+	if ((ThreadHandle = CreateThread(NULL, 0, MicThread, (void*)this, 0, &ThreadId)) == NULL)
+	{
+		MessageBox(NULL, L"CreateThread failed with error", L"ERROR", MB_ICONERROR);
+		return;
+	}
 }
 
+DWORD WINAPI ClientWindow::MicThread(LPVOID lpParameter)
+{
+	ClientWindow* This = (ClientWindow*)lpParameter;
+	return This->ThreadStart();
+}
+
+DWORD ClientWindow::ThreadStart(void)
+{
+	int type;
+	int length;
+	char* mic_dat = (char*)malloc(sizeof(char) * micMQueue->elementSize);
+
+	while (true)
+	{		
+		micMQueue->dequeue(&type, mic_dat, &length);
+		udpSock->sendtoGroup(type, mic_dat, length);
+	}
+
+}
 
 ClientWindow::~ClientWindow()
 {
