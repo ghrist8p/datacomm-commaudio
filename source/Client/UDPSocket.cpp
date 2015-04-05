@@ -1,6 +1,7 @@
 #include "Sockets.h"
 #include "../Buffer/MessageQueue.h"
 
+using namespace std;
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: UDPSocket
 --
@@ -32,6 +33,7 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 	HANDLE ThreadHandle;
 	DWORD ThreadId;
 	msgqueue = mqueue;
+	stopSending = false;
 
 	mutex = CreateMutex(NULL, FALSE, NULL);
 
@@ -295,11 +297,14 @@ DWORD UDPSocket::ThreadStart(void)
 	}
 }
 
-void UDPSocket::setGroup(char* group_address)
+void UDPSocket::setGroup(char* group_address, int mem_flag)
 {
 	memset(&mreq,0,sizeof(mreq));
 	mreq.imr_multiaddr.s_addr = inet_addr(group_address);
-	setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
+	if (mem_flag)
+	{
+		setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
+	}
 	setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char*)&mreq, sizeof(mreq));
 }
 
@@ -362,4 +367,88 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 		MessageBox(NULL, L"Error in the mutex", L"ERROR", MB_ICONERROR);
 	}
 
+}
+
+void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets)
+{
+	FILE* fp = fopen(songloc.filepath, "rb");
+	struct SongStream songInfo;
+	char* sendSong;
+	char* song;
+	stopSending = false;
+
+	if (fp) {
+
+		char id[5];
+		unsigned long size;
+		short format_tag, channels, block_align, bits_per_sample;
+		unsigned long format_length, sample_rate, avg_bytes_sec, data_size;
+		int data_read = 0;
+
+		fread(id, sizeof(char), 4, fp);
+		id[4] = '\0';
+
+		if (!strcmp(id, "RIFF")) {
+			fread(&size, sizeof(unsigned long), 1, fp);
+			fread(id, sizeof(char), 4, fp);
+			id[4] = '\0';
+
+			if (!strcmp(id, "WAVE")) {
+				//get wave headers
+				fread(id, sizeof(char), 4, fp);
+				fread(&format_length, sizeof(unsigned long), 1, fp);
+				fread(&format_tag, sizeof(short), 1, fp);
+				fread(&channels, sizeof(short), 1, fp);
+				fread(&sample_rate, sizeof(unsigned long), 1, fp);
+				fread(&avg_bytes_sec, sizeof(unsigned long), 1, fp);
+				fread(&block_align, sizeof(short), 1, fp);
+				fread(&bits_per_sample, sizeof(short), 1, fp);
+				fread(id, sizeof(char), 4, fp);
+				fread(&data_size, sizeof(unsigned long), 1, fp);
+
+				sendSong = (char*)malloc(sizeof(char) * SIZE_INDEX);
+
+				sendSong[0] = (songloc.index >> 24) & 0xFF;
+				sendSong[1] = (songloc.index >> 16) & 0xFF;
+				sendSong[2] = (songloc.index >> 8) & 0xFF;
+				sendSong[3] = songloc.index & 0xFF;
+
+				//for every client
+				for (int i = 0; i < sockets.size(); i++)
+				{
+					sockets[i]->Send(CHANGE_STREAM, sendSong, SIZE_INDEX);
+				}
+
+				song = (char*)malloc(speed + 5);
+
+				//read chunks of data from the file based on the speed selected and send it
+				while (data_read = fread(song + 5, 1, speed, fp) > 0)
+				{
+					if (stopSending)
+					{
+						return;
+					}					
+
+					sendtoGroup(MUSICSTREAM, song, data_read);
+				}
+
+				stopSending = false;
+			}
+			else
+			{
+				MessageBox(NULL, L"NOT WAVE", L"ERROR", MB_ICONERROR);
+			}
+		}
+		else
+		{
+			MessageBox(NULL, L"NOT RIFF", L"ERROR", MB_ICONERROR);
+		}
+	}
+
+	fclose(fp);
+}
+
+void UDPSocket::stopSong()
+{
+	stopSending = true;
 }
