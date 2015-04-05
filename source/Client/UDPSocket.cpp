@@ -297,15 +297,25 @@ DWORD UDPSocket::ThreadStart(void)
 
 void UDPSocket::setGroup(char* group_address, int mem_flag)
 {
+    char loop = 0;
+    char ttl = 1;
+    in_addr interfaceAddr;
+    interfaceAddr.s_addr = INADDR_ANY;
 	memset(&mreq,0,sizeof(mreq));
 	mreq.imr_multiaddr.s_addr = inet_addr(group_address);
+    mreq.imr_interface.s_addr = INADDR_ANY;
+    int i = 0;
+    int err = 0;
 	if (mem_flag)
 	{
-        char loop = 0;
-        setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
-		setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
+		i = setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
+        err = GetLastError();
+        i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
+        err = GetLastError();
+        i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
+        err = GetLastError();
 	}
-	//setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char*)&mreq, sizeof(mreq));
+	setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char*)&interfaceAddr, sizeof(interfaceAddr));
 }
 
 int UDPSocket::sendtoGroup(char type, void* data, int length)
