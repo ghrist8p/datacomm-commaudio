@@ -16,6 +16,7 @@
 #define DOWNLOAD '5'
 #define REQUEST_DOWNLOAD '6'
 #define CANCEL_DOWNLOAD '7'
+#define ACTUAL_MUSIC '8'
 
 
 #endif

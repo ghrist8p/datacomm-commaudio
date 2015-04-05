@@ -1,8 +1,8 @@
 #include "MusicBufferer.h"
 
-MusicBufferer::MusicBufferer(JitterBuffer* musicJB)
+MusicBufferer::MusicBufferer(JitterBuffer* musicJB) : music_buffer(musicJB)
 {
-	music_buffer = musicJB;
+	elementSize = music_buffer->getElementSize();
 
 	HANDLE ThreadHandle;
 	DWORD ThreadId;
@@ -16,6 +16,7 @@ MusicBufferer::MusicBufferer(JitterBuffer* musicJB)
 MusicBufferer::~MusicBufferer()
 {
 	delete music_buffer;
+	fclose(musicfile);
 }
 
 void MusicBufferer::clearBuffer()
@@ -32,16 +33,17 @@ DWORD WINAPI MusicBufferer::fileThread(LPVOID lpParameter)
 
 DWORD MusicBufferer::ThreadStart(void)
 {
-	musicfile = fopen("tempmusic.txt", "wb");
-	int len;
-	//music_buffer->getElementSize(&len);
-	char* music_data = (char*) malloc (sizeof(char) * len);
-	music_buffer->get(music_data);
+	musicfile = fopen("tempmusic.txt", "wb");	
+	char* music_data = (char*) malloc (sizeof(char) * elementSize);	
 
 	while(true)
 	{
-		fwrite(music_data, 1, len, musicfile);
+		music_buffer->get(music_data);
+		fwrite(music_data, 1, elementSize, musicfile);
 	}
+}
 
-
+int MusicBufferer::getSize()
+{
+	return elementSize;
 }
