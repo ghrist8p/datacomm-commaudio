@@ -2,6 +2,8 @@
 #define _RECEIVE_THREAD_H_
 
 #include "../common.h"
+#include "../Buffer/JitterBuffer.h"
+#include <map>
 
 #include <map>
 

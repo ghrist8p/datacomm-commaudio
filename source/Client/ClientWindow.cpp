@@ -19,6 +19,9 @@
 #include "VoiceBufferer.h"
 #include "MicReader.h"
 #include "PlayWave.h"
+#include "MusicBufferer.h"
+#include "MusicReader.h"
+#include "MusicBuffer.h"
 
 ClientWindow::ClientWindow(HINSTANCE hInst)
 	: GuiWindow(hInst)
@@ -33,10 +36,10 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	stopButtonUp = LoadBitmap(hInst, L"IMG_STOP_BUTTON_UP");
 	stopButtonDown = LoadBitmap(hInst, L"IMG_STOP_BUTTON_DOWN");
 
-	darkBackground = (HBRUSH) CreateSolidBrush(RGB(15, 15, 15));
-	lightBackground = (HBRUSH) CreateSolidBrush(RGB(30, 30, 30));;
-	accentBrush = (HBRUSH) CreateSolidBrush(RGB(0, 162, 232));
-	nullPen = (HPEN) CreatePen(PS_SOLID, 0, 0);
+	darkBackground = (HBRUSH)CreateSolidBrush(RGB(15, 15, 15));
+	lightBackground = (HBRUSH)CreateSolidBrush(RGB(30, 30, 30));;
+	accentBrush = (HBRUSH)CreateSolidBrush(RGB(0, 162, 232));
+	nullPen = (HPEN)CreatePen(PS_SOLID, 0, 0);
 	borderPen = (HPEN)CreatePen(PS_SOLID, 1, RGB(128, 0, 128));
 
 	recording = false;
@@ -51,11 +54,12 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	udpSock->setGroup(MULTICAST_ADDR,1);
 	recvThread->start();
 
+	MusicBuffer* musicfile = new MusicBuffer();
 	MessageQueue* q2 = new MessageQueue(1500,AUDIO_BUFFER_LENGTH);
-	VoiceBufferer* voiceBufferer = new VoiceBufferer(q2,musicJitBuf);
+	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
+	MusicReader* mreader = new MusicReader(q2, musicfile);
 	PlayWave* p = new PlayWave(50,q2);
 
-	voiceBufferer->start();
 	p->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
 
 	HANDLE ThreadHandle;
@@ -203,7 +207,7 @@ void ClientWindow::onCreate()
 	// Add Microphone Button
 	micTargetButton->init();
 	micTargetButton->setText(L"Start Speaking");
-	layout = (GuiLinearLayout*) topPanel->getLayoutManager();
+	layout = (GuiLinearLayout*)topPanel->getLayoutManager();
 	layout->setHorizontal(true);
 	layout->addComponent(micTargetButton);
 	topPanel->addCommandListener(BN_CLICKED, onClickMic, this);
@@ -234,7 +238,7 @@ void ClientWindow::onCreate()
 	buttonSpacer2->setBackgroundBrush(darkBackground);
 
 	// Add Play Button In Center
-	layout = (GuiLinearLayout*) seekPanel->getLayoutManager();
+	layout = (GuiLinearLayout*)seekPanel->getLayoutManager();
 	layout->setHorizontal(true);
 
 	layout->addComponent(buttonSpacer1);
@@ -255,7 +259,7 @@ void ClientWindow::onClickStop(void*)
 
 bool ClientWindow::onClickMic(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
 {
-	ClientWindow *pThis = (ClientWindow*) _pThis;
+	ClientWindow *pThis = (ClientWindow*)_pThis;
 
 	if (!pThis->requestingRecorderStop)
 	{

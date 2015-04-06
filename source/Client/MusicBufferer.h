@@ -4,22 +4,23 @@
 #include "../Buffer/JitterBuffer.h"
 #include "../Common.h"
 
+class MusicBuffer;
+
 class MusicBufferer
 {
 
 private:
 	int elementSize;
-	JitterBuffer* music_buffer;
-	FILE* musicfile;
+	JitterBuffer* music_jitter;
+	MusicBuffer* music_buffer;
 	static DWORD WINAPI fileThread(LPVOID lpParameter);
 	DWORD ThreadStart(void);
 
 public:
-	MusicBufferer(JitterBuffer* musicJB);
+	MusicBufferer(JitterBuffer* musicJB, MusicBuffer* musicB);
 	~MusicBufferer();
 	void clearBuffer();
-	int getSize();	
-
+	int getSize();
 };
 
 #endif
