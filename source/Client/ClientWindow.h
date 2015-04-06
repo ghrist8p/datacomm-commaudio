@@ -7,6 +7,7 @@
 
 class ConnectionWindow;
 class GuiPanel;
+class GuiTextBox;
 class GuiLabel;
 class GuiButton;
 class GuiStatusBar;
@@ -51,6 +52,8 @@ private:
 
 	GuiPanel *topPanel;
 	GuiPanel *topPanelStretch;
+	GuiLabel *voiceTargetLabel;
+	GuiTextBox *voiceTargetInput;
 	GuiScrollList *fileContainerPanel;
 	GuiPanel *seekPanel;
 	GuiLabel *micTargetLabel;
