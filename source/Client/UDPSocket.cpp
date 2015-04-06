@@ -271,19 +271,22 @@ DWORD UDPSocket::ThreadStart(void)
 		}
 		else
 		{
-            len = RecvBytes - 1;
-			CHAR* dataReceived = (char*)malloc(sizeof(char) * len);
-			memcpy(dataReceived, socketInfo.Buffer+1, len);
-			char* sourceaddr = inet_ntoa(source.sin_addr);
-            socketInfo.mqueue->enqueue(socketInfo.Buffer[0], dataReceived, len);
-			free(dataReceived);
+			len = RecvBytes - 1;
+
+			DataPacket dataPacket;
+			LocalDataPacket localDataPacket;
+			memcpy(&dataPacket,socketInfo.Buffer+1,len);
+			localDataPacket.index = dataPacket.index;
+			localDataPacket.srcAddr = source.sin_addr.s_addr;
+			memcpy(localDataPacket.data,dataPacket.data,DATA_LEN);
+			socketInfo.mqueue->enqueue(socketInfo.Buffer[0],&localDataPacket,sizeof(LocalDataPacket));
 		}
 	}
 }
 
 void UDPSocket::setGroup(char* group_address, int mem_flag)
 {
-    char loop = 0;
+    char loop = 1;
     char ttl = 1;
     in_addr interfaceAddr;
     interfaceAddr.s_addr = INADDR_ANY;

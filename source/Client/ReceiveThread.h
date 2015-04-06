@@ -3,6 +3,8 @@
 
 #include "../common.h"
 
+#include <map>
+
 class MessageQueue;
 class JitterBuffer;
 
@@ -16,8 +18,10 @@ public:
     void start();
     void stop();
 private:
+    JitterBuffer* getJitterBuffer(unsigned long srcAddr);
     static DWORD WINAPI threadRoutine(void* params);
     static void handleMsgqMsg(ReceiveThread* dis);
+    std::map<unsigned long,JitterBuffer*> voiceJitterBuffers;
     MessageQueue* sockMsgQueue;
     JitterBuffer* musicJitterBuffer;
     HANDLE thread;

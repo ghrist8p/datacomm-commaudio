@@ -67,11 +67,11 @@ MicReader::MicReader(int sampleRate, int buffLen, MessageQueue *queue, HWND owne
 	// Create the WAV format for the MicReader
 	result = 0;
 	format.wFormatTag = WAVE_FORMAT_PCM;
-	format.wBitsPerSample = MIC_BITS_PER_SAMPLE;
-	format.nChannels = NUM_MIC_CHANNELS;
+	format.wBitsPerSample = AUDIO_BITS_PER_SAMPLE;
+	format.nChannels = NUM_AUDIO_CHANNELS;
 	format.nSamplesPerSec = sampleRate;
-	format.nAvgBytesPerSec = format.nSamplesPerSec * format.nChannels * format.wBitsPerSample / MIC_BITS_PER_SAMPLE;
-	format.nBlockAlign = format.nChannels * format.wBitsPerSample / MIC_BITS_PER_SAMPLE;
+	format.nAvgBytesPerSec = format.nSamplesPerSec * format.nChannels * format.wBitsPerSample / AUDIO_BITS_PER_SAMPLE;
+	format.nBlockAlign = format.nChannels * format.wBitsPerSample / AUDIO_BITS_PER_SAMPLE;
 	format.cbSize = 0;
 }
 
@@ -108,11 +108,11 @@ MicReader::MicReader(int sampleRate, float intervalLength, MessageQueue *queue, 
 	// Create the WAV format for the MicReader
 	result = 0;
 	format.wFormatTag = WAVE_FORMAT_PCM;
-	format.wBitsPerSample = MIC_BITS_PER_SAMPLE;
-	format.nChannels = NUM_MIC_CHANNELS;
+	format.wBitsPerSample = AUDIO_BITS_PER_SAMPLE;
+	format.nChannels = NUM_AUDIO_CHANNELS;
 	format.nSamplesPerSec = sampleRate;
-	format.nAvgBytesPerSec = format.nSamplesPerSec * format.nChannels * format.wBitsPerSample / MIC_BITS_PER_SAMPLE;
-	format.nBlockAlign = format.nChannels * format.wBitsPerSample / MIC_BITS_PER_SAMPLE;
+	format.nAvgBytesPerSec = format.nSamplesPerSec * format.nChannels * format.wBitsPerSample / AUDIO_BITS_PER_SAMPLE;
+	format.nBlockAlign = format.nChannels * format.wBitsPerSample / AUDIO_BITS_PER_SAMPLE;
 	format.cbSize = 0;
 }
 

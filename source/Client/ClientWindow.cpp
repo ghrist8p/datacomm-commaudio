@@ -20,10 +20,6 @@
 #include "MicReader.h"
 #include "PlayWave.h"
 
-#define MIC_SAMPLE_RATE (44100/2)
-//#define MIC_RECORD_INTERVAL 0.740
-#define MIC_BUFFER_LENGTH DATA_LEN
-
 ClientWindow::ClientWindow(HINSTANCE hInst)
 	: GuiWindow(hInst)
 {
@@ -45,20 +41,22 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 
 	recording = false;
 	requestingRecorderStop = false;
-	micMQueue = new MessageQueue(1000,MIC_BUFFER_LENGTH);
+	micMQueue = new MessageQueue(1000,AUDIO_BUFFER_LENGTH);
 
-	MessageQueue* q2 = new MessageQueue(1500,sizeof(DataPacket));
-	udpSock = new UDPSocket(MULTICAST_PORT,q2);
+	MessageQueue* q1 = new MessageQueue(1500,sizeof(LocalDataPacket));
+	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,AUDIO_BUFFER_LENGTH,50,50);
+	udpSock = new UDPSocket(MULTICAST_PORT,q1);
+	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q1);
+
 	udpSock->setGroup(MULTICAST_ADDR,1);
-
-	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,MIC_BUFFER_LENGTH,50,50);
-	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q2);
 	recvThread->start();
-	MessageQueue* q1 = new MessageQueue(1500,MIC_BUFFER_LENGTH);
-	VoiceBufferer* voiceBufferer = new VoiceBufferer(q1,musicJitBuf);
+
+	MessageQueue* q2 = new MessageQueue(1500,AUDIO_BUFFER_LENGTH);
+	VoiceBufferer* voiceBufferer = new VoiceBufferer(q2,musicJitBuf);
+	PlayWave* p = new PlayWave(50,q2);
+
 	voiceBufferer->start();
-	PlayWave* p = new PlayWave(50,q1);
-	p->startPlaying(MIC_SAMPLE_RATE, MIC_BITS_PER_SAMPLE, NUM_MIC_CHANNELS);
+	p->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
 
 	HANDLE ThreadHandle;
 	DWORD ThreadId;
@@ -81,14 +79,14 @@ DWORD ClientWindow::ThreadStart(void)
 	int type;
 	int length;
 
-    DataPacket packet;
-    packet.index = 0;
+	DataPacket packet;
+	packet.index = 0;
 
 	while (true)
 	{
-        ++(packet.index);
+		++(packet.index);
 		micMQueue->dequeue(&type, packet.data, &length);
-		udpSock->sendtoGroup(MUSICSTREAM, &packet, sizeof(DataPacket));
+		udpSock->sendtoGroup(MICSTREAM, &packet, sizeof(DataPacket));
 	}
 
 }
@@ -129,7 +127,7 @@ void ClientWindow::onCreate()
 {
 	setTitle(L"CommAudio Client");
 	setSize(700, 325);
-	micReader = new MicReader(MIC_SAMPLE_RATE, MIC_BUFFER_LENGTH, micMQueue, getHWND());
+	micReader = new MicReader(AUDIO_SAMPLE_RATE, AUDIO_BUFFER_LENGTH, micMQueue, getHWND());
 	this->addMessageListener(WM_MIC_STOPPED_READING, onMicStop, this);
 
 	// Create Elements
