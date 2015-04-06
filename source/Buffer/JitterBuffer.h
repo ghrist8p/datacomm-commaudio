@@ -22,10 +22,19 @@ public:
      */
     HANDLE canGet;
 private:
+    int isIndexInReceiveWindow(int index);
     /**
      * holds the last index removed from the jitter buffer.
      */
     int lastIndex;
+    /**
+     * holds the number used to add to lastIndex when new packets are received.
+     *   the index of new packets must be greater than {lastIndex}, but smaller
+     *   than {lastIndex} + {windowSize} in order to be accepted into the jitter
+     *   buffer. this is to deal with overflowing indexes, and also to ignore
+     *   packets that arrive too late.
+     */
+    int windowSize;
     /**
      * minimum number of elements in the buffer before the buffer stops
      *   regulating the rate that elements can be removed from the buffer.

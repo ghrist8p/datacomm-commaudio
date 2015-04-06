@@ -2,7 +2,8 @@
 
 Heap::Heap(int capacity, int elementSize)
 {
-    this->elementSize = elementSize;
+    this->elementSize  = elementSize;
+    this->relativeZero = 0;
 
     data.reserve(capacity);
 }
@@ -167,6 +168,11 @@ int Heap::getElementSize()
     return elementSize;
 }
 
+void Heap::setRelativeZero(int relativeZero)
+{
+    this->relativeZero = relativeZero;
+}
+
 /**
  * reorganizes the minimum heap so that the last inserted element is moved to
  *   the right place in the minimum heap.
@@ -193,7 +199,7 @@ void Heap::heapify()
     while(true)
     {
         int parent = parentId(curr);
-        if(data[curr].first < data[parent].first && parent != -1)
+        if(parent != -1 && comapreIndexes(data[curr].first,data[parent].first) > 0)
         {
             swap(parent,curr);
             curr = parent;
@@ -239,9 +245,9 @@ void Heap::trickleDown()
         }
 
         // do the trickling
-        if((right == -1 && left != -1) || (left != -1 && data[left].first < data[right].first))
+        if((right == -1 && left != -1) || (left != -1 && comapreIndexes(data[left].first,data[right].first) > 0))
         {
-            if(data[left].first < data[curr].first)
+            if(comapreIndexes(data[left].first,data[curr].first) > 0)
             {
                 swap(left,curr);
                 curr = left;
@@ -251,9 +257,9 @@ void Heap::trickleDown()
                 break;
             }
         }
-        else if((left == -1 && right != -1) || (right != -1 && data[right].first <= data[left].first))
+        else if((left == -1 && right != -1) || (right != -1 && comapreIndexes(data[right].first,data[left].first) >= 0))
         {
-            if(data[right].first < data[curr].first)
+            if(comapreIndexes(data[right].first,data[curr].first) > 0)
             {
                 swap(right,curr);
                 curr = right;
@@ -292,4 +298,38 @@ int Heap::parentId(int id)
     // calculate and return id of parent element
     int parent = (id-1)/2;
     return (parent >= 0 && parent < (int) data.size()) ? parent : -1;
+}
+
+int Heap::comapreIndexes(int index1, int index2)
+{
+    // returned at the end of the function. positive number if {index2} is
+    // larger than {index1}, 0 is equal, and negative number if {index1} is
+    // larger than {index2}.
+    int ret;
+
+    if(index1 > relativeZero)
+    {
+        if(index2 > relativeZero)
+        {
+            ret = index2-index1;
+        }
+        if(index2 < relativeZero)
+        {
+            ret = 1;
+        }
+    }
+    if(index1 < relativeZero)
+    {
+        if(index2 > relativeZero)
+        {
+            ret = -1;
+        }
+        if(index2 < relativeZero)
+        {
+            ret = index2-index1;
+        }
+    }
+
+    // return...
+    return ret;
 }
