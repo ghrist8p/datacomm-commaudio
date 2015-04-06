@@ -7,6 +7,7 @@
 static int startRoutine(HANDLE* thread, HANDLE stopEvent,
     LPTHREAD_START_ROUTINE routine, void* params);
 static int stopRoutine(HANDLE* thread, HANDLE stopEvent);
+JitterBuffer* getJitterBuffer(unsigned long srcAddr);
 
 // receive thread implementation
 
@@ -92,9 +93,14 @@ void ReceiveThread::handleMsgqMsg(ReceiveThread* dis)
     }
     case MICSTREAM:
     {
-        // TODO: make a new audio wave thing or use an existing one
+        // makes a new
         LocalDataPacket* packet = (DataPacket*) element;
-        dis->musicJitterBuffer->put(packet->index,packet->data);
+        JitterBuffer* jb = getJitterBuffer(packet.srcAddr)
+        jb->put(packet->index,packet->data);
+        MessageQueue* queue = new MessageQueue(1500,MIC_BUFFER_LENGTH);
+        VoiceBufferer* voiceBufferer = new VoiceBufferer(queue,jb);
+        voiceBufferer->start();
+        new PlayWave(50,queue);
         break;
     }
     default:
@@ -107,6 +113,35 @@ void ReceiveThread::handleMsgqMsg(ReceiveThread* dis)
 }
 
 // static function implementations
+
+/**
+ * returns a jitter buffer used to store voice data from a specific source
+ *   address; instantiates a new jitter buffer if needed.
+ *
+ * @date     2015-04-05T19:51:23-0800
+ *
+ * @author   Eric Tsang
+ *
+ * @param    srcAddr   source address used to identify which jitter buffer to
+ *   return.
+ *
+ * @return   the jitter buffer used to store the voice data from the passed
+ *   source address
+ */
+JitterBuffer* getJitterBuffer(unsigned long srcAddr)
+{
+    // maps source IP addresses to jitter buffers
+    static std::map<unsigned long,JitterBuffer*> voiceJitterBuffers;
+
+    // if the jitter buffer doesn't exist make one, put it into the map
+    if(voiceJitterBuffers.find(srcAddr) == voiceJitterBuffers.end())
+    {
+        voiceJitterBuffers[srcAddr] = new JitterBuffer();
+    }
+
+    // return the jitter buffer for the passed srcAddr
+    return voiceJitterBuffers[srcAddr];
+}
 
 int startRoutine(HANDLE* thread, HANDLE stopEvent,
     LPTHREAD_START_ROUTINE routine, void* params)
