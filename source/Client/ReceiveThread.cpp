@@ -1,12 +1,24 @@
 #include "ReceiveThread.h"
 #include "../Buffer/MessageQueue.h"
 #include "../Buffer/JitterBuffer.h"
+#include "PlaybackTrackerPanel.h"
+#include "ButtonPanel.h"
+#include "FileListItem.h"
+#include "ConnectionWindow.h"
+#include "../Buffer/MessageQueue.h"
+#include "../Buffer/JitterBuffer.h"
+#include "ReceiveThread.h"
+#include "VoiceBufferer.h"
+#include "MicReader.h"
+#include "PlayWave.h"
+#include "../protocol.h"
 
 // static function forward declarations
 
 static int startRoutine(HANDLE* thread, HANDLE stopEvent,
     LPTHREAD_START_ROUTINE routine, void* params);
 static int stopRoutine(HANDLE* thread, HANDLE stopEvent);
+JitterBuffer* getJitterBuffer(unsigned long srcAddr);
 
 // receive thread implementation
 
@@ -86,15 +98,20 @@ void ReceiveThread::handleMsgqMsg(ReceiveThread* dis)
     {
     case MUSICSTREAM:
     {
-        DataPacket* packet = (DataPacket*) element;
+        LocalDataPacket* packet = (LocalDataPacket*) element;
         dis->musicJitterBuffer->put(packet->index,packet->data);
         break;
     }
     case MICSTREAM:
     {
-        // TODO: make a new audio wave thing or use an existing one
-        DataPacket* packet = (DataPacket*) element;
-        dis->musicJitterBuffer->put(packet->index,packet->data);
+        LocalDataPacket* packet = (LocalDataPacket*) element;
+        JitterBuffer* jb = getJitterBuffer(packet->srcAddr);
+        jb->put(packet->index,packet->data);
+        MessageQueue* queue = new MessageQueue(1500,DATA_LEN);
+        VoiceBufferer* voiceBufferer = new VoiceBufferer(queue,jb);
+        voiceBufferer->start();
+        PlayWave* playWave = new PlayWave(50,queue);
+        playWave->startPlaying(DATA_LEN, MIC_BITS_PER_SAMPLE, NUM_MIC_CHANNELS);
         break;
     }
     default:
@@ -107,6 +124,35 @@ void ReceiveThread::handleMsgqMsg(ReceiveThread* dis)
 }
 
 // static function implementations
+
+/**
+ * returns a jitter buffer used to store voice data from a specific source
+ *   address; instantiates a new jitter buffer if needed.
+ *
+ * @date     2015-04-05T19:51:23-0800
+ *
+ * @author   Eric Tsang
+ *
+ * @param    srcAddr   source address used to identify which jitter buffer to
+ *   return.
+ *
+ * @return   the jitter buffer used to store the voice data from the passed
+ *   source address
+ */
+JitterBuffer* getJitterBuffer(unsigned long srcAddr)
+{
+    // maps source IP addresses to jitter buffers
+    static std::map<unsigned long,JitterBuffer*> voiceJitterBuffers;
+
+    // if the jitter buffer doesn't exist make one, put it into the map
+    if(voiceJitterBuffers.find(srcAddr) == voiceJitterBuffers.end())
+    {
+        voiceJitterBuffers[srcAddr] = new JitterBuffer(5000,100,DATA_LEN,50,50);;
+    }
+
+    // return the jitter buffer for the passed srcAddr
+    return voiceJitterBuffers[srcAddr];
+}
 
 int startRoutine(HANDLE* thread, HANDLE stopEvent,
     LPTHREAD_START_ROUTINE routine, void* params)

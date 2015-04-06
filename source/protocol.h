@@ -18,6 +18,12 @@
 
 #define STR_LEN 128
 
+/**
+ * audio data packet, that has an {index}, describing in what order the packet is
+ *   supposed to be played.
+ *
+ * also has a {data} member, used to hold the raw PCM data
+ */
 struct DataPacket
 {
     int index;
@@ -25,6 +31,25 @@ struct DataPacket
 };
 
 typedef struct DataPacket DataPacket;
+
+/**
+ * local data packet is used internal to the client. its like a data packet, but
+ *   has an extra member for storing the packet's source address.
+ *
+ * {index}; describing in what order the packet is supposed to be played in.
+ *
+ * {srcAddr}; holds the source address that sent this packet
+ *
+ * {data}; raw PCM data to play
+ */
+struct LocalDataPacket
+{
+    int index;
+    unsigned long srcAddr;
+    char data[DATA_LEN];
+};
+
+typedef struct LocalDataPacket LocalDataPacket;
 
 struct StringPacket
 {
