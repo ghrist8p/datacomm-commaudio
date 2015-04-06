@@ -1,14 +1,14 @@
 #ifndef _GUI_SCROLL_LIST_ITEM_H_
 #define _GUI_SCROLL_LIST_ITEM_H_
 
-#include <Windows.h>
+#include "../common.h"
 
 class GuiScrollList;
 
 class GuiScrollListItem
 {
 public:
-	GuiScrollListItem();
+	GuiScrollListItem(GuiScrollList *parent);
 	virtual ~GuiScrollListItem();
 
 	virtual void paint(HDC hdc, LPRECT drawingArea) = 0;
@@ -20,6 +20,8 @@ public:
 
 	int getY();
 	int getHeight();
+
+	GuiScrollList *list;
 
 private:
 	int yPos;

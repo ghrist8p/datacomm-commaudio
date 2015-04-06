@@ -2,13 +2,17 @@
 #define _SERVER_WINDOW_H_
 
 #include "../GuiLibrary/GuiWindow.h"
-#include "Server.h"
 
+#define BUFSIZE 64
+
+class Server;
 class GuiListBox;
 class GuiPanel;
 class GuiLabel;
 class GuiButton;
 class GuiTextBox;
+class TCPSocket;
+struct TCPConnection;
 
 class ServerWindow : public GuiWindow
 {
@@ -20,24 +24,44 @@ public:
 private:
 	GuiListBox *connectedClients;
 	GuiPanel *bottomPanel;
+
 	GuiPanel *leftPaddingPanel;
+    
+    GuiPanel *inputPanel;
+
 	GuiPanel *tcpInputPanel;
 	GuiPanel *udpInputPanel;
+	GuiPanel *playlistInputPanel;
+
 	GuiLabel *tcpPortLabel;
 	GuiLabel *udpPortLabel;
+	GuiLabel *playlistLabel;
+
 	GuiTextBox *tcpPortInput;
 	GuiTextBox *udpPortInput;
+	GuiTextBox *playlistInput;
+
 	GuiButton *connectionButton;
-	HFONT labelFont;
+	
+    HFONT labelFont;
 	HBRUSH bottomPanelBrush;
 	HPEN pen;
-
-    Server * server;
-
+    
 	void createLabelFont();
 
+    Server * server;
+	bool connected;
+
+    uint8_t * receiveMessage(  TCPConnection * from );
+
+    static void CALLBACK receiveCallback( ULONG_PTR param );
+    static void CALLBACK receive( DWORD dwError
+                                , DWORD cbTransferred
+                                , LPWSAOVERLAPPED lpOverlapped
+                                , DWORD dwFlags );
+
 	static bool toggleConnection(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval);
-    static void newConnHandler( Server * server, void * data );
+    static void newConnHandler( TCPConnection * server, void * data );
 };
 
 #endif

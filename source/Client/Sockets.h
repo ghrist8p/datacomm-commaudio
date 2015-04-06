@@ -1,15 +1,19 @@
-#include <winsock2.h>
-#include <windows.h>
+#ifndef _SOCKETS_H_
+#define _SOCKETS_H_
+
+#include <wS2tcpip.h>
 #include <stdio.h>
-#include <ws2tcpip.h>
-#include "../Buffer/MessageQueue.h"
+#include <vector>
+#include "../protocol.h"
+
+
 #pragma warning(disable:4996)
 #pragma comment(lib,"ws2_32.lib")
 
-#define GETLENGTH	4
-#define DATA_BUFSIZE 8192
+class MessageQueue;
+class TCPSocket;
 
-typedef struct _SOCKET_INFORMATION {
+typedef struct {
 	OVERLAPPED Overlapped;
 	SOCKET Socket;
 	CHAR Buffer[DATA_BUFSIZE];
@@ -21,18 +25,24 @@ class UDPSocket
 {
 private:
 	SOCKET sd;
-	MessageQueue* msgqueue;
 	HANDLE mutex;
-	ip_mreq_source mreq;
+	ip_mreq mreq;
+	int stopSending;
+	DWORD ThreadStart(void);
+	static void CALLBACK UDPRoutine(DWORD Error, DWORD BytesTransferred,
+		LPWSAOVERLAPPED Overlapped, DWORD InFlags);
+	static DWORD WINAPI UDPThread(LPVOID lpParameter);
+	MessageQueue* msgqueue;
 
 public:
 	UDPSocket(int port, MessageQueue* mqueue);
 	~UDPSocket();
-	int Send(void* data, int length, char* dest_ip, int dest_port);
-	static DWORD WINAPI UDPThread(LPVOID lpParameter);
-	DWORD ThreadStart(void);
-	static void CALLBACK UDPRoutine(DWORD Error, DWORD BytesTransferred,
-		LPWSAOVERLAPPED Overlapped, DWORD InFlags);
+	int Send(char type, void* data, int length, char* dest_ip, int dest_port);
+	int sendtoGroup(char type, void* data, int length);
+	void setGroup(char* group_address, int mem_flag);
+	MessageQueue* getMessageQueue();
+	void stopSong();
+	void sendWave(SongName songloc, int speed, std::vector<TCPSocket*> sockets);
 
 };
 
@@ -40,16 +50,20 @@ class TCPSocket
 {
 private:
 	SOCKET sd;
-	MessageQueue* msgqueue;
 	HANDLE mutex;
-
-public:
-	TCPSocket(char* host, int port, MessageQueue* mqueue);
-	~TCPSocket();
-	int Send(void* data, int lenght);
+	MessageQueue* msgqueue;
 	static DWORD WINAPI TCPThread(LPVOID lpParameter);
 	DWORD ThreadStart(void);
 	static void CALLBACK TCPRoutine(DWORD Error, DWORD BytesTransferred,
 		LPWSAOVERLAPPED Overlapped, DWORD InFlags);
 
+public:
+	TCPSocket(SOCKET socket, MessageQueue* mqueue);
+	TCPSocket(char* host, int port, MessageQueue* mqueue);
+	~TCPSocket();
+	int Send(char type, void* data, int length);
+
+    MessageQueue * getMessageQueue( void );
 };
+
+#endif

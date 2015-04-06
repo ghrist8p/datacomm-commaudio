@@ -3,7 +3,7 @@
 
 #include "GuiPanel.h"
 
-#include <Windows.h>
+#include "../common.h"
 #include <vector>
 
 class GuiScrollListItem;

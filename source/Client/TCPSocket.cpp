@@ -1,4 +1,71 @@
+/*------------------------------------------------------------------------------------------------------------------
+-- SOURCE FILE: TCPSocket.cpp
+--
+-- FUNCTIONS:
+	TCPSocket(SOCKET socket, MessageQueue* mqueue);
+	TCPSocket(char* host, int port, MessageQueue* mqueue);
+	~TCPSocket();
+	static DWORD WINAPI TCPThread(LPVOID lpParameter);
+	DWORD ThreadStart(void);
+	static void CALLBACK TCPRoutine(DWORD Error, DWORD BytesTransferred,
+	LPWSAOVERLAPPED Overlapped, DWORD InFlags);	
+	int Send(char type, void* data, int length);
+--
+-- DATE: April 1, 2015
+--
+-- REVISIONS: April 4, 2015		Eric Tsang
+--			Fixed Memory leaks and buffer size problems.
+--
+-- DESIGNER: Manuel Gonzales
+--
+-- PROGRAMMER: Manuel Gonzales
+--
+-- NOTES:
+-- This is the file containing all the necessary functions for the TCP Socket to send and receive following the protocol
+-- created. This class is used for the server as well as the client socket.
+----------------------------------------------------------------------------------------------------------------------*/
+
 #include "Sockets.h"
+#include "../Buffer/MessageQueue.h"
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: TCPSocket
+--
+-- DATE: April 3, 2015
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Manuel Gonzales
+--
+-- PROGRAMMER: Manuel Gonzales
+--
+-- INTERFACE: TCPSocket::TCPSocket(SOCKET socket, MessageQueue* mqueue)
+--
+--  socket : socket descriptor
+--  mqueue : message queue to use for storing the data.
+--
+--	RETURNS: nothing.
+--
+--	NOTES:
+--  This is the constructor for the TCP socket, it will use the passed file descriptor as a socket and
+--  then it will start the thread to receive data.
+----------------------------------------------------------------------------------------------------------------------*/
+TCPSocket::TCPSocket(SOCKET socket, MessageQueue* mqueue)
+{
+	sd = socket;
+	msgqueue = mqueue;
+    
+	mutex = CreateMutex(NULL, FALSE, NULL);
+
+	HANDLE ThreadHandle;
+	DWORD ThreadId;
+
+	if ((ThreadHandle = CreateThread(NULL, 0, TCPThread, (void*)this, 0, &ThreadId)) == NULL)
+	{
+		MessageBox(NULL, L"CreateThread failed with error", L"ERROR", MB_ICONERROR);
+		return;
+	}
+}
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: TCPSocket
@@ -42,7 +109,7 @@ TCPSocket::TCPSocket(char* host, int port, MessageQueue* mqueue)
 
 	if (error != 0) //No usable DLL
 	{
-		printf("DLL not fount- Read Help guide for more information");
+		MessageBox(NULL, L"DLL not found- Read Help guide for more information", L"ERROR", MB_ICONERROR);
 		return;
 	}
 
@@ -50,7 +117,7 @@ TCPSocket::TCPSocket(char* host, int port, MessageQueue* mqueue)
 	if ((sd = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0,
 		WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET)
 	{
-		printf("Socket cannot be created- Read Help guide for more information");
+		MessageBox(NULL, L"Socket cannot be created- Read Help guide for more information", L"ERROR", MB_ICONERROR);
 		return;
 	}
 
@@ -61,7 +128,7 @@ TCPSocket::TCPSocket(char* host, int port, MessageQueue* mqueue)
 
 	if ((hp = gethostbyname(host)) == NULL)
 	{
-		printf("Unknown server address- Read Help guide for more information");
+		MessageBox(NULL, L"Unknown server address- Read Help guide for more information", L"ERROR", MB_ICONERROR);
 		return;
 	}
 
@@ -71,7 +138,7 @@ TCPSocket::TCPSocket(char* host, int port, MessageQueue* mqueue)
 	// Connecting to the server
 	if (connect(sd, (struct sockaddr *)&server, sizeof(server)) == -1)
 	{
-		printf("Cannot connect to server- Read Help guide for more information");
+		MessageBox(NULL, L"Cannot connect to server- Read Help guide for more information", L"ERROR", MB_ICONERROR);
 		return;
 	}
 
@@ -79,7 +146,7 @@ TCPSocket::TCPSocket(char* host, int port, MessageQueue* mqueue)
 
 	if ((ThreadHandle = CreateThread(NULL, 0, TCPThread, (void*)this, 0, &ThreadId)) == NULL)
 	{
-		printf("CreateThread failed with error %d\n", GetLastError());
+		MessageBox(NULL, L"CreateThread failed with error", L"ERROR", MB_ICONERROR);
 		return;
 	}
 }
@@ -132,36 +199,60 @@ DWORD WINAPI TCPSocket::TCPThread(LPVOID lpParameter)
 DWORD TCPSocket::ThreadStart(void)
 {
 	DWORD Flags;
-	LPSOCKET_INFORMATION SocketInfo;	
+	LPSOCKET_INFORMATION SocketInfo;
 	DWORD RecvBytes;
+	int length;
 
 
 		if ((SocketInfo = (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
 			sizeof(SOCKET_INFORMATION))) == NULL)
 		{
-			printf("GlobalAlloc() failed with error %d\n", GetLastError());
+			MessageBox(NULL, L"GlobalAlloc() failed with error", L"ERROR", MB_ICONERROR);
 			return FALSE;
 		}
 
 		SocketInfo->Socket = sd;
 		ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));
-		SocketInfo->DataBuf.len = GETLENGTH;
 		SocketInfo->DataBuf.buf = SocketInfo->Buffer;
 		SocketInfo->mqueue = msgqueue;
 		Flags = 0;
 
 		while (true)
 		{
-			printf("Waiting Now");
+    		SocketInfo->DataBuf.len = sizeof(int)+1;
+            char type;
+
 			if (WSARecv(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags,
-				&(SocketInfo->Overlapped), TCPRoutine) == SOCKET_ERROR)
+				0, 0) == SOCKET_ERROR)
+			{
+                int err;
+				if ((err = WSAGetLastError()) != WSA_IO_PENDING)
+				{
+					MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
+					return FALSE;
+				}
+			}
+
+            type = SocketInfo->Buffer[0];
+			length = (SocketInfo->Buffer[1] << 24) | (SocketInfo->Buffer[2] << 16) | (SocketInfo->Buffer[3] << 8) | (SocketInfo->Buffer[4]);
+			SocketInfo->DataBuf.len = length;
+
+			if (WSARecv(SocketInfo->Socket, &SocketInfo->DataBuf, 1, &RecvBytes, &Flags,
+				0, 0) == SOCKET_ERROR)
 			{
 				if (WSAGetLastError() != WSA_IO_PENDING)
 				{
-					printf("WSARecv() failed with error %d\n", WSAGetLastError());
-					return FALSE;
+					MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
+					return 0;
 				}
-			}		
+			}
+			else
+			{
+				char* dataReceived = (char*)malloc(sizeof(char) * length);
+				memcpy(dataReceived, SocketInfo->Buffer, length);
+                SocketInfo->mqueue->enqueue(type, dataReceived, length);
+				free(dataReceived);
+			}
 		}
 }
 /*------------------------------------------------------------------------------------------------------------------
@@ -187,35 +278,35 @@ DWORD TCPSocket::ThreadStart(void)
 --  This function will read the data based on the length received earlier and will store it to the message
 --  queue based on type.
 ----------------------------------------------------------------------------------------------------------------------*/
-void CALLBACK TCPSocket::TCPRoutine(DWORD Error, DWORD BytesTransferred,
-	LPWSAOVERLAPPED Overlapped, DWORD InFlags)
-{
-	DWORD Flags;
-	DWORD RecvBytes;
-
-	LPSOCKET_INFORMATION SocketInfo = (LPSOCKET_INFORMATION)Overlapped;
-
-	int length = (SocketInfo->Buffer[3] << 24) | (SocketInfo->Buffer[2] << 16) | (SocketInfo->Buffer[1] << 8) | (SocketInfo->Buffer[0]);
-	SocketInfo->DataBuf.len = length;
-
-	printf("Got Data");
-	if (WSARecv(SocketInfo->Socket, &SocketInfo->DataBuf, 1, &RecvBytes, &Flags,
-		Overlapped, TCPRoutine) == SOCKET_ERROR)
-	{
-		if (WSAGetLastError() != WSA_IO_PENDING)
-		{
-			printf("WSARecv() failed with error %d\n", WSAGetLastError());
-			return;
-		}
-	}
-	else
-	{
-		int type = SocketInfo->Buffer[0];
-		SocketInfo->mqueue->enqueue(type, SocketInfo->Buffer);
-	}
-
-
-}
+//void CALLBACK TCPSocket::TCPRoutine(DWORD Error, DWORD BytesTransferred,
+//	LPWSAOVERLAPPED Overlapped, DWORD InFlags)
+//{
+//	DWORD Flags;
+//	DWORD RecvBytes;
+//
+//	LPSOCKET_INFORMATION SocketInfo = (LPSOCKET_INFORMATION)Overlapped;
+//
+//	int length = (SocketInfo->Buffer[3] << 24) | (SocketInfo->Buffer[2] << 16) | (SocketInfo->Buffer[1] << 8) | (SocketInfo->Buffer[0]);
+//	SocketInfo->DataBuf.len = length + 1;
+//
+//	if (WSARecv(SocketInfo->Socket, &SocketInfo->DataBuf, 1, &RecvBytes, &Flags,
+//		Overlapped, TCPRoutine) == SOCKET_ERROR)
+//	{
+//		if (WSAGetLastError() != WSA_IO_PENDING)
+//		{
+//			MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
+//			return;
+//		}
+//	}
+//	else
+//	{
+//		int type = SocketInfo->Buffer[0];
+//		SocketInfo->mqueue->enqueue(type, SocketInfo->Buffer);
+//	}
+//
+//
+//
+//}
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: ~TCPSocket
@@ -246,14 +337,15 @@ TCPSocket::~TCPSocket()
 --
 -- DATE: March 17, 2015
 --
--- REVISIONS: (Date and Description)
+-- REVISIONS: April 4, 2015  Added type
 --
 -- DESIGNER: Manuel Gonzales
 --
 -- PROGRAMMER: Manuel Gonzales
 --
--- INTERFACE: int TCPSocket::Send(void* data, int length)
+-- INTERFACE: int TCPSocket::Send(char type, void* data, int length)
 --
+--	type : type of data
 --	data : data to send
 --  length : data length
 --
@@ -262,49 +354,85 @@ TCPSocket::~TCPSocket()
 --	NOTES:
 --  This will send the desired data to the server.
 ----------------------------------------------------------------------------------------------------------------------*/
-int TCPSocket::Send(void* data, int length)
+int TCPSocket::Send(char type, void* data, int length)
 {
 	DWORD Flags;
 	LPSOCKET_INFORMATION SocketInfo;
-	DWORD RecvBytes;
+	DWORD bytesSent;
 	DWORD WaitResult;
+	char* data_send = (char*) malloc(sizeof(char) * (length + 5));
+
+	data_send[0] = type;
+
+	//message len
+	data_send[1] = (length >> 24) & 0xFF;
+	data_send[2] = (length >> 16) & 0xFF;
+	data_send[3] = (length >> 8) & 0xFF;
+	data_send[4] = length & 0xFF;
+
+	memcpy(data_send + 5, (char*)data, length);
 
 	WaitResult = WaitForSingleObject( mutex, INFINITE);
 
-	if (WaitResult = WAIT_OBJECT_0)
+	if (WaitResult == WAIT_OBJECT_0)
 	{
 		if ((SocketInfo = (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
 			sizeof(SOCKET_INFORMATION))) == NULL)
 		{
-			printf("GlobalAlloc() failed with error %d\n", GetLastError());
+			MessageBox(NULL, L"GlobalAlloc() failed with error", L"ERROR", MB_ICONERROR);
 			return 0;
 		}
 
 		SocketInfo->Socket = sd;
 		ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));
-		SocketInfo->DataBuf.len = length;
-		SocketInfo->DataBuf.buf = (char*)data;
+		SocketInfo->DataBuf.len = length + 5;
+		SocketInfo->DataBuf.buf = data_send;
 		Flags = 0;
 
-		if (WSASend(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, Flags,
+		if (WSASend(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &bytesSent, Flags,
 			&(SocketInfo->Overlapped), 0) == SOCKET_ERROR)
 		{
 			if (WSAGetLastError() != WSA_IO_PENDING)
 			{
-				printf("WSASend() failed with error %d\n", WSAGetLastError());
+				MessageBox(NULL, L"WSASend() failed with error", L"ERROR", MB_ICONERROR);
 				return 0;
 			}
 		}
 		else
 		{
+			ReleaseMutex(mutex);
+			free(data_send);
 			return 1;
 		}
 	}
 	else
 	{
-		printf("Error in the mutex");
+		MessageBox(NULL, L"Error in the mutex", L"ERROR", MB_ICONERROR);
+        int err = GetLastError();
 		return 0;
-	}
+	}	
 
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: getMessageQueue
+--
+-- DATE: April 2, 2015
+--
+-- REVISIONS: --
+--
+-- DESIGNER: Eric Tsang
+--
+-- PROGRAMMER: Eric Tsang
+--
+-- INTERFACE: MessageQueue * TCPSocket::getMessageQueue( void )
+--
+--	RETURNS: message queue pointer.
+--
+--	NOTES:
+--  This function will return a pointer to the message queue being used by the socket
+----------------------------------------------------------------------------------------------------------------------*/
+MessageQueue * TCPSocket::getMessageQueue( void )
+{
+    return msgqueue;
+}

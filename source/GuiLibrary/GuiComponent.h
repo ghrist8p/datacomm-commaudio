@@ -6,7 +6,7 @@
 #include "GuiLayoutComponent.h"
 #include "GuiListener.h"
 
-#include <Windows.h>
+#include "../common.h"
 #include <map>
 #include <list>
 

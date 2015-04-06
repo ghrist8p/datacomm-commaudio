@@ -1,7 +1,7 @@
 #ifndef MESSAGE_QUEUE_H
 #define MESSAGE_QUEUE_H
 
-#include <windows.h>
+#include "../common.h"
 #include <vector>
 
 class MessageQueue
@@ -9,17 +9,20 @@ class MessageQueue
 public:
     MessageQueue(int capacity, int elementSize);
     void enqueue(int type, void* src);
+    void enqueue(int type, void* src, int len);
+    int peekLen();
     void dequeue(int* type, void* dest);
+    void dequeue(int* type, void* dest, int* len);
     /**
      * handle to an event that is set when the queue is not empty; it is unset
      *   otherwise.
      */
     HANDLE hasMessage;
-private:
     /**
      * size of an element in the queue.
      */
-    int elementSize;
+    const int elementSize;
+private:
     /**
      * holds the elements of the queue.
      */

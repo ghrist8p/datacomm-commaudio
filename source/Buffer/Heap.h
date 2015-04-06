@@ -1,7 +1,7 @@
 #ifndef HEAP_H
 #define HEAP_H
 
-#include <windows.h>
+#include "../common.h"
 #include <vector>
 
 class Heap
@@ -13,6 +13,7 @@ public:
     virtual void remove();
     virtual void peek(int* index, void* dest);
     virtual int size();
+    virtual int getElementSize();
 private:
     void heapify();
     void trickleDown();

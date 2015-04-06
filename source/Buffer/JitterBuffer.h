@@ -1,7 +1,7 @@
 #ifndef JITTER_BUFFER_H
 #define JITTER_BUFFER_H
 
-#include <windows.h>
+#include "../common.h"
 #include <vector>
 
 #include "Heap.h"
@@ -15,6 +15,7 @@ public:
     virtual int put(int index, void* src);
     virtual int get(void* dest);
     virtual int size();
+    virtual int getElementSize();
     /**
      * handle to event that is set when the jitter buffer allows something to be
      *   removed, unset otherwise.

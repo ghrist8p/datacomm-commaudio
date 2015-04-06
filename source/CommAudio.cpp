@@ -35,6 +35,7 @@
 #include "Client/ConnectionWindow.h"
 #include "Client/MicReader.h"
 #include "Client/PlayWave.h"
+#include "Buffer/MessageQueue.h"
 #include <WinSock2.h>
 
 #pragma comment(lib, "ws2_32.lib")
@@ -45,6 +46,8 @@
 // The version of Windows Sockets required.
 const DWORD WSA_VERSION = 0x0202;
 
+#ifndef _COMMAUDIO_CPP_
+#define _COMMAUDIO_CPP_
 /*-------------------------------------------------------------------------------------------------
 -- FUNCTION: WinMain
 --
@@ -86,11 +89,6 @@ int CALLBACK WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int 
 	#if BUILD_TARGET == APP_SERVER
 		window = new ServerWindow(hInst);
 	#else
-		// MicReader micReader(5);
-		// micReader.startReading();
-		// char *recordedData = micReader.getRecordedData();
-		// PlayWave player;
-		// player.playWave(recordedData);
 		window = new ConnectionWindow(hInst);
 	#endif
 
@@ -115,3 +113,5 @@ int CALLBACK WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int 
 	delete window;
 	return 0;
 }
+
+#endif

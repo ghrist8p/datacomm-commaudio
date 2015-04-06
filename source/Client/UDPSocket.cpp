@@ -1,4 +1,39 @@
+/*------------------------------------------------------------------------------------------------------------------
+-- SOURCE FILE: UDPSocket.cpp
+--
+-- FUNCTIONS:
+	UDPSocket(int port, MessageQueue* mqueue);
+	~UDPSocket();
+	DWORD ThreadStart(void);
+	static void CALLBACK UDPRoutine(DWORD Error, DWORD BytesTransferred,
+	LPWSAOVERLAPPED Overlapped, DWORD InFlags);
+	static DWORD WINAPI UDPThread(LPVOID lpParameter);	
+	int Send(char type, void* data, int length, char* dest_ip, int dest_port);
+	int sendtoGroup(char type, void* data, int length);
+	void setGroup(char* group_address, int mem_flag);
+	MessageQueue* getMessageQueue();
+	void stopSong();
+	void sendWave(SongName songloc, int speed, std::vector<TCPSocket*> sockets);
+--
+-- DATE: April 1, 2015
+--
+-- REVISIONS: April 4, 2015		Eric Tsang
+--			Fixed Memory leaks and buffer size problems.
+--
+-- DESIGNER: Manuel Gonzales
+--
+-- PROGRAMMER: Manuel Gonzales
+--
+-- NOTES:
+-- This is the file containing all the necessary functions for the UDP Socket to send and receive following the protocol
+-- created. This class is used for the server as well as the client socket.
+----------------------------------------------------------------------------------------------------------------------*/
+
 #include "Sockets.h"
+#include "../Buffer/MessageQueue.h"
+#include "../Server/ServerControlThread.h"
+
+using namespace std;
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: UDPSocket
@@ -22,17 +57,16 @@
 --  This is the constructor for the UDP socket, it will create the socket and will start the thread to listen for data
 ----------------------------------------------------------------------------------------------------------------------*/
 UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
+	: msgqueue(mqueue)
 {
 	int error;
-	struct hostent	*hp = nullptr;
 	struct sockaddr_in server;
-	char** pptr;
 	WSADATA WSAData;
 	WORD wVersionRequested;
 
 	HANDLE ThreadHandle;
 	DWORD ThreadId;
-	msgqueue = mqueue;
+	stopSending = false;
 
 	mutex = CreateMutex(NULL, FALSE, NULL);
 
@@ -41,7 +75,7 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 
 	if (error != 0) //No usable DLL
 	{
-		printf("DLL not fount- Read Help guide for more information");
+		MessageBox(NULL, L"WSA error", L"ERROR", MB_ICONERROR);
 		return;
 	}
 
@@ -56,22 +90,22 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 	// Initialize and set up the address structure
 	memset((char *)&server, 0, sizeof(struct sockaddr_in));
 	server.sin_family = AF_INET;
-	server.sin_port = htons(port);
+	server.sin_port = htons(MULTICAST_PORT);
 	server.sin_addr.s_addr = htonl(INADDR_ANY);
 	// Copy the server address
 
 	// Connecting to the server
+    char reuseAddr = 1;
+    setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &reuseAddr, sizeof(reuseAddr));
 	if (bind(sd, (struct sockaddr *)&server, sizeof(server)) == -1)
 	{
-		perror("Can't bind name to socket");
+        OutputDebugString(L"Can't bind name to socket");
 		exit(1);
 	}
 
-	pptr = hp->h_addr_list;
-
 	if ((ThreadHandle = CreateThread(NULL, 0, UDPThread, (void*)this, 0, &ThreadId)) == NULL)
 	{
-		printf("CreateThread failed with error %d\n", GetLastError());
+		OutputDebugString(L"CreateThread failed with error %d\n");
 		return;
 	}
 }
@@ -96,6 +130,7 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 ----------------------------------------------------------------------------------------------------------------------*/
 UDPSocket::~UDPSocket()
 {
+    setsockopt(sd, IPPROTO_IP, IP_DROP_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
 	closesocket(sd);
 	WSACleanup();
 }
@@ -106,14 +141,15 @@ UDPSocket::~UDPSocket()
 --
 -- DATE: March 17, 2015
 --
--- REVISIONS: (Date and Description)
+-- REVISIONS: April 4, 2015 Manuel Gonzales Added type.
 --
 -- DESIGNER: Manuel Gonzales
 --
 -- PROGRAMMER: Manuel Gonzales
 --
--- INTERFACE: int UDPSocket::Send(void* data, int length, char* dest_ip, int dest_port)
+-- INTERFACE: int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_port)
 --
+--  type : type of data
 --	data : data to send
 --  length : data length
 --  dest_ip : ip address of the destination
@@ -124,64 +160,73 @@ UDPSocket::~UDPSocket()
 --	NOTES:
 --  This will send the desired data to another UDP client socket.
 ----------------------------------------------------------------------------------------------------------------------*/
-int UDPSocket::Send(void* data, int length, char* dest_ip, int dest_port)
+int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_port)
 {
 	DWORD Flags;
-	LPSOCKET_INFORMATION SocketInfo;
+	SOCKET_INFORMATION socketInfo;
 	DWORD SendBytes;
 	DWORD WaitResult;
 	struct sockaddr_in destination;
 	int destsize = sizeof(destination);
+	char* data_send = (char*)malloc(sizeof(char) * (length + 1));
+
+	data_send[0] = type;
+
+	//message len
+	/*data_send[1] = (length >> 24) & 0xFF;
+	data_send[2] = (length >> 16) & 0xFF;
+	data_send[3] = (length >> 8) & 0xFF;
+	data_send[4] = length & 0xFF;*/
 
 	WaitResult = WaitForSingleObject(mutex, INFINITE);
 
-	if (WaitResult = WAIT_OBJECT_0)
+	if (WaitResult == WAIT_OBJECT_0)
 	{
-		if ((SocketInfo = (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
-			sizeof(SOCKET_INFORMATION))) == NULL)
-		{
-			printf("GlobalAlloc() failed with error %d\n", GetLastError());
-			return 0;
-		}
 
-		SocketInfo->Socket = sd;
-		ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));
-		SocketInfo->DataBuf.len = length;
-		SocketInfo->DataBuf.buf = (char*)data;
+		socketInfo.Socket = sd;
+		ZeroMemory(&(socketInfo.Overlapped), sizeof(WSAOVERLAPPED));
+		socketInfo.DataBuf.len = length + 1;
+		socketInfo.DataBuf.buf = data_send;
 		Flags = 0;
 
+		memset(&destination,0,destsize);
+
+		destination.sin_family = AF_INET;
 		destination.sin_addr.s_addr = inet_addr(dest_ip);
-		if (destination.sin_addr.s_addr == INADDR_NONE) 
+		if (destination.sin_addr.s_addr == INADDR_NONE)
 		{
-			printf("The target ip address entered must be a legal IPv4 address\n");
+			MessageBox(NULL, L"The target ip address entered must be a legal IPv4 address", L"ERROR", MB_ICONERROR);
 			return 0;
 		}
 
-		destination.sin_port = htons((u_short)dest_port);
+		destination.sin_port = htons(dest_port);
 
-		if (destination.sin_port == 0) 
+		if (destination.sin_port == 0)
 		{
-			printf("The targetport must be a legal UDP port number\n");
+			MessageBox(NULL, L"The targetport must be a legal UDP port number", L"ERROR", MB_ICONERROR);
 			return 0;
 		}
 
-		if (WSASendTo(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &SendBytes, Flags, (SOCKADDR*)&destination, destsize,
-			&(SocketInfo->Overlapped), 0) == SOCKET_ERROR)
+		if (WSASendTo(socketInfo.Socket, &(socketInfo.DataBuf), 1, &SendBytes, Flags, (SOCKADDR*)&destination, destsize,
+			0, 0) == SOCKET_ERROR)
 		{
 			if (WSAGetLastError() != WSA_IO_PENDING)
 			{
-				printf("WSASend() failed with error %d\n", WSAGetLastError());
+				int err = GetLastError();
+				MessageBox(NULL, L"WSASend() failed with error", L"ERROR", MB_ICONERROR);
 				return 0;
 			}
 		}
 		else
 		{
+			free(data_send);
+			ReleaseMutex(mutex);
 			return 1;
 		}
 	}
 	else
 	{
-		printf("Error in the mutex");
+		MessageBox(NULL, L"Error in the mutex", L"ERROR", MB_ICONERROR);
 		return 0;
 	}
 
@@ -234,51 +279,323 @@ DWORD WINAPI UDPSocket::UDPThread(LPVOID lpParameter)
 DWORD UDPSocket::ThreadStart(void)
 {
 	DWORD Flags;
-	LPSOCKET_INFORMATION SocketInfo;
+	SOCKET_INFORMATION socketInfo;
 	DWORD RecvBytes;
 	int flag = 0;
+	int msg_type = 0;
+	int len = 0;
+	struct sockaddr_in source;
+	int length = sizeof(struct sockaddr_in);
 
-
-	if ((SocketInfo = (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
-		sizeof(SOCKET_INFORMATION))) == NULL)
-	{
-		printf("GlobalAlloc() failed with error %d\n", GetLastError());
-		return FALSE;
-	}
-
-	SocketInfo->Socket = sd;
-	ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));
-	SocketInfo->DataBuf.len = DATA_BUFSIZE;
-	SocketInfo->DataBuf.buf = SocketInfo->Buffer;
-	SocketInfo->mqueue = msgqueue;
+	socketInfo.Socket = sd;
+	ZeroMemory(&(socketInfo.Overlapped), sizeof(WSAOVERLAPPED));
+	socketInfo.DataBuf.buf = socketInfo.Buffer;
+	socketInfo.mqueue = msgqueue;
 	Flags = 0;
 
 	while (true)
 	{
-		if (WSARecvFrom(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags, 0,
-			0, &(SocketInfo->Overlapped), 0) == SOCKET_ERROR)
+		socketInfo.DataBuf.len = DATA_BUFSIZE;
+
+		if (WSARecvFrom(socketInfo.Socket, &(socketInfo.DataBuf), 1, &RecvBytes, &Flags, (sockaddr*)&source,
+			&length, 0, 0) == SOCKET_ERROR)
 		{
-			if (WSAGetLastError() != WSA_IO_PENDING)
+			int err;
+			if ((err = WSAGetLastError()) != WSA_IO_PENDING)
 			{
-				printf("WSARecv() failed with error %d\n", WSAGetLastError());
+				MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
 				return FALSE;
 			}
 		}
 		else
 		{
-			switch (flag)
-			{
-			case 1:
-				mreq.imr_multiaddr.s_addr = inet_addr(SocketInfo->Buffer);
-				flag += 1;
-			case 2:
-				mreq.imr_sourceaddr.s_addr = inet_addr(SocketInfo->Buffer);
-				setsockopt(SocketInfo->Socket, IPPROTO_IP, IP_ADD_SOURCE_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
-				flag += 1;
-			default:
-				int type = SocketInfo->Buffer[0];
-				SocketInfo->mqueue->enqueue(type, SocketInfo->Buffer);
-			}
+			len = RecvBytes - 1;
+
+			DataPacket dataPacket;
+			LocalDataPacket localDataPacket;
+			memcpy(&dataPacket,socketInfo.Buffer+1,len);
+			localDataPacket.index = dataPacket.index;
+			localDataPacket.srcAddr = source.sin_addr.s_addr;
+			memcpy(localDataPacket.data,dataPacket.data,DATA_LEN);
+			socketInfo.mqueue->enqueue(socketInfo.Buffer[0],&localDataPacket,sizeof(LocalDataPacket));
 		}
 	}
+}
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: setGroup
+--
+-- DATE: April 2, 2015
+--
+-- REVISIONS: April 4  Eric Tsang
+--
+-- DESIGNER: Manuel Gonzales
+--
+-- PROGRAMMER: Manuel Gonzales
+--
+-- INTERFACE: void UDPSocket::setGroup(char* group_address, int mem_flag)
+--
+--	group_address : ip address for the multicast
+--  mem_flag : add socket to the group flag
+--
+--	RETURNS: nothing.
+--
+--	NOTES:
+--  This function will set the multicast flag for the udp socket and will add the socket to the gorup as well
+--	depending on the type of socket.
+----------------------------------------------------------------------------------------------------------------------*/
+void UDPSocket::setGroup(char* group_address, int mem_flag)
+{
+	char loop = 0;
+	char ttl = 2;
+	in_addr interfaceAddr;
+	interfaceAddr.s_addr = inet_addr(INADDR_ANY);
+	memset(&mreq,0,sizeof(mreq));
+	mreq.imr_multiaddr.s_addr = inet_addr(group_address);
+	mreq.imr_interface.s_addr = inet_addr(INADDR_ANY);
+	int i = 0;
+	int err = 0;
+	if (mem_flag)
+	{
+		i = setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
+		err = GetLastError();
+		i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
+		err = GetLastError();
+		i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
+		err = GetLastError();
+	}
+	setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char*)&interfaceAddr, sizeof(interfaceAddr));
+}
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: sendtoGroup
+--
+-- DATE: April 2, 2015
+--
+-- REVISIONS: April 4  Eric Tsang
+--
+-- DESIGNER: Manuel Gonzales
+--
+-- PROGRAMMER: Manuel Gonzales
+--
+-- INTERFACE: int UDPSocket::sendtoGroup(char type, void* data, int length)
+--
+--	type : type of data to send
+--  data : data to send
+--	length : size of data in bytes
+--
+--	RETURNS: nothing.
+--
+--	NOTES:
+--  This function will send a datagram via multicast to the default group for the socket
+----------------------------------------------------------------------------------------------------------------------*/
+int UDPSocket::sendtoGroup(char type, void* data, int length)
+{
+	DWORD Flags;
+	SOCKET_INFORMATION socketInfo;
+	DWORD SendBytes;
+	DWORD WaitResult;
+	char* data_send = (char*)malloc(sizeof(char) * (length + 1));
+
+	data_send[0] = type;
+
+	DataPacket* p = (DataPacket*) data;
+
+	memcpy(data_send + 1, (char*)data, length);
+
+	WaitResult = WaitForSingleObject(mutex, INFINITE);
+
+	if (WaitResult == WAIT_OBJECT_0)
+	{
+
+		socketInfo.Socket = sd;
+		ZeroMemory(&(socketInfo.Overlapped), sizeof(WSAOVERLAPPED));
+		socketInfo.DataBuf.len = length + 1;
+		socketInfo.DataBuf.buf = data_send;
+		Flags = 0;
+
+		sockaddr_in address;
+		memset(&address,0,sizeof(address));
+		address.sin_family = AF_INET;
+		address.sin_port   = htons(MULTICAST_PORT);
+		memcpy(&address.sin_addr,&mreq.imr_multiaddr,sizeof(struct in_addr));
+
+		if (WSASendTo(socketInfo.Socket, &(socketInfo.DataBuf), 1, &SendBytes, Flags, (struct sockaddr*)&address, sizeof(address),
+			0, 0) == SOCKET_ERROR)
+		{
+			int err;
+			if ((err = WSAGetLastError()) != WSA_IO_PENDING)
+			{
+				MessageBox(NULL, L"WSASend() failed with error", L"ERROR", MB_ICONERROR);
+				return 0;
+			}
+		}
+		else
+		{
+			free(data_send);
+			ReleaseMutex(mutex);
+			return 1;
+		}
+	}
+	else
+	{
+		MessageBox(NULL, L"Error in the mutex", L"ERROR", MB_ICONERROR);
+	}
+
+
+}
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: getMessageQueue
+--
+-- DATE: April 2, 2015
+--
+-- REVISIONS: --
+--
+-- DESIGNER: Eric Tsang
+--
+-- PROGRAMMER: Eric Tsang
+--
+-- INTERFACE: MessageQueue* UDPSocket::getMessageQueue()
+--
+--	RETURNS: message queue pointer.
+--
+--	NOTES:
+--  This function will return a pointer to the message queue being used by the socket
+----------------------------------------------------------------------------------------------------------------------*/
+MessageQueue* UDPSocket::getMessageQueue()
+{
+	return msgqueue;
+}
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: sendWave
+--
+-- DATE: April 2, 2015
+--
+-- REVISIONS: --
+--
+-- DESIGNER: Manuel Gonzales
+--
+-- PROGRAMMER: Manuel Gonzales
+--
+-- INTERFACE: void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets)
+--
+--	songloc : structure golding the id and path of the song
+--  speed : sending speed in bytes
+--	sockets : a set of TCP sockets (clients)
+--
+--	RETURNS: nothing.
+--
+--	NOTES:
+--  This function will send a song via multicast to all the clients and will send it in parts bnased on the speed
+--	it will also send a flag notifying the clients the current song that is being played.
+----------------------------------------------------------------------------------------------------------------------*/
+void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets)
+{
+    ServerControlThread * sct = ServerControlThread::getInstance();
+    char * path = sct->getPlaylist()->getSongPath( songloc.id );
+    FILE* fp = fopen(path, "rb");
+    free( path );
+	struct SongStream songInfo;
+	char* sendSong;
+	char* song;
+	stopSending = false;
+
+	if (fp) {
+
+		char id[5];
+		unsigned long size;
+		short format_tag, channels, block_align, bits_per_sample;
+		unsigned long format_length, sample_rate, avg_bytes_sec, data_size;
+		int data_read = 0;
+
+		fread(id, sizeof(char), 4, fp);
+		id[4] = '\0';
+
+		if (!strcmp(id, "RIFF")) {
+			fread(&size, sizeof(unsigned long), 1, fp);
+			fread(id, sizeof(char), 4, fp);
+			id[4] = '\0';
+
+			if (!strcmp(id, "WAVE")) {
+				//get wave headers
+				fread(id, sizeof(char), 4, fp);
+				fread(&format_length, sizeof(unsigned long), 1, fp);
+				fread(&format_tag, sizeof(short), 1, fp);
+				fread(&channels, sizeof(short), 1, fp);
+				fread(&sample_rate, sizeof(unsigned long), 1, fp);
+				fread(&avg_bytes_sec, sizeof(unsigned long), 1, fp);
+				fread(&block_align, sizeof(short), 1, fp);
+				fread(&bits_per_sample, sizeof(short), 1, fp);
+				fread(id, sizeof(char), 4, fp);
+				fread(&data_size, sizeof(unsigned long), 1, fp);
+
+				sendSong = (char*)malloc(sizeof(char) * SIZE_INDEX);
+
+				sendSong[0] = (songloc.id >> 24) & 0xFF;
+				sendSong[1] = (songloc.id >> 16) & 0xFF;
+				sendSong[2] = (songloc.id >> 8) & 0xFF;
+				sendSong[3] = songloc.id & 0xFF;
+
+				//for every client
+				for (int i = 0; i < sockets.size(); i++)
+				{
+					sockets[i]->Send(CHANGE_STREAM, sendSong, SIZE_INDEX);
+				}
+
+				free(sendSong);
+
+				song = (char*)malloc(speed + 5);
+
+				//read chunks of data from the file based on the speed selected and send it
+				while (data_read = fread(song + 5, 1, speed, fp) > 0)
+				{
+					if (stopSending)
+					{
+						return;
+					}
+
+					sendtoGroup(MUSICSTREAM, song, data_read);
+				}
+
+				free(song);
+
+				stopSending = false;
+			}
+			else
+			{
+				MessageBox(NULL, L"NOT WAVE", L"ERROR", MB_ICONERROR);
+			}
+		}
+		else
+		{
+			MessageBox(NULL, L"NOT RIFF", L"ERROR", MB_ICONERROR);
+		}
+	}
+
+	fclose(fp);
+}
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: stopSong
+--
+-- DATE: April 2, 2015
+--
+-- REVISIONS: --
+--
+-- DESIGNER: Manuel Gonzales
+--
+-- PROGRAMMER: Manuel Gonzales
+--
+-- INTERFACE: void UDPSocket::stopSong()
+--
+--	RETURNS: nothing.
+--
+--	NOTES:
+--  This function will set the flag to stop sending music in the case of a change of song event
+----------------------------------------------------------------------------------------------------------------------*/
+void UDPSocket::stopSong()
+{
+	stopSending = true;
 }

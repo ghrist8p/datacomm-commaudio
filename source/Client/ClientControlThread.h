@@ -2,8 +2,9 @@
 #define CLIENTCONTROLTHREAD_H_
 
 #include "../Buffer/MessageQueue.h"
+#include "ClientWindow.h"
 
-//class TCPSocket;
+class TCPSocket;
 
 #define IP_ADDR_LEN 16
 
@@ -11,18 +12,18 @@ class ClientControlThread
 {
 public:
     static ClientControlThread* getInstance();
-    void requestPacketRetransmission(int index);
-    void requestDownload(char* file);
-    void cancelDownload(char* file);
-    void requestChangeStream(char* file);
+    void requestDownload(int id);
+    void cancelDownload(int id);
+    void requestChangeStream(int id);
     void connect(char* ipAddress, unsigned short port);
     void disconnect();
+    void setClientWindow( ClientWindow * );
 protected:
     ClientControlThread();
     ~ClientControlThread();
     void onDownloadPacket(int index, void* data, int len);
-    void onRetransmissionPacket(int index, void* data, int len);
-    void onChangeStream(char* file);
+    void onChangeStream(int index, void* data, int len);
+    void onNewSong(SongName song);
 private:
     int _startRoutine(HANDLE* thread, HANDLE stopEvent,
         LPTHREAD_START_ROUTINE routine, void* params);
@@ -35,9 +36,13 @@ private:
      */
     static ClientControlThread* _instance;
     /**
+     * reference to the one and only {ClientControlThread} instance.
+     */
+    ClientWindow * _window;
+    /**
      * pointer to the TCPSocket owned by the control thread.
      */
-    //TCPSocket* tcpSock;
+    TCPSocket* tcpSock;
     /**
      * pointer to IP address of the remote host
      */

@@ -97,6 +97,7 @@ void Heap::remove()
     swap(0,data.size()-1);
 
     // remove the last element (originally root) from the heap
+    free((*--data.end()).second);
     data.erase(--data.end());
 
     // maintain the heap structure
@@ -159,6 +160,11 @@ void Heap::peek(int* index, void* dest)
 int Heap::size()
 {
     return data.size();
+}
+
+int Heap::getElementSize()
+{
+    return elementSize;
 }
 
 /**

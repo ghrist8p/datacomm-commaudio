@@ -8,9 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <iostream>
+#include "../common.h"
 using namespace std;
-
-#define MULTICAST_ADDRESS "239.255.255.240"
 
 class Server;
 
@@ -20,33 +19,41 @@ struct WavSong
 	unsigned long len;
 };
 
-typedef void (*newConnectionHandler)( Server *, void * );
-
-typedef struct _TCPConnection
+struct TCPConnection
 {
     SOCKET sock;
+    WSAEVENT signal;
     // add more connection data at will
-} TCPConnection;
+};
+
+typedef void (*newConnectionHandler)( TCPConnection *, void * );
+
 
 class Server
 {
 public:
     Server( unsigned short _tcpPort, newConnectionHandler _handler, void * _data, unsigned long groupIP, unsigned short udpPort );
     virtual ~Server();
-    void startTCP();
-    void submitCompletionRoutine( PAPCFUNC lpCompletionRoutine, TCPConnection * to );
+    bool startTCP();
+    void submitCompletionRoutine( PAPCFUNC lpCompletionRoutine, void * to );
     friend newConnectionHandler;
     
-    void startUDP();
-    void sendToGroup( const char * buf, int len );
-	void sendWave(char* fname, WavSong *ret, int speed);
+    bool startUDP();
+
+	void disconnect();
+
 	
     friend DWORD WINAPI WorkerThread( LPVOID lpParam );
 private:
     unsigned short tcpPort;
     SOCKET listenSocket;
+
+	bool stopSending;
     
     WSAEVENT newConnectionEvent;
+	short channels;
+	short bitrate;
+	unsigned long sampling;
     
     int numTCPConnections;
     TCPConnection * TCPConnections;

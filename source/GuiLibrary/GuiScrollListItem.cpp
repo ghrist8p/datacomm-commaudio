@@ -1,6 +1,9 @@
 #include "GuiScrollListItem.h"
 
-GuiScrollListItem::GuiScrollListItem()
+#include "GuiScrollList.h"
+
+GuiScrollListItem::GuiScrollListItem(GuiScrollList *parent)
+	: list(parent)
 {
 	yPos = 0;
 	height = 0;

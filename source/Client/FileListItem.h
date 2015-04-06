@@ -3,12 +3,13 @@
 
 #include "../GuiLibrary/GuiScrollListItem.h"
 
+class GuiScrollList;
 class ClientWindow;
 
 class FileListItem : public GuiScrollListItem
 {
 public:
-	FileListItem(ClientWindow *clientWindow, HINSTANCE hInst, LPWSTR filename);
+	FileListItem(GuiScrollList *list, ClientWindow *clientWindow, HINSTANCE hInst, SongName filename);
 	virtual ~FileListItem();
 	
 	void setColours(HBRUSH bg, HPEN brdr, COLORREF fnt);
@@ -17,19 +18,22 @@ public:
 	virtual void onClick(int x, int y);
 	virtual void onMouseMove(int x, int y);
 
-
+	void markAsDownloading();
+	void markAsDownloadingStopped();
 private:
 	bool pointInPlayButton(int x, int y);
 	bool pointInSaveButton(int x, int y);
 
 	ClientWindow *clientWindow;
+	bool downloading;
 	int width, height;
 	HBRUSH background;
 	HPEN border;
 	HBITMAP save;
+	HBITMAP cancelSave;
 	HBITMAP stream;
 	COLORREF font;
-	LPWSTR filename;
+	SongName song;
 	HCURSOR hoverCursor;
 	HCURSOR arrowCursor;
 };

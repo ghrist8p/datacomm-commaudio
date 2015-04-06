@@ -13,6 +13,8 @@ class GuiStatusBar;
 class PlaybackTrackerPanel;
 class ButtonPanel;
 class GuiScrollList;
+class MessageQueue;
+class MicReader;
 
 class ClientWindow : public GuiWindow
 {
@@ -21,13 +23,25 @@ public:
 	virtual ~ClientWindow();
 	virtual void onCreate();
 
-	void addRemoteFile(LPWSTR filename);
+	void addRemoteFile(SongName);
 
 private:
 	static void onClickPlay(void*);
+	static void onClickStop(void*);
+	static bool onClickMic(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval);
+	static bool onMicStop(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval);
+	static DWORD WINAPI MicThread(LPVOID lpParameter);
+	DWORD ThreadStart(void);
+
+	bool recording;
+	bool requestingRecorderStop;
+	MessageQueue *micMQueue;
+	MicReader *micReader;
 
 	HBITMAP playButtonUp;
 	HBITMAP playButtonDown;
+	HBITMAP stopButtonUp;
+	HBITMAP stopButtonDown;
 	HBRUSH darkBackground;
 	HBRUSH lightBackground;
 	HBRUSH accentBrush;
@@ -47,8 +61,9 @@ private:
 	GuiPanel *buttonSpacer2;
 	GuiPanel *bottomSpacer;
 	ButtonPanel *playButton;
+	ButtonPanel *stopButton;
 
-    TCPSocket * tcpSocket;
+	UDPSocket* udpSock;
 };
 
 #endif
