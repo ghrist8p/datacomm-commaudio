@@ -1,3 +1,27 @@
+/*-------------------------------------------------------------------------------------------------
+-- SOURCE FILE: WaveSend.cpp
+--
+-- PROGRAM: CommAudio
+--
+-- FUNCTIONS:
+-- void sendWaveFile(char* fname, WavSong *ret, int speed)
+--
+--
+-- DATE: March 28, 2015
+--
+-- REVISIONS:
+--
+-- DESIGNER: Manuel Gonzales
+--
+-- PROGRAMMER: Manuel Gonzales
+--
+-- NOTES:
+-- Really early version to test music streaming of wave files.
+-------------------------------------------------------------------------------------------------*/
+
+
+
+
 //#include <stdio.h>
 //#include <stdlib.h>
 //#include <string.h>

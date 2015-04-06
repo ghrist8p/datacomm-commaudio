@@ -12,12 +12,12 @@ class MusicReader
 private:
 	MusicBuffer* musicbuffer;
 	MessageQueue* msgqueue;
+	static DWORD WINAPI fileThread(LPVOID lpParameter);
+	DWORD ThreadStart(void);
 
 public:
 	MusicReader(MessageQueue* mqueue, MusicBuffer* mbuffer);
 	~MusicReader();
-	static DWORD WINAPI fileThread(LPVOID lpParameter);
-	DWORD ThreadStart(void);
 
 };
 
