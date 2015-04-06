@@ -1,6 +1,6 @@
 #include "../Common.h"
 
-#define SUPERSIZEBUF	99999999
+#define SUPERSIZEBUF	9999
 
 class MusicBuffer
 {

@@ -36,6 +36,8 @@ private:
 
 	bool recording;
 	bool requestingRecorderStop;
+
+	DataPacket voicePacket;
 	MessageQueue *micMQueue;
 	MicReader *micReader;
 

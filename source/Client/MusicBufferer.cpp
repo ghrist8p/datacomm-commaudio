@@ -23,6 +23,7 @@
 ----------------------------------------------------------------------------------------------------------------------*/
 #include "MusicBufferer.h"
 #include "MusicBuffer.h"
+#include "../Buffer/MessageQueue.h"
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: MusicBufferer
@@ -163,9 +164,10 @@ DWORD MusicBufferer::ThreadStart(void)
 
 	while(true)
 	{
+		WaitForSingleObject(music_jitter->canGet,INFINITE);
 		music_jitter->get(music_data);
 		//fwrite(music_data, 1, elementSize, musicfile);
-		music_buffer->writeBuf(music_data, elementSize);		
+		music_buffer->writeBuf(music_data, elementSize);
 	}
 }
 

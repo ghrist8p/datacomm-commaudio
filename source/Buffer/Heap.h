@@ -14,6 +14,7 @@ public:
     virtual void peek(int* index, void* dest);
     virtual int size();
     virtual int getElementSize();
+    virtual void setRelativeZero(int zero);
 private:
     void heapify();
     void trickleDown();
@@ -21,6 +22,13 @@ private:
     int leftId(int id);
     int rightId(int id);
     int parentId(int id);
+    int comapreIndexes(int index1, int index2);
+    /**
+     * the zero is what the heap treats as "zero", it affects how the heap is
+     *   sorted internally. for example, if zero is actually zero, then -1 will
+     *   be treated as the biggest number that can exist in the heap.
+     */
+    int relativeZero;
     /**
      * size allocated for the payload of each element in the buffer.
      */

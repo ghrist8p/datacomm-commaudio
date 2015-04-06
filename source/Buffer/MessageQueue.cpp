@@ -211,3 +211,8 @@ void MessageQueue::dequeue(int* type, void* dest, int* len)
     free(n->data);
     free(n);
 }
+
+int MessageQueue::size()
+{
+    return messages.size();
+}

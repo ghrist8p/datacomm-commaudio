@@ -48,7 +48,7 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	micMQueue = new MessageQueue(1000,AUDIO_BUFFER_LENGTH);
 
 	MessageQueue* q1 = new MessageQueue(1500,sizeof(LocalDataPacket));
-	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,AUDIO_BUFFER_LENGTH,50,50);
+	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,AUDIO_BUFFER_LENGTH,50,0);
 	udpSock = new UDPSocket(MULTICAST_PORT,q1);
 	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q1);
 
@@ -59,9 +59,9 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	MessageQueue* q2 = new MessageQueue(1500,AUDIO_BUFFER_LENGTH);
 	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
 	MusicReader* mreader = new MusicReader(q2, musicfile);
-	PlayWave* p = new PlayWave(50,q2);
+	PlayWave* playWave = new PlayWave(1000, q2);
 
-	p->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
+	playWave->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
 
 	HANDLE ThreadHandle;
 	DWORD ThreadId;
@@ -81,19 +81,18 @@ DWORD WINAPI ClientWindow::MicThread(LPVOID lpParameter)
 
 DWORD ClientWindow::ThreadStart(void)
 {
-	int type;
+	int useless;
 	int length;
 
-	DataPacket packet;
-	packet.index = 0;
+	voicePacket.index = 0;
 
+	// continuously send voice data over the network when it becomes available
 	while (true)
 	{
-		++(packet.index);
-		micMQueue->dequeue(&type, packet.data, &length);
-		udpSock->sendtoGroup(MICSTREAM, &packet, sizeof(DataPacket));
+		++(voicePacket.index);
+		micMQueue->dequeue(&useless, voicePacket.data, &length);
+		udpSock->sendtoGroup(MICSTREAM, &voicePacket, sizeof(DataPacket));
 	}
-
 }
 
 ClientWindow::~ClientWindow()
@@ -305,6 +304,7 @@ bool ClientWindow::onMicStop(GuiComponent *_pThis, UINT command, UINT id, WPARAM
 	pThis->micTargetButton->setText(L"Start Speaking");
 	pThis->recording = false;
 	pThis->requestingRecorderStop = false;
+    pThis->voicePacket.index = 0;
 
 	return true;
 }

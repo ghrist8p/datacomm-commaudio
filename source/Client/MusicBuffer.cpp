@@ -147,6 +147,7 @@ void MusicBuffer::writeBuf(char* data, int len)
 void MusicBuffer::readBuf(char* data, int len)
 {
 	unsigned long rdifference;
+
 	WaitForSingleObject(canRead, INFINITE);
 	WaitForSingleObject(mutexx, INFINITE);
 
@@ -156,7 +157,7 @@ void MusicBuffer::readBuf(char* data, int len)
 		memcpy(data, buffer + readindex, rdifference);
 		readindex = 0;
 		memcpy(data + rdifference, buffer + readindex, len - rdifference);
-		writeindex = len - rdifference;
+		readindex = len - rdifference;
 	}
 	else
 	{
