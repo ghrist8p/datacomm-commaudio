@@ -1,6 +1,55 @@
+/*------------------------------------------------------------------------------------------------------------------
+-- SOURCE FILE: TCPSocket.cpp
+--
+-- FUNCTIONS:
+	TCPSocket(SOCKET socket, MessageQueue* mqueue);
+	TCPSocket(char* host, int port, MessageQueue* mqueue);
+	~TCPSocket();
+	static DWORD WINAPI TCPThread(LPVOID lpParameter);
+	DWORD ThreadStart(void);
+	static void CALLBACK TCPRoutine(DWORD Error, DWORD BytesTransferred,
+	LPWSAOVERLAPPED Overlapped, DWORD InFlags);	
+	int Send(char type, void* data, int length);
+--
+-- DATE: April 1, 2015
+--
+-- REVISIONS: April 4, 2015		Eric Tsang
+--			Fixed Memory leaks and buffer size problems.
+--
+-- DESIGNER: Manuel Gonzales
+--
+-- PROGRAMMER: Manuel Gonzales
+--
+-- NOTES:
+-- This is the file containing all the necessary functions for the TCP Socket to send and receive following the protocol
+-- created. This class is used for the server as well as the client socket.
+----------------------------------------------------------------------------------------------------------------------*/
+
 #include "Sockets.h"
 #include "../Buffer/MessageQueue.h"
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: TCPSocket
+--
+-- DATE: April 3, 2015
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Manuel Gonzales
+--
+-- PROGRAMMER: Manuel Gonzales
+--
+-- INTERFACE: TCPSocket::TCPSocket(SOCKET socket, MessageQueue* mqueue)
+--
+--  socket : socket descriptor
+--  mqueue : message queue to use for storing the data.
+--
+--	RETURNS: nothing.
+--
+--	NOTES:
+--  This is the constructor for the TCP socket, it will use the passed file descriptor as a socket and
+--  then it will start the thread to receive data.
+----------------------------------------------------------------------------------------------------------------------*/
 TCPSocket::TCPSocket(SOCKET socket, MessageQueue* mqueue)
 {
 	sd = socket;
@@ -286,14 +335,15 @@ TCPSocket::~TCPSocket()
 --
 -- DATE: March 17, 2015
 --
--- REVISIONS: (Date and Description)
+-- REVISIONS: April 4, 2015  Added type
 --
 -- DESIGNER: Manuel Gonzales
 --
 -- PROGRAMMER: Manuel Gonzales
 --
--- INTERFACE: int TCPSocket::Send(void* data, int length)
+-- INTERFACE: int TCPSocket::Send(char type, void* data, int length)
 --
+--	type : type of data
 --	data : data to send
 --  length : data length
 --
@@ -348,6 +398,8 @@ int TCPSocket::Send(char type, void* data, int length)
 		}
 		else
 		{
+			ReleaseMutex(mutex);
+			free(data_send);
 			return 1;
 		}
 	}
@@ -356,13 +408,28 @@ int TCPSocket::Send(char type, void* data, int length)
 		MessageBox(NULL, L"Error in the mutex", L"ERROR", MB_ICONERROR);
         int err = GetLastError();
 		return 0;
-	}
-
-	free(data_send);
+	}	
 
 }
 
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: getMessageQueue
+--
+-- DATE: April 2, 2015
+--
+-- REVISIONS: --
+--
+-- DESIGNER: Eric Tsang
+--
+-- PROGRAMMER: Eric Tsang
+--
+-- INTERFACE: MessageQueue * TCPSocket::getMessageQueue( void )
+--
+--	RETURNS: message queue pointer.
+--
+--	NOTES:
+--  This function will return a pointer to the message queue being used by the socket
+----------------------------------------------------------------------------------------------------------------------*/
 MessageQueue * TCPSocket::getMessageQueue( void )
 {
     return msgqueue;
