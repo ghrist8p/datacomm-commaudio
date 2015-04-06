@@ -345,7 +345,7 @@ DWORD UDPSocket::ThreadStart(void)
 ----------------------------------------------------------------------------------------------------------------------*/
 void UDPSocket::setGroup(char* group_address, int mem_flag)
 {
-	char loop = 1;
+	char loop = 0;
 	char ttl = 2;
 	in_addr interfaceAddr;
 	interfaceAddr.s_addr = inet_addr(INADDR_ANY);
