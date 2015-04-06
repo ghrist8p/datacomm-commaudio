@@ -362,3 +362,8 @@ int TCPSocket::Send(char type, void* data, int length)
 
 }
 
+
+MessageQueue * TCPSocket::getMessageQueue( void )
+{
+    return msgqueue;
+}

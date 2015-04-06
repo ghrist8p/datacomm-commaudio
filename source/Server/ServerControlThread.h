@@ -2,6 +2,7 @@
 #define SERVERCONTROLTHREAD_H_
 
 #include "../Buffer/MessageQueue.h"
+#include "Playlist.h"
 
 class UDPSocket;
 
@@ -10,29 +11,30 @@ class UDPSocket;
 class ServerControlThread
 {
 public:
-    static ServerControlThread* getInstance();
+    static ServerControlThread * getInstance();
     void addConnection(TCPSocket* connection);
     void start();
     void stop();
+    void setPlaylist( Playlist * );
+    void sendPlaylistToAll( void );
+    void setUDPSocket( UDPSocket * );
 protected:
     ServerControlThread();
     ~ServerControlThread();
 private:
-    static DWORD WINAPI _threadRoutine(void* params);
-    //static void _handleMsgqMsg(ServerControlThread* dis);
+    static DWORD WINAPI _threadRoutine( void * params );
+    static DWORD WINAPI _multicastRoutine( void * params );
+    void _handleMsgChangeStream( RequestPacket * );
+    void _handleMsgRequestDownload( RequestPacket * );
+    void _handleMsgCancelDownload( RequestPacket * );
+    void _handleMsgDisconnect( int clientIndex );
+    static VOID CALLBACK _sendPlaylistToAllRoutine( ULONG_PTR );
+    static VOID CALLBACK _sendPlaylistToOne( ULONG_PTR tcpSock );
     //static void _handleSockMsgqMsg(ServerControlThread* dis);
-    /**
-     * reference to the one and only {ServerControlThread} instance.
-     */
-    static ServerControlThread* _instance;
     /**
      * pointer to the UDPSocket owned by the control thread.
      */
-    UDPSocket* udpSocket;
-    /**
-     * pointer to IP address of the remote host
-     */
-    short port;
+    UDPSocket * udpSocket;
     /**
      * Message queue used to communicate to {_thread}, and get it to do tasks.
      */
@@ -40,15 +42,24 @@ private:
     /**
      * Message queue used to receive data from {_TCPSocket}.
      */
-    std::vector<MessageQueue*> _sockMsgqs;
+    std::vector< TCPSocket * > _socks;
+    std::vector< HANDLE > _sockHandles;
     /**
      * handle to the thread used to run {ServerControlThread::_threadRoutine}.
      */
     HANDLE _thread;
     /**
+     * handle to the thread used to run {ServerControlThread::_multicastRoutine}.
+     */
+    HANDLE _multicastThread;
+    /**
      * handle to an event object, used to stop the execution of thread.
      */
     HANDLE _threadStopEv;
+
+    HANDLE access;
+
+    Playlist * playlist;
 };
 
 #endif

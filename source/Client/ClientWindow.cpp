@@ -59,16 +59,6 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
     voiceBufferer->start();
 	PlayWave* p = new PlayWave(50,q1);
 
-	p->startPlaying(MIC_SAMPLE_RATE, MIC_BITS_PER_SAMPLE, NUM_MIC_CHANNELS);
-
-	HANDLE ThreadHandle;
-	DWORD ThreadId;
-
-	if ((ThreadHandle = CreateThread(NULL, 0, MicThread, (void*)this, 0, &ThreadId)) == NULL)
-    {
-		MessageBox(NULL, L"CreateThread failed with error", L"ERROR", MB_ICONERROR);
-		return;
-	}
 }
 
 DWORD WINAPI ClientWindow::MicThread(LPVOID lpParameter)

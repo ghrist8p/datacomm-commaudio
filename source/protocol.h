@@ -53,7 +53,7 @@ struct SongStream
 	short channels;
 	short bps; //bit rae
 	unsigned long sample_rate;
-	int index;
+	int id;
 	char songname[STR_LEN];
 };
 
@@ -61,7 +61,7 @@ typedef struct SongStream SongStream;
 
 struct SongName
 {
-	int index;
+	int  id;
 	char filepath[STR_LEN];
 };
 

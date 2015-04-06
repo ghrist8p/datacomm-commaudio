@@ -403,10 +403,10 @@ void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets
 
 				sendSong = (char*)malloc(sizeof(char) * SIZE_INDEX);
 
-				sendSong[0] = (songloc.index >> 24) & 0xFF;
-				sendSong[1] = (songloc.index >> 16) & 0xFF;
-				sendSong[2] = (songloc.index >> 8) & 0xFF;
-				sendSong[3] = songloc.index & 0xFF;
+				sendSong[0] = (songloc.id >> 24) & 0xFF;
+				sendSong[1] = (songloc.id >> 16) & 0xFF;
+				sendSong[2] = (songloc.id >> 8) & 0xFF;
+				sendSong[3] = songloc.id & 0xFF;
 
 				//for every client
 				for (int i = 0; i < sockets.size(); i++)
