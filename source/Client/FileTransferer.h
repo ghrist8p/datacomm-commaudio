@@ -1,3 +1,25 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: FileTransferer.h - This file provides functionality for
+-- transferring files between multiple computers.
+--
+-- PUBLIC FUNCTIONS:
+-- void sendFile(char *filename, TCPSocket *socket);
+-- void recvFile(char *data);
+-- void cancelTransfer(char *filename, TCPSocket *socket);
+--
+-- DATE:
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-- This class will SEND transfer data using TCPSockets, but must be fed
+-- incoming data into recvFile.
+-----------------------------------------------------------------------------*/
+
 #ifndef _FILE_TRANSFERER_H_
 #define _FILE_TRANSFERER_H_
 
@@ -9,10 +31,16 @@
 
 class FileTransferer;
 
-struct FileTransferInfo
+/*
+	A Callback type called when a download has finished transferring.
+*/
+typedef void(*OnDownloadComplete)(char *filename, bool success);
+
+/*
+	Data Sent/Received to communicate file data.
+ */
+struct FileTransferData
 {
-	FileTransferer *pThis;
-	int socket;
 	char filename[FILENAME_PACKET_LENGTH];
 	char data[FILE_PACKET_SIZE];
 	int dataLen;
@@ -20,24 +48,47 @@ struct FileTransferInfo
 	bool f_EOF;
 };
 
+/*
+	Information used internally to utilize threads.
+*/
+struct FileTransferInfo
+{
+	FileTransferer *pThis;
+	TCPSocket *socket;
+	FileTransferData *data;
+};
+
+/*-----------------------------------------------------------------------------
+-- CLASS: FileTransferer
+--
+-- DESCRIPTION: This class provides functionality for sending/receiving files
+-- across multiple computers. It will keep track of multiple downloads/uploads
+-- and send a callback when a download has finished.
+--
+-- When a Download has finished transferring (successfully or not), the
+-- OnDownloadComplete callback is called indicating the status.
+-----------------------------------------------------------------------------*/
 class FileTransferer
 {
 	public:
-		FileTransferer(char *filename, int socket, bool send);
-		~FileTransferer();
+		/* CONSTRUCTORS/DESTRUCTORS */
+		FileTransferer(OnDownloadComplete downloadComplete);
+		~FileTransferer(){};
 
-		void sendFile();
+		/* PUBLIC MEMBER METHODS */
+		void sendFile(char *filename, TCPSocket *socket);
 		void recvFile(char *data);
-		void cancelTransfer();
+		void cancelTransfer(char *filename, TCPSocket *socket);
 
 	private:
+		/* PRIVATE STATIC MEMBER METHODS */
 		static DWORD WINAPI TransferThread(LPVOID transferInfo);
 
-		int currentSegment;
-		FILE *file;
-		char *filename;
-		int socket;
-		bool transferring;
+		/* PRIVATE MEMBER DATA */
+		std::map<char*, std::map<TCPSocket*, FILE*>> filesOut;
+		std::map<char*, FILE*> filesIn;
+		std::map<char*, std::map<TCPSocket*, bool>> transferring;
+		OnDownloadComplete onDownloadComplete;
 };
 
 #endif
