@@ -1,88 +1,209 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: FileTransferer.h - This file provides functionality for
+-- transferring files between multiple computers.
+--
+-- PUBLIC FUNCTIONS:
+-- void sendFile(char *filename, TCPSocket *socket);
+-- void recvFile(char *data);
+-- void cancelTransfer(char *filename, TCPSocket *socket);
+--
+-- DATE:
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-- This class will SEND transfer data using TCPSockets, but must be fed
+-- incoming data into recvFile.
+-----------------------------------------------------------------------------*/
+
 #include "FileTransferer.h"
 
 #include <fstream>
 #include <string>
 
-FileTransferer::FileTransferer(char *filename, int socket, bool send)
-	: filename(filename), socket(socket)
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: FileTransferer
+--
+-- DATE:
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: FileTransferer(OnDownloadComplete downloadComplete)
+--		OnDownloadComplete downloadComplete	 : the callback to call when a download stops.
+--
+-- NOTES: Create a new FileTransferer
+-------------------------------------------------------------------------------------------------*/
+FileTransferer::FileTransferer(OnDownloadComplete downloadComplete)
+	: onDownloadComplete(downloadComplete)
 {
-	if (send)
-		sendFile();
 }
 
-FileTransferer::~FileTransferer()
-{
-
-}
-
-void FileTransferer::sendFile()
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: sendFile
+--
+-- DATE:
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: sendFile(char *filename, TCPSocket *socket)
+--		char *filename	  : the name of the file to send.
+--		TCPSocket *socket : the client to send the file to.
+--
+-- NOTES: Start sending a file to a client. Multiple file transfers can occur at once, both up
+-- and down, from the same instance.
+-------------------------------------------------------------------------------------------------*/
+void FileTransferer::sendFile(char *filename, TCPSocket *socket)
 {
 	FileTransferInfo info = { 0 };
+	FileTransferData *data = new FileTransferData;
 	info.pThis = this;
-	memcpy(info.filename, file, strlen(filename));
-	memcpy(info.data, 0, FILE_PACKET_SIZE);
-	info.f_SOF = true;
-	info.f_EOF = false;
-	info.dataLen = 0;
 	info.socket = socket;
+	info.data = data;
 
-	transferring = true;
-	CreateThread(NULL, 0, FileTransferer::TransferThread, &info, 0, NULL);
+	memcpy(data->filename, filename, strlen(filename));
+	memcpy(data->data, 0, FILE_PACKET_SIZE);
+	data->f_SOF = true;
+	data->f_EOF = false;
+	data->dataLen = 0;
+
+	if (filesOut.find(filename) != filesOut.end())
+	{
+		filesOut[filename][socket] = fopen(filename, "rb");
+		transferring[filename][socket] = true;
+		CreateThread(NULL, 0, FileTransferer::TransferThread, &info, 0, NULL);
+	}
 }
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: recvFile
+--
+-- DATE:
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: recvFile(char *data)
+--		char *data : the received file data
+--
+-- NOTES: Data Received from a remote FileTranserer "sendFile" call. Data will be placed into
+-- the file associated with the correct filename.
+-------------------------------------------------------------------------------------------------*/
 void FileTransferer::recvFile(char *data)
 {
-	FileTransferInfo *info = (FileTransferInfo*) data;
+	FileTransferData *ft_data = (FileTransferData*) data;
+	FILE *file;
 
 	// Check if the file should be created
-	if (info->f_SOF)
+	if (ft_data->f_SOF)
 	{
 		//CreateDirectory(DOWNLOAD_FOLDER, NULL);
-		file = fopen(info->filename, "wb");
+		filesIn[ft_data->filename] = fopen(ft_data->filename, "wb");
 	}
+
+	file = filesIn[ft_data->filename];
 
 	// If the file is open, add contents
 	if (file)
 	{
 		// Write data into the file
-		fwrite(info->data, sizeof(char), info->dataLen, file);
+		fwrite(ft_data->data, sizeof(char), ft_data->dataLen, file);
 
 		// If End of File Sent, close the file
-		if (info->f_EOF)
+		if (ft_data->f_EOF)
 		{
 			fclose(file);
+			onDownloadComplete(ft_data->filename, true);
 		}
 	}
 }
 
-void FileTransferer::cancelTransfer()
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: cancelTransfer
+--
+-- DATE:
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: cancelTransfer(char *filename, TCPSocket *socket)
+--		char *filename    : the name of the file to cancel transferring
+--		TCPSocket *socket : the socket of the client being transferred to.
+--
+-- NOTES: Stop a file Transfer to a given client.
+-------------------------------------------------------------------------------------------------*/
+void FileTransferer::cancelTransfer(char *filename, TCPSocket *socket)
 {
-	transferring = false;
+	transferring[filename][socket] = false;
+	onDownloadComplete(filename, false);
 }
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: TransferThread
+--
+-- DATE:
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: cancelTransfer(LPVOID transferInfo)
+--		LPVOID transferInfo : the file transfer information
+--
+-- NOTES: Transfer a file in a thread until the file is completely sent, or transfer is
+-- cancelled.
+-------------------------------------------------------------------------------------------------*/
 DWORD WINAPI FileTransferer::TransferThread(LPVOID transferInfo)
 {
 	FileTransferInfo *info = (FileTransferInfo*) transferInfo;
-	std::ifstream file(info->filename, std::ios::binary);
+	FileTransferData *data = (FileTransferData*) info->data;
+
+	std::ifstream file(data->filename, std::ios::binary);
 
 	char buffer[FILE_PACKET_SIZE];
+	bool success = false;
 
-	while (info->pThis->transferring && file.is_open() && file.read(buffer, FILE_PACKET_SIZE))
+	// Transfer until cancelled or EOF is found.
+	while (info->pThis->transferring[data->filename][info->socket] && file.is_open() && file.read(buffer, FILE_PACKET_SIZE))
 	{
 		// Update the FileTransferInfo struct with new data
-		info->f_EOF = (file.eofbit) ? true : false;
-		info->dataLen = file.gcount();
-		memcpy(info->data, buffer, info->dataLen);
+		data->f_EOF = (file.eofbit) ? true : false;
+		data->dataLen = file.gcount();
+		memcpy(data->data, buffer, data->dataLen);
 
 		// Send Data
-		send(info->socket, (char*) info, sizeof(FILE_PACKET_SIZE), NULL);
+		info->socket->Send(DOWNLOAD, (void*)data, sizeof(FileTransferData));
 
 		// Mark all but first packet as NOT the start of file
-		if (info->f_SOF)
-			info->f_SOF = false;
+		if (data->f_SOF)
+		{
+			data->f_SOF = false;
+			success = true;
+		}
 	}
 
+	// Close the File
 	file.close();
+	info->pThis->onDownloadComplete(data->filename, success);
 
 	return 0;
 }

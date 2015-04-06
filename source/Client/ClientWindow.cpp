@@ -21,7 +21,6 @@
 #include "PlayWave.h"
 
 #define MIC_SAMPLE_RATE (44100/2)
-//#define MIC_RECORD_INTERVAL 0.740
 #define MIC_BUFFER_LENGTH DATA_LEN
 
 ClientWindow::ClientWindow(HINSTANCE hInst)
@@ -47,18 +46,13 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	requestingRecorderStop = false;
 	micMQueue = new MessageQueue(1000,MIC_BUFFER_LENGTH);
 
-	MessageQueue* q2 = new MessageQueue(1500,sizeof(DataPacket));
+	MessageQueue* q2 = new MessageQueue(1500,sizeof(LocalDataPacket));
 	udpSock = new UDPSocket(MULTICAST_PORT,q2);
 	udpSock->setGroup(MULTICAST_ADDR,1);
 
 	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,MIC_BUFFER_LENGTH,50,50);
 	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q2);
 	recvThread->start();
-	MessageQueue* q1 = new MessageQueue(1500,MIC_BUFFER_LENGTH);
-	VoiceBufferer* voiceBufferer = new VoiceBufferer(q1,musicJitBuf);
-	voiceBufferer->start();
-	PlayWave* p = new PlayWave(50,q1);
-	p->startPlaying(MIC_SAMPLE_RATE, MIC_BITS_PER_SAMPLE, NUM_MIC_CHANNELS);
 
 	HANDLE ThreadHandle;
 	DWORD ThreadId;
@@ -81,14 +75,14 @@ DWORD ClientWindow::ThreadStart(void)
 	int type;
 	int length;
 
-    DataPacket packet;
-    packet.index = 0;
+	DataPacket packet;
+	packet.index = 0;
 
 	while (true)
 	{
-        ++(packet.index);
+		++(packet.index);
 		micMQueue->dequeue(&type, packet.data, &length);
-		udpSock->sendtoGroup(MUSICSTREAM, &packet, sizeof(DataPacket));
+		udpSock->sendtoGroup(MICSTREAM, &packet, sizeof(DataPacket));
 	}
 
 }
