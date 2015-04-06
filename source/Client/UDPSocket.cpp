@@ -348,7 +348,6 @@ void UDPSocket::setGroup(char* group_address, int mem_flag)
 	char loop = 1;
 	char ttl = 2;
 	in_addr interfaceAddr;
-	interfaceAddr.s_addr = INADDR_ANY;
 	interfaceAddr.s_addr = inet_addr(INADDR_ANY);
 	memset(&mreq,0,sizeof(mreq));
 	mreq.imr_multiaddr.s_addr = inet_addr(group_address);
