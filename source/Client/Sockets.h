@@ -21,8 +21,6 @@ typedef struct {
 	MessageQueue* mqueue;
 } SOCKET_INFORMATION, *LPSOCKET_INFORMATION;
 
-class TCPSocket;
-
 class UDPSocket
 {
 private:
@@ -64,7 +62,7 @@ public:
 	TCPSocket(char* host, int port, MessageQueue* mqueue);
 	~TCPSocket();
 	int Send(char type, void* data, int length);
-    
+
     MessageQueue * getMessageQueue( void );
 };
 
