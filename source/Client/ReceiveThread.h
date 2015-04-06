@@ -2,6 +2,8 @@
 #define _RECEIVE_THREAD_H_
 
 #include "../common.h"
+#include "../Buffer/JitterBuffer.h"
+#include <map>
 
 class MessageQueue;
 class JitterBuffer;
@@ -20,6 +22,7 @@ private:
     static void handleMsgqMsg(ReceiveThread* dis);
     MessageQueue* sockMsgQueue;
     JitterBuffer* musicJitterBuffer;
+    std::map<unsigned long,JitterBuffer*>
     HANDLE thread;
     HANDLE threadStopEv;
 };

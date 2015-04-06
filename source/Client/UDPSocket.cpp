@@ -271,35 +271,38 @@ DWORD UDPSocket::ThreadStart(void)
 		}
 		else
 		{
-            len = RecvBytes - 1;
-			CHAR* dataReceived = (char*)malloc(sizeof(char) * len);
-			memcpy(dataReceived, socketInfo.Buffer+1, len);
-			char* sourceaddr = inet_ntoa(source.sin_addr);
-            socketInfo.mqueue->enqueue(socketInfo.Buffer[0], dataReceived, len);
-			free(dataReceived);
+			len = RecvBytes - 1;
+
+			DataPacket dataPacket;
+			LocalDataPacket localDataPacket;
+			memcpy(&dataPacket,socketInfo.Buffer+1,len);
+			localDataPacket.index = dataPacket.index;
+			localDataPacket.srcAddr = source.sin_addr.s_addr;
+			memcpy(localDataPacket.data,dataPacket.data,DATA_LEN);
+			socketInfo.mqueue->enqueue(socketInfo.Buffer[0],&localDataPacket,sizeof(LocalDataPacket));
 		}
 	}
 }
 
 void UDPSocket::setGroup(char* group_address, int mem_flag)
 {
-    char loop = 0;
-    char ttl = 1;
-    in_addr interfaceAddr;
-    interfaceAddr.s_addr = INADDR_ANY;
+	char loop = 0;
+	char ttl = 1;
+	in_addr interfaceAddr;
+	interfaceAddr.s_addr = INADDR_ANY;
 	memset(&mreq,0,sizeof(mreq));
 	mreq.imr_multiaddr.s_addr = inet_addr(group_address);
-    mreq.imr_interface.s_addr = INADDR_ANY;
-    int i = 0;
-    int err = 0;
+	mreq.imr_interface.s_addr = INADDR_ANY;
+	int i = 0;
+	int err = 0;
 	if (mem_flag)
 	{
 		i = setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
-        err = GetLastError();
-        i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
-        err = GetLastError();
-        i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
-        err = GetLastError();
+		err = GetLastError();
+		// i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
+		// err = GetLastError();
+		i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
+		err = GetLastError();
 	}
 	setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char*)&interfaceAddr, sizeof(interfaceAddr));
 }
@@ -314,9 +317,9 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 
 	data_send[0] = type;
 
-    DataPacket* p = (DataPacket*) data;
+	DataPacket* p = (DataPacket*) data;
 
-    memcpy(data_send + 1, (char*)data, length);
+	memcpy(data_send + 1, (char*)data, length);
 
 	WaitResult = WaitForSingleObject(mutex, INFINITE);
 
@@ -361,7 +364,7 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 
 MessageQueue* UDPSocket::getMessageQueue()
 {
-    return msgqueue;
+	return msgqueue;
 }
 
 void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets)

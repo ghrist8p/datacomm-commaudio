@@ -86,14 +86,14 @@ void ReceiveThread::handleMsgqMsg(ReceiveThread* dis)
     {
     case MUSICSTREAM:
     {
-        DataPacket* packet = (DataPacket*) element;
+        LocalDataPacket* packet = (DataPacket*) element;
         dis->musicJitterBuffer->put(packet->index,packet->data);
         break;
     }
     case MICSTREAM:
     {
         // TODO: make a new audio wave thing or use an existing one
-        DataPacket* packet = (DataPacket*) element;
+        LocalDataPacket* packet = (DataPacket*) element;
         dis->musicJitterBuffer->put(packet->index,packet->data);
         break;
     }
