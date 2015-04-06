@@ -26,13 +26,12 @@
 #define _MIC_READER_H_
 
 #include "../common.h"
+#include "../protocol.h"
 #include <mmsystem.h>
 #include <queue>
 
 #define WM_MIC_STOPPED_READING (WM_USER + 0x0001)
 #define MIC_INPUT_MQUEUE_TYPE 101
-#define MIC_BITS_PER_SAMPLE 8
-#define NUM_MIC_CHANNELS 1
 
 class MessageQueue;
 

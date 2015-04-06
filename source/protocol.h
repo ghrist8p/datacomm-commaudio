@@ -18,6 +18,14 @@
 
 #define STR_LEN 128
 
+#define AUDIO_BITS_PER_SAMPLE 8
+
+#define AUDIO_SAMPLE_RATE (44100/2)
+
+#define AUDIO_BUFFER_LENGTH DATA_LEN
+
+#define NUM_AUDIO_CHANNELS 1
+
 /**
  * audio data packet, that has an {index}, describing in what order the packet is
  *   supposed to be played.
