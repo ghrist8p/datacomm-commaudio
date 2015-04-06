@@ -95,7 +95,7 @@ void ReceiveThread::handleMsgqMsg(ReceiveThread* dis)
     // process the message queue message according to its type
     switch(msgType)
     {
-    case MUSICSTREAM:
+	case MUSICSTREAM:
     {
         LocalDataPacket* packet = (LocalDataPacket*) element;
         dis->musicJitterBuffer->put(packet->index,packet->data);
