@@ -9,6 +9,7 @@
 #include "../GuiLibrary/GuiLabel.h"
 #include "../GuiLibrary/GuiScrollList.h"
 #include "../GuiLibrary/GuiScrollBar.h"
+#include "../GuiLibrary/GuiTextBox.h"
 #include "PlaybackTrackerPanel.h"
 #include "ButtonPanel.h"
 #include "FileListItem.h"
@@ -100,7 +101,6 @@ ClientWindow::~ClientWindow()
 	delete topPanelStretch;
 	delete fileContainerPanel;
 	delete seekPanel;
-	delete micTargetLabel;
 	delete micTargetButton;
 	delete statusBar;
 	delete trackerPanel;
@@ -109,6 +109,8 @@ ClientWindow::~ClientWindow()
 	delete bottomSpacer;
 	delete playButton;
 	delete stopButton;
+	delete voiceTargetInput;
+	delete voiceTargetLabel;
 
 	DeleteObject(playButtonUp);
 	DeleteObject(playButtonDown);
@@ -138,7 +140,8 @@ void ClientWindow::onCreate()
 	topPanelStretch = new GuiPanel(hInst, topPanel);
 	fileContainerPanel = new GuiScrollList(hInst, this);
 	seekPanel = new GuiPanel(hInst, this);
-	micTargetLabel = new GuiLabel(hInst, topPanel);
+	voiceTargetLabel = new GuiLabel(hInst, topPanel);
+	voiceTargetInput = new GuiTextBox(hInst, topPanel, false);
 	micTargetButton = new GuiButton(hInst, topPanel, IDB_MIC_TOGGLE);
 	statusBar = new GuiStatusBar(hInst, this);
 	trackerPanel = new PlaybackTrackerPanel(hInst, this);
@@ -159,7 +162,7 @@ void ClientWindow::onCreate()
 	topPanel->enableCustomDrawing(true);
 	topPanel->setBorderPen(nullPen);
 	topPanel->setBackgroundBrush(darkBackground);
-	topPanel->setPreferredSize(0, 64);
+	topPanel->setPreferredSize(0, 32);
 	layout->addComponent(topPanel);
 
 	// Add File Panel to layout
@@ -203,11 +206,27 @@ void ClientWindow::onCreate()
 	bottomSpacer->setBackgroundBrush(darkBackground);
 	layout->addComponent(bottomSpacer);
 
+	// Add Top Spacer
+	layout = (GuiLinearLayout*)topPanel->getLayoutManager();
+	layout->setHorizontal(true);
+	topPanelStretch->init();
+	topPanelStretch->setPreferredSize(150, 0);
+	layout->addComponent(topPanelStretch);
+
+	// Add Microphone Label
+	voiceTargetLabel->init();
+	voiceTargetLabel->setText(L"Target");
+	layout->addComponent(voiceTargetLabel);
+
+	// Add Microphone Textbox
+	voiceTargetInput->init();
+	voiceTargetInput->enableCustomDrawing(false);
+	voiceTargetInput->setPreferredSize(184, 32);
+	layout->addComponent(voiceTargetInput);
+
 	// Add Microphone Button
 	micTargetButton->init();
 	micTargetButton->setText(L"Start Speaking");
-	layout = (GuiLinearLayout*)topPanel->getLayoutManager();
-	layout->setHorizontal(true);
 	layout->addComponent(micTargetButton);
 	topPanel->addCommandListener(BN_CLICKED, onClickMic, this);
 
