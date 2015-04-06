@@ -1,11 +1,10 @@
 #include "MusicReader.h"
-#include "MusicBufferer.h"
+#include "MusicBuffer.h"
 #include "../Buffer/MessageQueue.h"
 
-MusicReader::MusicReader(MusicBufferer* musicB, MessageQueue* mqueue) : msgqueue(mqueue)
+MusicReader::MusicReader(MessageQueue* mqueue, MusicBuffer* mbuffer) : msgqueue(mqueue)
 {
-	musicbuffer = musicB;
-
+	musicbuffer = mbuffer;
 	HANDLE ThreadHandle;
 	DWORD ThreadId;
 
@@ -17,13 +16,8 @@ MusicReader::MusicReader(MusicBufferer* musicB, MessageQueue* mqueue) : msgqueue
 }
 MusicReader::~MusicReader()
 {
-	delete musicbuffer;
+	//delete msgqueue
 	//fclose(music_file);
-}
-
-void MusicReader::restartBuffer()
-{
-	fseek(music_file, 0, SEEK_SET);
 }
 
 DWORD WINAPI MusicReader::fileThread(LPVOID lpParameter)
@@ -34,14 +28,16 @@ DWORD WINAPI MusicReader::fileThread(LPVOID lpParameter)
 
 DWORD MusicReader::ThreadStart(void)
 {
-	music_file = fopen("tempmusic.txt", "rb");
-	int len = 0;
-	len = musicbuffer->getSize();
+	//music_file = fopen("tempmusic.txt", "rb");
+	int len;
+	len = msgqueue->elementSize;
 	char* music_data = (char*)malloc(sizeof(char) * len);
-
+	
 	while (true)
 	{
-		fread(music_data, 1, len, music_file);
+		musicbuffer->readBuf(music_data, len);
 		msgqueue->enqueue(ACTUAL_MUSIC, music_data, len);
 	}
+
+	return true;
 }
