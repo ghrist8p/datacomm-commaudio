@@ -358,5 +358,12 @@ int TCPSocket::Send(char type, void* data, int length)
 		return 0;
 	}
 
+	free(data_send);
+
 }
 
+
+MessageQueue * TCPSocket::getMessageQueue( void )
+{
+    return msgqueue;
+}

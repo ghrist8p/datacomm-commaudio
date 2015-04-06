@@ -47,25 +47,24 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	requestingRecorderStop = false;
 	micMQueue = new MessageQueue(1000,MIC_BUFFER_LENGTH);
 
-    MessageQueue* q2 = new MessageQueue(1500,sizeof(DataPacket));
+	MessageQueue* q2 = new MessageQueue(1500,sizeof(DataPacket));
 	udpSock = new UDPSocket(MULTICAST_PORT,q2);
 	udpSock->setGroup(MULTICAST_ADDR,1);
 
-	JitterBuffer* musicJitBuf = new JitterBuffer(5000,3000,MIC_BUFFER_LENGTH,50,0);
-	ReceiveThread* recvThread = new ReceiveThread(q2,musicJitBuf);
+	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,MIC_BUFFER_LENGTH,50,50);
+	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q2);
 	recvThread->start();
 	MessageQueue* q1 = new MessageQueue(1500,MIC_BUFFER_LENGTH);
 	VoiceBufferer* voiceBufferer = new VoiceBufferer(q1,musicJitBuf);
-    voiceBufferer->start();
-	PlayWave* p = new PlayWave(1000,q1);
-
+	voiceBufferer->start();
+	PlayWave* p = new PlayWave(50,q1);
 	p->startPlaying(MIC_SAMPLE_RATE, MIC_BITS_PER_SAMPLE, NUM_MIC_CHANNELS);
 
 	HANDLE ThreadHandle;
 	DWORD ThreadId;
 
 	if ((ThreadHandle = CreateThread(NULL, 0, MicThread, (void*)this, 0, &ThreadId)) == NULL)
-    {
+	{
 		MessageBox(NULL, L"CreateThread failed with error", L"ERROR", MB_ICONERROR);
 		return;
 	}

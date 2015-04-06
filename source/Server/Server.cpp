@@ -192,23 +192,6 @@ bool Server::startUDP()
 	//makes the socket multicast and adds it to the group.
 	setsockopt( multicastSocket, IPPROTO_IP, IP_MULTICAST_IF, (char*)&group, sizeof(group));
 }
-//
-//void Server::sendToGroup( const char * buf, int len )
-//{
-//    if( sendto( multicastSocket            //_In_ SOCKET                  s
-//              , buf                        //_In_ const char            * buf
-//              , len                        //_In_ int                     len
-//              , 0                          //_In_ int                     flags
-//              , (struct sockaddr *) &group //_In_ const struct sockaddr * to
-//              , sizeof( group ) )          //_In_ int                     tolen
-//        < 0 )
-//    {
-//        wchar_t errorStr[256] = {0};
-//        swprintf( errorStr, 256, L"sendto() failed: %d", WSAGetLastError() );
-//        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
-//    }
-//}
-
 void Server::disconnect()
 {
 	closesocket(listenSocket);

@@ -1,3 +1,29 @@
+#include "ServerControlThread.h"
+
+/*
+ * message queue constructor parameters
+ */
+#define MSGQ_CAPACITY 30
+#define MSGQ_ELEM_SIZE sizeof(MsgqElement)
+#define SOCK_MSGQ_CAPACITY 1000
+#define SOCK_MSGQ_ELEM_SIZE sizeof(SockMsgqElement)
+
+/**
+ * element that is put into the message queue.
+ */
+union MsgqElement
+{
+    int index;
+    char string[STR_LEN];
+};
+
+/**
+ * element that is put into the socket message queue
+ */
+union SockMsgqElement
+{
+    char data[DATA_BUFSIZE];
+};
 
 /////////////////////////////////////////
 // static function forward declaration //
@@ -6,30 +32,22 @@ static int startRoutine(HANDLE* thread, HANDLE stopEvent,
     LPTHREAD_START_ROUTINE routine, void* params);
 static int stopRoutine(HANDLE* thread, HANDLE stopEvent);
 
-ServerControlThread* getInstance()
+ServerControlThread * ServerControlThread::getInstance()
 {
-    // acquire synchronization objects
-    WaitForSingleObject(access,INFINITE);
-
-    // retrieve singleton and make if needed
-    if(_instance == 0)
-    {
-        _instance = new ServerControlThread();
-    }
-
-    // release synchronization objects
-    ReleaseMutex(access);
-
+    static ServerControlThread * _instance = new ServerControlThread();
     return _instance;
 }
 
 ServerControlThread::ServerControlThread()
-    :_msgq(MSGQ_CAPACITY,MSGQ_ELEM_SIZE)
-    ,_sockMsgq(SOCK_MSGQ_CAPACITY,SOCK_MSGQ_ELEM_SIZE)
+    : _msgq(MSGQ_CAPACITY,MSGQ_ELEM_SIZE)
+    , _socks()
+    , access( CreateMutex(NULL, FALSE, NULL) )
 {
     // initialize instance variables
     _threadStopEv = CreateEvent(NULL,TRUE,FALSE,NULL);
     _thread       = INVALID_HANDLE_VALUE;
+
+    _sockHandles.emplace_back( _threadStopEv );
 }
 
 ServerControlThread::~ServerControlThread()
@@ -37,55 +55,188 @@ ServerControlThread::~ServerControlThread()
 
 }
 
-void ServerControlThread::start(short port)
+
+void ServerControlThread::setPlaylist( Playlist * _playlist )
 {
-    this->port = port;
-    _startRoutine(&_thread,_threadStopEv,_threadRoutine,this);
+    if( _playlist != NULL )
+    {
+        WaitForSingleObject(access,INFINITE);
+        playlist = _playlist;
+        ReleaseMutex(access);
+    }
+}
+
+void ServerControlThread::setUDPSocket( UDPSocket * sock )
+{
+    if( sock != NULL )
+    {
+        WaitForSingleObject(access,INFINITE);
+        udpSocket = sock;
+        ReleaseMutex(access);
+    }
+}
+
+
+void ServerControlThread::addConnection( TCPSocket * connection )
+{
+    WaitForSingleObject(access,INFINITE);
+    _socks.emplace_back( connection );
+    _sockHandles.emplace_back( connection->getMessageQueue()->hasMessage );
+    QueueUserAPC( _sendPlaylistToOne        // _In_  PAPCFUNC pfnAPC,
+                , _thread                   // _In_  HANDLE hThread,
+                , (ULONG_PTR) connection ); // _In_  ULONG_PTR dwData
+    ReleaseMutex(access);
+}
+
+void ServerControlThread::start()
+{
+    startRoutine(&_thread,_threadStopEv,_threadRoutine,this);
 }
 
 void ServerControlThread::stop()
 {
-    _stopRoutine(&_thread,_threadStopEv);
+    stopRoutine(&_thread,_threadStopEv);
 }
 
-DWORD WINAPI ServerControlThread::_threadRoutine(void* params)
+DWORD WINAPI ServerControlThread::_threadRoutine( void * params )
+{
+    ServerControlThread * thiz = (ServerControlThread *) params;
+
+    int breakLoop = FALSE;
+    while(!breakLoop)
+    {
+        int handleNum = 0;
+        switch( handleNum = WaitForMultipleObjectsEx(  thiz->_sockHandles.size()
+                                                    , &thiz->_sockHandles[ 0 ]
+                                                    , FALSE
+                                                    , INFINITE
+                                                    , TRUE ) )
+        {
+        case WAIT_IO_COMPLETION:
+            break;
+        case WAIT_OBJECT_0+0:   // stop event triggered
+            breakLoop = TRUE;
+            break;
+        default:
+            int len = thiz->_socks[ handleNum ]->getMessageQueue()->peekLen();
+            RequestPacket * data = new RequestPacket;
+            int type;
+            thiz->_socks[ handleNum ]->getMessageQueue()->dequeue( &type, data );
+            switch( type )
+            {
+            case CHANGE_STREAM:
+                thiz->_handleMsgChangeStream( data );
+                break;
+            case REQUEST_DOWNLOAD:
+                thiz->_handleMsgRequestDownload( data );
+                break;
+            case CANCEL_DOWNLOAD:
+                thiz->_handleMsgCancelDownload( data );
+                break;
+            case DISCONNECT:
+                thiz->_handleMsgDisconnect( handleNum );
+                break;
+            }
+            break;
+        }
+    }
+    return 0;
+}
+
+void ServerControlThread::_handleMsgChangeStream( RequestPacket * data )
+{
+    udpSocket->stopSong();
+    DWORD useless;
+    _multicastThread = CreateThread( 0, 0, _multicastRoutine, playlist->getSong( data->index ), 0, &useless );
+}
+
+void ServerControlThread::_handleMsgRequestDownload( RequestPacket * data )
 {
 
+}
+
+void ServerControlThread::_handleMsgCancelDownload( RequestPacket * data )
+{
+
+}
+
+void ServerControlThread::_handleMsgDisconnect( int client )
+{
+    WaitForSingleObject( access, INFINITE );
+    _socks.erase( _socks.begin() + client );
+    _sockHandles.erase( _sockHandles.begin() + client );
+    ReleaseMutex( access );
+}
+
+void ServerControlThread::sendPlaylistToAll( void )
+{
+    QueueUserAPC( _sendPlaylistToAllRoutine // _In_  PAPCFUNC pfnAPC,
+                , _thread                   // _In_  HANDLE hThread,
+                , NULL );                   // _In_  ULONG_PTR dwData
+}
+
+VOID CALLBACK ServerControlThread::_sendPlaylistToAllRoutine( ULONG_PTR )
+{
+    ServerControlThread * thiz = ServerControlThread::getInstance();
+    for( std::vector< TCPSocket * >::iterator sockit = thiz->_socks.begin()
+        ; sockit != thiz->_socks.end()
+        ; ++sockit )
+    {
+        _sendPlaylistToOne( (ULONG_PTR) *sockit );
+    }
+}
+
+VOID CALLBACK ServerControlThread::_sendPlaylistToOne( ULONG_PTR data )
+{
+    ServerControlThread * thiz = ServerControlThread::getInstance();
+    TCPSocket * sock = (TCPSocket *) data;
+
+    for( std::vector< SongName >::iterator songit = thiz->playlist->playlist.begin()
+       ; songit != thiz->playlist->playlist.end()
+       ; ++songit )
+    {
+        sock->Send( NEW_SONG, &(*songit), sizeof( SongName ) );
+    }
+}
+
+DWORD WINAPI ServerControlThread::_multicastRoutine( void * params )
+{
+    ServerControlThread * thiz = ServerControlThread::getInstance();
+    thiz->udpSocket->sendWave( *((SongName *) params), 60, thiz->_socks );
+    return 0;
 }
 
 /////////////////////////////////////
 // static function implementations //
 /////////////////////////////////////
 
-int startRoutine(HANDLE* thread, HANDLE stopEvent,
-    LPTHREAD_START_ROUTINE routine, void* params)
+int startRoutine( HANDLE                 * thread
+                , HANDLE                   stopEvent
+                , LPTHREAD_START_ROUTINE   routine
+                , void                   * params)
 {
     // return immediately if the routine is already running
-    if(*thread != INVALID_HANDLE_VALUE)
-    {
+    if( *thread != INVALID_HANDLE_VALUE )
         return 1;
-    }
 
     // reset the stop event
-    ResetEvent(stopEvent);
+    ResetEvent( stopEvent );
 
     // start the thread & return
     DWORD useless;
-    *thread = CreateThread(0,0,routine,params,0,&useless);
-    return (*thread == INVALID_HANDLE_VALUE);
+    *thread = CreateThread( 0, 0, routine, params, 0, &useless );
+    return ( *thread == INVALID_HANDLE_VALUE );
 }
 
 int stopRoutine(HANDLE* thread, HANDLE stopEvent)
 {
     // return immediately if the routine is already stopped
     if(*thread == INVALID_HANDLE_VALUE)
-    {
         return 1;
-    }
 
     // set the stop event to stop the thread
-    SetEvent(stopEvent);
-    WaitForSingleObject(*thread,INFINITE);
+    SetEvent( stopEvent );
+    WaitForSingleObject( *thread, INFINITE );
 
     // invalidate thread handle, so we know it's terminated
     *thread = INVALID_HANDLE_VALUE;

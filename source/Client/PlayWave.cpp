@@ -1,7 +1,7 @@
 #ifndef _PLAY_WAVE_CPP_
 #define _PLAY_WAVE_CPP_
 
-//#define DEBUG
+#define DEBUG
 //#define RUN_TEST
 
 #include "PlayWave.h"
@@ -329,7 +329,7 @@ void PlayWave::handleMsgqMsg()
 	waveOutWrite(speakers,audioPacket,sizeof(*audioPacket));
 
 	// acquire synchronization objects
-	//WaitForSingleObject(canEnqueue,INFINITE);
+	WaitForSingleObject(canEnqueue,INFINITE);
 	WaitForSingleObject(lastAudioPacketAccess,INFINITE);
 
 	// link the previous audio packet, if it has not been deallocated yet, to
@@ -347,7 +347,7 @@ void PlayWave::handleMsgqMsg()
 
 	// release synchronization objects
 	ReleaseMutex(lastAudioPacketAccess);
-	//ReleaseSemaphore(canDequeue,1,NULL);
+	ReleaseSemaphore(canDequeue,1,NULL);
 }
 
 void PlayWave::startCleanupRoutine(PlayWave* dis, WAVEHDR* audioPacket)
@@ -369,12 +369,12 @@ DWORD WINAPI PlayWave::cleanupRoutine(void* params)
 	// parse thread parameters
 	CrParams* p = (CrParams*) params;
 
-	while(true)
+	while(p->audioPacket != 0)
 	{
 		// wait for the "header finished being used" flag to be set. the flag is
 		// set once the audio device has finished reading it, and playing out
 		// the speakers
-		while(!(p->audioPacket->dwFlags&WHDR_DONE) || p->audioPacket->dwUser == 0)
+		while(!(p->audioPacket->dwFlags&WHDR_DONE))
 		{
 			#ifdef DEBUG
 			OutputDebugString(L"cleanup thread waiting\n");
@@ -383,7 +383,7 @@ DWORD WINAPI PlayWave::cleanupRoutine(void* params)
 		}
 
 		// acquire synchronization objects
-		//WaitForSingleObject(p->dis->canDequeue,INFINITE);
+		WaitForSingleObject(p->dis->canDequeue,INFINITE);
 		WaitForSingleObject(p->dis->lastAudioPacketAccess,INFINITE);
 
 		// save where the next packet to deallocate is
@@ -413,13 +413,14 @@ DWORD WINAPI PlayWave::cleanupRoutine(void* params)
 
 		// release synchronization objects
 		ReleaseMutex(p->dis->lastAudioPacketAccess);
-		//ReleaseSemaphore(p->dis->canEnqueue,1,NULL);
+		ReleaseSemaphore(p->dis->canEnqueue,1,NULL);
 	}
 
 	// free thread parameters & return
 	#ifdef DEBUG
 	OutputDebugString(L"cleanup thread stopped\n");
 	#endif
+	stopRoutine(&p->dis->cleanupThread,0);
 	free(p);
 	return 0;
 }
@@ -456,7 +457,10 @@ int stopRoutine(HANDLE* thread, HANDLE stopEvent)
 
 	// set the stop event to stop the thread
 	SetEvent(stopEvent);
-	WaitForSingleObject(*thread,INFINITE);
+    if(GetCurrentThreadId() != GetThreadId(*thread))
+    {
+	    WaitForSingleObject(*thread,INFINITE);
+    }
 
 	// invalidate thread handle, so we know it's terminated
 	*thread = INVALID_HANDLE_VALUE;

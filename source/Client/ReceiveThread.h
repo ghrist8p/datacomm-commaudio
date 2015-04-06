@@ -10,8 +10,8 @@ class ReceiveThread
 {
 public:
     ReceiveThread(
-        MessageQueue* sockMsgQueue,
-        JitterBuffer* musicJitterBuffer);
+        JitterBuffer* musicJitterBuffer,
+        MessageQueue* sockMsgQueue);
     ~ReceiveThread();
     void start();
     void stop();
