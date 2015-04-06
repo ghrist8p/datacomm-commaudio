@@ -59,6 +59,9 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
     voiceBufferer->start();
 	PlayWave* p = new PlayWave(50,q1);
 
+    ClientControlThread * cct = ClientControlThread::getInstance();
+    cct->setClientWindow( this );
+
 }
 
 DWORD WINAPI ClientWindow::MicThread(LPVOID lpParameter)

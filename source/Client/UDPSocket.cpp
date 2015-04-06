@@ -1,5 +1,6 @@
 #include "Sockets.h"
 #include "../Buffer/MessageQueue.h"
+#include "../Server/ServerControlThread.h"
 
 using namespace std;
 /*------------------------------------------------------------------------------------------------------------------
@@ -64,13 +65,13 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 	// Connecting to the server
 	if (bind(sd, (struct sockaddr *)&server, sizeof(server)) == -1)
 	{
-		perror("Can't bind name to socket");
+        OutputDebugString(L"Can't bind name to socket");
 		exit(1);
 	}
 
 	if ((ThreadHandle = CreateThread(NULL, 0, UDPThread, (void*)this, 0, &ThreadId)) == NULL)
 	{
-		printf("CreateThread failed with error %d\n", GetLastError());
+		OutputDebugString(L"CreateThread failed with error %d\n");
 		return;
 	}
 }
@@ -366,7 +367,10 @@ MessageQueue* UDPSocket::getMessageQueue()
 
 void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets)
 {
-	FILE* fp = fopen(songloc.filepath, "rb");
+    ServerControlThread * sct = ServerControlThread::getInstance();
+    char * path = sct->getPlaylist()->getSongPath( songloc.id );
+    FILE* fp = fopen(path, "rb");
+    free( path );
 	struct SongStream songInfo;
 	char* sendSong;
 	char* song;

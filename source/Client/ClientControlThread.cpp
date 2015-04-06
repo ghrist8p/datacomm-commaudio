@@ -157,6 +157,11 @@ void ClientControlThread::disconnect()
     _stopRoutine(&_thread,_threadStopEv);
 }
 
+void ClientControlThread::setClientWindow( ClientWindow * theWindow )
+{
+    _window = theWindow;
+}
+
 void ClientControlThread::onDownloadPacket(int index, void* data, int len)
 {
     // TODO: implement stufffff!!!!!
@@ -167,9 +172,9 @@ void ClientControlThread::onChangeStream(int index, void* data, int len)
     // TODO: implement stufffff!!!!!
 }
 
-void ClientControlThread::onNewSong(char* file)
+void ClientControlThread::onNewSong( SongName song )
 {
-    // TODO: implement stufffff!!!!!
+    _window->addRemoteFile( song.filepath );
 }
 
 int ClientControlThread::_startRoutine(HANDLE* thread, HANDLE stopEvent,
@@ -299,7 +304,7 @@ void ClientControlThread::_handleSockMsgqMsg(ClientControlThread* dis)
     SockMsgqElement element;
 
     // get the message queue message
-    dis->_sockMsgq.dequeue((int*)&msgType,&element);
+    dis->_sockMsgq.dequeue(&msgType,&element);
 
     // process the message queue message according to its type
     switch(msgType)
@@ -317,7 +322,7 @@ void ClientControlThread::_handleSockMsgqMsg(ClientControlThread* dis)
     case NEW_SONG:
         OutputDebugString(L"NEW_SONG\n");
         // TODO: parse packet, and fill in callback parameters
-        dis->onNewSong(0);
+        dis->onNewSong( *((SongName *)element.data) );
         break;
     default:
         fprintf(stderr,"WARNING: received unknown message type: %d\n",msgType);

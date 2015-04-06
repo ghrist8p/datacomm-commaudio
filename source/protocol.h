@@ -6,7 +6,7 @@
 
 #define MULTICAST_ADDR "224.0.0.1"
 
-#define MULTICAST_PORT 7515
+#define MULTICAST_PORT 7777
 
 #define DATA_BUFSIZE 8196
 
@@ -62,7 +62,7 @@ typedef struct SongStream SongStream;
 struct SongName
 {
 	int  id;
-	char filepath[STR_LEN];
+	wchar_t filepath[STR_LEN];
 };
 
 typedef struct SongName SongName;
