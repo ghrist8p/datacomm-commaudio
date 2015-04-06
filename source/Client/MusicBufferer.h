@@ -5,6 +5,7 @@
 #include "../Common.h"
 
 class MusicBuffer;
+class MessageQueue;
 
 class MusicBufferer
 {
@@ -13,6 +14,7 @@ private:
 	int elementSize;
 	JitterBuffer* music_jitter;
 	MusicBuffer* music_buffer;
+	MessageQueue* mqueue;
 	static DWORD WINAPI fileThread(LPVOID lpParameter);
 	DWORD ThreadStart(void);
 

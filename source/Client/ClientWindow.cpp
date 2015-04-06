@@ -47,7 +47,7 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	micMQueue = new MessageQueue(1000,AUDIO_BUFFER_LENGTH);
 
 	MessageQueue* q1 = new MessageQueue(1500,sizeof(LocalDataPacket));
-	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,AUDIO_BUFFER_LENGTH,50,50);
+	JitterBuffer* musicJitBuf = new JitterBuffer(5000, 100, DATA_LEN, 50, 50);
 	udpSock = new UDPSocket(MULTICAST_PORT,q1);
 	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q1);
 
@@ -58,9 +58,9 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	MessageQueue* q2 = new MessageQueue(1500,AUDIO_BUFFER_LENGTH);
 	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
 	MusicReader* mreader = new MusicReader(q2, musicfile);
-	PlayWave* p = new PlayWave(50,q2);
+	PlayWave* playWave = new PlayWave(1000, q2);
 
-	p->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
+	playWave->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
 
 	HANDLE ThreadHandle;
 	DWORD ThreadId;
