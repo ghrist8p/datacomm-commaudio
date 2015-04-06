@@ -19,8 +19,12 @@
 #include "VoiceBufferer.h"
 #include "MicReader.h"
 #include "PlayWave.h"
+#include "MusicBufferer.h"
+#include "MusicReader.h"
+#include "MusicBuffer.h"
 
 #define MIC_SAMPLE_RATE (44100/2)
+//#define MIC_RECORD_INTERVAL 0.740
 #define MIC_BUFFER_LENGTH DATA_LEN
 
 ClientWindow::ClientWindow(HINSTANCE hInst)
@@ -36,23 +40,35 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	stopButtonUp = LoadBitmap(hInst, L"IMG_STOP_BUTTON_UP");
 	stopButtonDown = LoadBitmap(hInst, L"IMG_STOP_BUTTON_DOWN");
 
-	darkBackground = (HBRUSH) CreateSolidBrush(RGB(15, 15, 15));
-	lightBackground = (HBRUSH) CreateSolidBrush(RGB(30, 30, 30));;
-	accentBrush = (HBRUSH) CreateSolidBrush(RGB(0, 162, 232));
-	nullPen = (HPEN) CreatePen(PS_SOLID, 0, 0);
+	darkBackground = (HBRUSH)CreateSolidBrush(RGB(15, 15, 15));
+	lightBackground = (HBRUSH)CreateSolidBrush(RGB(30, 30, 30));;
+	accentBrush = (HBRUSH)CreateSolidBrush(RGB(0, 162, 232));
+	nullPen = (HPEN)CreatePen(PS_SOLID, 0, 0);
 	borderPen = (HPEN)CreatePen(PS_SOLID, 1, RGB(128, 0, 128));
 
 	recording = false;
 	requestingRecorderStop = false;
-	micMQueue = new MessageQueue(1000,MIC_BUFFER_LENGTH);
+	micMQueue = new MessageQueue(1000, MIC_BUFFER_LENGTH);
 
-	MessageQueue* q2 = new MessageQueue(1500,sizeof(LocalDataPacket));
-	udpSock = new UDPSocket(MULTICAST_PORT,q2);
-	udpSock->setGroup(MULTICAST_ADDR,1);
+	MessageQueue* q2 = new MessageQueue(1500, sizeof(DataPacket));
+	udpSock = new UDPSocket(MULTICAST_PORT, q2);
+	udpSock->setGroup(MULTICAST_ADDR, 1);
 
-	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,MIC_BUFFER_LENGTH,50,50);
-	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q2);
+	JitterBuffer* musicJitBuf = new JitterBuffer(5000, 100, MIC_BUFFER_LENGTH, 50, 50);
+	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf, q2);
 	recvThread->start();
+
+	MusicBuffer* musicfile = new MusicBuffer();
+	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
+
+	MessageQueue* q1 = new MessageQueue(1500, MIC_BUFFER_LENGTH);
+	/*VoiceBufferer* voiceBufferer = new VoiceBufferer(q1,musicJitBuf);
+	voiceBufferer->start();
+	*/
+
+	MusicReader* mreader = new MusicReader(q1, musicfile);
+	PlayWave* p = new PlayWave(50, q1);
+	p->startPlaying(MIC_SAMPLE_RATE, MIC_BITS_PER_SAMPLE, NUM_MIC_CHANNELS);
 
 	HANDLE ThreadHandle;
 	DWORD ThreadId;
@@ -82,7 +98,7 @@ DWORD ClientWindow::ThreadStart(void)
 	{
 		++(packet.index);
 		micMQueue->dequeue(&type, packet.data, &length);
-		udpSock->sendtoGroup(MICSTREAM, &packet, sizeof(DataPacket));
+		udpSock->sendtoGroup(MUSICSTREAM, &packet, sizeof(DataPacket));
 	}
 
 }
@@ -199,7 +215,7 @@ void ClientWindow::onCreate()
 	// Add Microphone Button
 	micTargetButton->init();
 	micTargetButton->setText(L"Start Speaking");
-	layout = (GuiLinearLayout*) topPanel->getLayoutManager();
+	layout = (GuiLinearLayout*)topPanel->getLayoutManager();
 	layout->setHorizontal(true);
 	layout->addComponent(micTargetButton);
 	topPanel->addCommandListener(BN_CLICKED, onClickMic, this);
@@ -230,7 +246,7 @@ void ClientWindow::onCreate()
 	buttonSpacer2->setBackgroundBrush(darkBackground);
 
 	// Add Play Button In Center
-	layout = (GuiLinearLayout*) seekPanel->getLayoutManager();
+	layout = (GuiLinearLayout*)seekPanel->getLayoutManager();
 	layout->setHorizontal(true);
 
 	layout->addComponent(buttonSpacer1);
@@ -251,7 +267,7 @@ void ClientWindow::onClickStop(void*)
 
 bool ClientWindow::onClickMic(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
 {
-	ClientWindow *pThis = (ClientWindow*) _pThis;
+	ClientWindow *pThis = (ClientWindow*)_pThis;
 
 	if (!pThis->requestingRecorderStop)
 	{

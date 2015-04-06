@@ -5,18 +5,17 @@
 
 class MusicBufferer;
 class MessageQueue;
+class MusicBuffer;
 
 class MusicReader
 {
 private:
-	MusicBufferer* musicbuffer;
-	FILE* music_file;
+	MusicBuffer* musicbuffer;
 	MessageQueue* msgqueue;
 
 public:
-	MusicReader(MusicBufferer* musicB, MessageQueue* mqueue);
+	MusicReader(MessageQueue* mqueue, MusicBuffer* mbuffer);
 	~MusicReader();
-	void restartBuffer();
 	static DWORD WINAPI fileThread(LPVOID lpParameter);
 	DWORD ThreadStart(void);
 
