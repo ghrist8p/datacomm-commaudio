@@ -148,7 +148,6 @@ void MessageQueue::dequeue(int* type, void* dest)
 int MessageQueue::peekLen()
 {
     // obtain synchronization objects
-    WaitForSingleObject(canDequeue,INFINITE);
     WaitForSingleObject(access,INFINITE);
     int data = (*messages.begin())->len;
     ReleaseMutex(access);

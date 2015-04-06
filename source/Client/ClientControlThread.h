@@ -12,9 +12,9 @@ class ClientControlThread
 {
 public:
     static ClientControlThread* getInstance();
-    void requestDownload(char* file);
-    void cancelDownload(char* file);
-    void requestChangeStream(char* file);
+    void requestDownload(int id);
+    void cancelDownload(int id);
+    void requestChangeStream(int id);
     void connect(char* ipAddress, unsigned short port);
     void disconnect();
     void setClientWindow( ClientWindow * );

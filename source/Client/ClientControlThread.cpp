@@ -112,31 +112,31 @@ ClientControlThread::~ClientControlThread()
  *
  * @param    file   [description]
  */
-void ClientControlThread::requestDownload(char* file)
+void ClientControlThread::requestDownload(int id)
 {
     // prepare the element for insertion into the message queue
     MsgqElement element;
-    memcpy(&element.string,file,STR_LEN);
+    memcpy(&element.string,&id,sizeof( int ));
 
     // insert the element into the message queue
     _msgq.enqueue((int)REQUEST_DOWNLOAD,&element);
 }
 
-void ClientControlThread::cancelDownload(char* file)
+void ClientControlThread::cancelDownload(int id)
 {
     // prepare the element for insertion into the message queue
     MsgqElement element;
-    memcpy(&element.string,file,STR_LEN);
+    memcpy(&element.string,&id,sizeof( int ));
 
     // insert the element into the message queue
     _msgq.enqueue((int)CANCEL_DOWNLOAD,&element);
 }
 
-void ClientControlThread::requestChangeStream(char* file)
+void ClientControlThread::requestChangeStream(int id)
 {
     // prepare the element for insertion into the message queue
     MsgqElement element;
-    memcpy(&element.string,file,STR_LEN);
+    memcpy(&element.string,&id,sizeof(int));
 
     // insert the element into the message queue
     _msgq.enqueue((int)CHANGE_STREAM,&element);
@@ -174,7 +174,7 @@ void ClientControlThread::onChangeStream(int index, void* data, int len)
 
 void ClientControlThread::onNewSong( SongName song )
 {
-    _window->addRemoteFile( song.filepath );
+    _window->addRemoteFile( song );
 }
 
 int ClientControlThread::_startRoutine(HANDLE* thread, HANDLE stopEvent,
@@ -272,22 +272,22 @@ void ClientControlThread::_handleMsgqMsg(ClientControlThread* dis)
     {
     case REQUEST_DOWNLOAD:
     {
-        StringPacket packet;
-        memcpy(packet.string,element.string,STR_LEN);
+        RequestPacket packet;
+        memcpy(&packet.index,element.string,sizeof( int ));
         dis->tcpSock->Send(REQUEST_DOWNLOAD,&packet,sizeof(packet));
         break;
     }
     case CANCEL_DOWNLOAD:
     {
-        StringPacket packet;
-        memcpy(packet.string,element.string,STR_LEN);
+        RequestPacket packet;
+        memcpy(&packet.index,element.string,sizeof( int ));
         dis->tcpSock->Send(CANCEL_DOWNLOAD,&packet,sizeof(packet));
         break;
     }
     case CHANGE_STREAM:
     {
-        StringPacket packet;
-        memcpy(packet.string,element.string,STR_LEN);
+        RequestPacket packet;
+        memcpy(&packet.index,element.string,sizeof( int ));
         dis->tcpSock->Send(CHANGE_STREAM,&packet,sizeof(packet));
         break;
     }

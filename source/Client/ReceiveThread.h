@@ -2,6 +2,10 @@
 #define _RECEIVE_THREAD_H_
 
 #include "../common.h"
+#include "../Buffer/JitterBuffer.h"
+#include <map>
+
+#include <map>
 
 class MessageQueue;
 class JitterBuffer;
@@ -16,8 +20,10 @@ public:
     void start();
     void stop();
 private:
+    JitterBuffer* getJitterBuffer(unsigned long srcAddr);
     static DWORD WINAPI threadRoutine(void* params);
     static void handleMsgqMsg(ReceiveThread* dis);
+    std::map<unsigned long,JitterBuffer*> voiceJitterBuffers;
     MessageQueue* sockMsgQueue;
     JitterBuffer* musicJitterBuffer;
     HANDLE thread;

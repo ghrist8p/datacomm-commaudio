@@ -19,10 +19,9 @@
 #include "VoiceBufferer.h"
 #include "MicReader.h"
 #include "PlayWave.h"
-
-#define MIC_SAMPLE_RATE (44100/2)
-//#define MIC_RECORD_INTERVAL 0.740
-#define MIC_BUFFER_LENGTH DATA_LEN
+#include "MusicBufferer.h"
+#include "MusicReader.h"
+#include "MusicBuffer.h"
 
 ClientWindow::ClientWindow(HINSTANCE hInst)
 	: GuiWindow(hInst)
@@ -37,31 +36,43 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	stopButtonUp = LoadBitmap(hInst, L"IMG_STOP_BUTTON_UP");
 	stopButtonDown = LoadBitmap(hInst, L"IMG_STOP_BUTTON_DOWN");
 
-	darkBackground = (HBRUSH) CreateSolidBrush(RGB(15, 15, 15));
-	lightBackground = (HBRUSH) CreateSolidBrush(RGB(30, 30, 30));;
-	accentBrush = (HBRUSH) CreateSolidBrush(RGB(0, 162, 232));
-	nullPen = (HPEN) CreatePen(PS_SOLID, 0, 0);
+	darkBackground = (HBRUSH)CreateSolidBrush(RGB(15, 15, 15));
+	lightBackground = (HBRUSH)CreateSolidBrush(RGB(30, 30, 30));;
+	accentBrush = (HBRUSH)CreateSolidBrush(RGB(0, 162, 232));
+	nullPen = (HPEN)CreatePen(PS_SOLID, 0, 0);
 	borderPen = (HPEN)CreatePen(PS_SOLID, 1, RGB(128, 0, 128));
 
 	recording = false;
 	requestingRecorderStop = false;
-	micMQueue = new MessageQueue(1000,MIC_BUFFER_LENGTH);
+	micMQueue = new MessageQueue(1000,AUDIO_BUFFER_LENGTH);
 
-    MessageQueue* q2 = new MessageQueue(1500,sizeof(DataPacket));
-	udpSock = new UDPSocket(MULTICAST_PORT,q2);
+	MessageQueue* q1 = new MessageQueue(1500,sizeof(LocalDataPacket));
+	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,AUDIO_BUFFER_LENGTH,50,50);
+	udpSock = new UDPSocket(MULTICAST_PORT,q1);
+	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q1);
+
 	udpSock->setGroup(MULTICAST_ADDR,1);
-
-	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,MIC_BUFFER_LENGTH,50,50);
-	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q2);
 	recvThread->start();
-	MessageQueue* q1 = new MessageQueue(1500,MIC_BUFFER_LENGTH);
-	VoiceBufferer* voiceBufferer = new VoiceBufferer(q1,musicJitBuf);
-    voiceBufferer->start();
-	PlayWave* p = new PlayWave(50,q1);
 
     ClientControlThread * cct = ClientControlThread::getInstance();
     cct->setClientWindow( this );
 
+	MusicBuffer* musicfile = new MusicBuffer();
+	MessageQueue* q2 = new MessageQueue(1500,AUDIO_BUFFER_LENGTH);
+	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
+	MusicReader* mreader = new MusicReader(q2, musicfile);
+	PlayWave* p = new PlayWave(50,q2);
+
+	p->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
+
+	HANDLE ThreadHandle;
+	DWORD ThreadId;
+
+	if ((ThreadHandle = CreateThread(NULL, 0, MicThread, (void*)this, 0, &ThreadId)) == NULL)
+	{
+		MessageBox(NULL, L"CreateThread failed with error", L"ERROR", MB_ICONERROR);
+		return;
+	}
 }
 
 DWORD WINAPI ClientWindow::MicThread(LPVOID lpParameter)
@@ -75,14 +86,14 @@ DWORD ClientWindow::ThreadStart(void)
 	int type;
 	int length;
 
-    DataPacket packet;
-    packet.index = 0;
+	DataPacket packet;
+	packet.index = 0;
 
 	while (true)
 	{
-        ++(packet.index);
+		++(packet.index);
 		micMQueue->dequeue(&type, packet.data, &length);
-		udpSock->sendtoGroup(MUSICSTREAM, &packet, sizeof(DataPacket));
+		udpSock->sendtoGroup(MICSTREAM, &packet, sizeof(DataPacket));
 	}
 
 }
@@ -114,16 +125,16 @@ ClientWindow::~ClientWindow()
 	DeleteObject(borderPen);
 }
 
-void ClientWindow::addRemoteFile(LPWSTR filename)
+void ClientWindow::addRemoteFile(SongName song)
 {
-	fileContainerPanel->addItem(new FileListItem(fileContainerPanel, this, hInst, filename));
+	fileContainerPanel->addItem(new FileListItem(fileContainerPanel, this, hInst, song));
 }
 
 void ClientWindow::onCreate()
 {
 	setTitle(L"CommAudio Client");
 	setSize(700, 325);
-	micReader = new MicReader(MIC_SAMPLE_RATE, MIC_BUFFER_LENGTH, micMQueue, getHWND());
+	micReader = new MicReader(AUDIO_SAMPLE_RATE, AUDIO_BUFFER_LENGTH, micMQueue, getHWND());
 	this->addMessageListener(WM_MIC_STOPPED_READING, onMicStop, this);
 
 	// Create Elements
@@ -166,11 +177,11 @@ void ClientWindow::onCreate()
 	layout->addComponent(fileContainerPanel, &layoutProps);
 
 	// Add some files to the list view
-	addRemoteFile(L"This_Was_A_TRIUMPH_DUH_NUH_NUH_NUH_DUH.wav");
-	addRemoteFile(L"This_Was_A_TRIUMPH_DUH_NUH_NUH_NUH_DUH_1.wav");
-	addRemoteFile(L"This_Was_A_TRIUMPH_DUH_NUH_NUH_NUH_DUH_2.wav");
-	addRemoteFile(L"This_Was_A_TRIUMPH_DUH_NUH_NUH_NUH_DUH_3.wav");
-	addRemoteFile(L"This_Was_A_TRIUMPH_DUH_NUH_NUH_NUH_DUH_4.wav");
+	//addRemoteFile(L"This_Was_A_TRIUMPH_DUH_NUH_NUH_NUH_DUH.wav");
+	//addRemoteFile(L"This_Was_A_TRIUMPH_DUH_NUH_NUH_NUH_DUH_1.wav");
+	//addRemoteFile(L"This_Was_A_TRIUMPH_DUH_NUH_NUH_NUH_DUH_2.wav");
+	//addRemoteFile(L"This_Was_A_TRIUMPH_DUH_NUH_NUH_NUH_DUH_3.wav");
+	//addRemoteFile(L"This_Was_A_TRIUMPH_DUH_NUH_NUH_NUH_DUH_4.wav");
 
 	// Add Tracker Panel to layout
 	trackerPanel->init();
@@ -199,7 +210,7 @@ void ClientWindow::onCreate()
 	// Add Microphone Button
 	micTargetButton->init();
 	micTargetButton->setText(L"Start Speaking");
-	layout = (GuiLinearLayout*) topPanel->getLayoutManager();
+	layout = (GuiLinearLayout*)topPanel->getLayoutManager();
 	layout->setHorizontal(true);
 	layout->addComponent(micTargetButton);
 	topPanel->addCommandListener(BN_CLICKED, onClickMic, this);
@@ -230,7 +241,7 @@ void ClientWindow::onCreate()
 	buttonSpacer2->setBackgroundBrush(darkBackground);
 
 	// Add Play Button In Center
-	layout = (GuiLinearLayout*) seekPanel->getLayoutManager();
+	layout = (GuiLinearLayout*)seekPanel->getLayoutManager();
 	layout->setHorizontal(true);
 
 	layout->addComponent(buttonSpacer1);
@@ -251,7 +262,7 @@ void ClientWindow::onClickStop(void*)
 
 bool ClientWindow::onClickMic(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
 {
-	ClientWindow *pThis = (ClientWindow*) _pThis;
+	ClientWindow *pThis = (ClientWindow*)_pThis;
 
 	if (!pThis->requestingRecorderStop)
 	{

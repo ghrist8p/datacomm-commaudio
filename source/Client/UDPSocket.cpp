@@ -1,8 +1,40 @@
+/*------------------------------------------------------------------------------------------------------------------
+-- SOURCE FILE: UDPSocket.cpp
+--
+-- FUNCTIONS:
+	UDPSocket(int port, MessageQueue* mqueue);
+	~UDPSocket();
+	DWORD ThreadStart(void);
+	static void CALLBACK UDPRoutine(DWORD Error, DWORD BytesTransferred,
+	LPWSAOVERLAPPED Overlapped, DWORD InFlags);
+	static DWORD WINAPI UDPThread(LPVOID lpParameter);	
+	int Send(char type, void* data, int length, char* dest_ip, int dest_port);
+	int sendtoGroup(char type, void* data, int length);
+	void setGroup(char* group_address, int mem_flag);
+	MessageQueue* getMessageQueue();
+	void stopSong();
+	void sendWave(SongName songloc, int speed, std::vector<TCPSocket*> sockets);
+--
+-- DATE: April 1, 2015
+--
+-- REVISIONS: April 4, 2015		Eric Tsang
+--			Fixed Memory leaks and buffer size problems.
+--
+-- DESIGNER: Manuel Gonzales
+--
+-- PROGRAMMER: Manuel Gonzales
+--
+-- NOTES:
+-- This is the file containing all the necessary functions for the UDP Socket to send and receive following the protocol
+-- created. This class is used for the server as well as the client socket.
+----------------------------------------------------------------------------------------------------------------------*/
+
 #include "Sockets.h"
 #include "../Buffer/MessageQueue.h"
 #include "../Server/ServerControlThread.h"
 
 using namespace std;
+
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: UDPSocket
 --
@@ -43,7 +75,7 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 
 	if (error != 0) //No usable DLL
 	{
-		MessageBox(NULL, L"GlobalAlloc() failed with error", L"ERROR", MB_ICONERROR);
+		MessageBox(NULL, L"WSA error", L"ERROR", MB_ICONERROR);
 		return;
 	}
 
@@ -63,6 +95,8 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 	// Copy the server address
 
 	// Connecting to the server
+    char reuseAddr = 1;
+    setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &reuseAddr, sizeof(reuseAddr));
 	if (bind(sd, (struct sockaddr *)&server, sizeof(server)) == -1)
 	{
         OutputDebugString(L"Can't bind name to socket");
@@ -96,6 +130,7 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 ----------------------------------------------------------------------------------------------------------------------*/
 UDPSocket::~UDPSocket()
 {
+    setsockopt(sd, IPPROTO_IP, IP_DROP_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
 	closesocket(sd);
 	WSACleanup();
 }
@@ -106,14 +141,15 @@ UDPSocket::~UDPSocket()
 --
 -- DATE: March 17, 2015
 --
--- REVISIONS: (Date and Description)
+-- REVISIONS: April 4, 2015 Manuel Gonzales Added type.
 --
 -- DESIGNER: Manuel Gonzales
 --
 -- PROGRAMMER: Manuel Gonzales
 --
--- INTERFACE: int UDPSocket::Send(void* data, int length, char* dest_ip, int dest_port)
+-- INTERFACE: int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_port)
 --
+--  type : type of data
 --	data : data to send
 --  length : data length
 --  dest_ip : ip address of the destination
@@ -132,15 +168,15 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 	DWORD WaitResult;
 	struct sockaddr_in destination;
 	int destsize = sizeof(destination);
-	char* data_send = (char*)malloc(sizeof(char) * (length + 5));
+	char* data_send = (char*)malloc(sizeof(char) * (length + 1));
 
 	data_send[0] = type;
 
 	//message len
-	data_send[1] = (length >> 24) & 0xFF;
+	/*data_send[1] = (length >> 24) & 0xFF;
 	data_send[2] = (length >> 16) & 0xFF;
 	data_send[3] = (length >> 8) & 0xFF;
-	data_send[4] = length & 0xFF;
+	data_send[4] = length & 0xFF;*/
 
 	WaitResult = WaitForSingleObject(mutex, INFINITE);
 
@@ -149,7 +185,7 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 
 		socketInfo.Socket = sd;
 		ZeroMemory(&(socketInfo.Overlapped), sizeof(WSAOVERLAPPED));
-		socketInfo.DataBuf.len = length + 5;
+		socketInfo.DataBuf.len = length + 1;
 		socketInfo.DataBuf.buf = data_send;
 		Flags = 0;
 
@@ -184,6 +220,7 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 		else
 		{
 			free(data_send);
+			ReleaseMutex(mutex);
 			return 1;
 		}
 	}
@@ -272,39 +309,86 @@ DWORD UDPSocket::ThreadStart(void)
 		}
 		else
 		{
-            len = RecvBytes - 1;
-			CHAR* dataReceived = (char*)malloc(sizeof(char) * len);
-			memcpy(dataReceived, socketInfo.Buffer+1, len);
-			char* sourceaddr = inet_ntoa(source.sin_addr);
-            socketInfo.mqueue->enqueue(socketInfo.Buffer[0], dataReceived, len);
-			free(dataReceived);
+			len = RecvBytes - 1;
+
+			DataPacket dataPacket;
+			LocalDataPacket localDataPacket;
+			memcpy(&dataPacket,socketInfo.Buffer+1,len);
+			localDataPacket.index = dataPacket.index;
+			localDataPacket.srcAddr = source.sin_addr.s_addr;
+			memcpy(localDataPacket.data,dataPacket.data,DATA_LEN);
+			socketInfo.mqueue->enqueue(socketInfo.Buffer[0],&localDataPacket,sizeof(LocalDataPacket));
 		}
 	}
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: setGroup
+--
+-- DATE: April 2, 2015
+--
+-- REVISIONS: April 4  Eric Tsang
+--
+-- DESIGNER: Manuel Gonzales
+--
+-- PROGRAMMER: Manuel Gonzales
+--
+-- INTERFACE: void UDPSocket::setGroup(char* group_address, int mem_flag)
+--
+--	group_address : ip address for the multicast
+--  mem_flag : add socket to the group flag
+--
+--	RETURNS: nothing.
+--
+--	NOTES:
+--  This function will set the multicast flag for the udp socket and will add the socket to the gorup as well
+--	depending on the type of socket.
+----------------------------------------------------------------------------------------------------------------------*/
 void UDPSocket::setGroup(char* group_address, int mem_flag)
 {
-    char loop = 0;
-    char ttl = 1;
-    in_addr interfaceAddr;
-    interfaceAddr.s_addr = INADDR_ANY;
+	char loop = 0;
+	char ttl = 2;
+	in_addr interfaceAddr;
+	interfaceAddr.s_addr = inet_addr(INADDR_ANY);
 	memset(&mreq,0,sizeof(mreq));
 	mreq.imr_multiaddr.s_addr = inet_addr(group_address);
-    mreq.imr_interface.s_addr = INADDR_ANY;
-    int i = 0;
-    int err = 0;
+	mreq.imr_interface.s_addr = inet_addr(INADDR_ANY);
+	int i = 0;
+	int err = 0;
 	if (mem_flag)
 	{
 		i = setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
-        err = GetLastError();
-        i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
-        err = GetLastError();
-        i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
-        err = GetLastError();
+		err = GetLastError();
+		i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
+		err = GetLastError();
+		i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
+		err = GetLastError();
 	}
 	setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char*)&interfaceAddr, sizeof(interfaceAddr));
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: sendtoGroup
+--
+-- DATE: April 2, 2015
+--
+-- REVISIONS: April 4  Eric Tsang
+--
+-- DESIGNER: Manuel Gonzales
+--
+-- PROGRAMMER: Manuel Gonzales
+--
+-- INTERFACE: int UDPSocket::sendtoGroup(char type, void* data, int length)
+--
+--	type : type of data to send
+--  data : data to send
+--	length : size of data in bytes
+--
+--	RETURNS: nothing.
+--
+--	NOTES:
+--  This function will send a datagram via multicast to the default group for the socket
+----------------------------------------------------------------------------------------------------------------------*/
 int UDPSocket::sendtoGroup(char type, void* data, int length)
 {
 	DWORD Flags;
@@ -315,9 +399,9 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 
 	data_send[0] = type;
 
-    DataPacket* p = (DataPacket*) data;
+	DataPacket* p = (DataPacket*) data;
 
-    memcpy(data_send + 1, (char*)data, length);
+	memcpy(data_send + 1, (char*)data, length);
 
 	WaitResult = WaitForSingleObject(mutex, INFINITE);
 
@@ -349,6 +433,7 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 		else
 		{
 			free(data_send);
+			ReleaseMutex(mutex);
 			return 1;
 		}
 	}
@@ -360,11 +445,52 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: getMessageQueue
+--
+-- DATE: April 2, 2015
+--
+-- REVISIONS: --
+--
+-- DESIGNER: Eric Tsang
+--
+-- PROGRAMMER: Eric Tsang
+--
+-- INTERFACE: MessageQueue* UDPSocket::getMessageQueue()
+--
+--	RETURNS: message queue pointer.
+--
+--	NOTES:
+--  This function will return a pointer to the message queue being used by the socket
+----------------------------------------------------------------------------------------------------------------------*/
 MessageQueue* UDPSocket::getMessageQueue()
 {
-    return msgqueue;
+	return msgqueue;
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: sendWave
+--
+-- DATE: April 2, 2015
+--
+-- REVISIONS: --
+--
+-- DESIGNER: Manuel Gonzales
+--
+-- PROGRAMMER: Manuel Gonzales
+--
+-- INTERFACE: void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets)
+--
+--	songloc : structure golding the id and path of the song
+--  speed : sending speed in bytes
+--	sockets : a set of TCP sockets (clients)
+--
+--	RETURNS: nothing.
+--
+--	NOTES:
+--  This function will send a song via multicast to all the clients and will send it in parts bnased on the speed
+--	it will also send a flag notifying the clients the current song that is being played.
+----------------------------------------------------------------------------------------------------------------------*/
 void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets)
 {
     ServerControlThread * sct = ServerControlThread::getInstance();
@@ -451,6 +577,24 @@ void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets
 	fclose(fp);
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: stopSong
+--
+-- DATE: April 2, 2015
+--
+-- REVISIONS: --
+--
+-- DESIGNER: Manuel Gonzales
+--
+-- PROGRAMMER: Manuel Gonzales
+--
+-- INTERFACE: void UDPSocket::stopSong()
+--
+--	RETURNS: nothing.
+--
+--	NOTES:
+--  This function will set the flag to stop sending music in the case of a change of song event
+----------------------------------------------------------------------------------------------------------------------*/
 void UDPSocket::stopSong()
 {
 	stopSending = true;
