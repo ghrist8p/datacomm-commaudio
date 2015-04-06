@@ -13,6 +13,7 @@ public:
     int peekLen();
     void dequeue(int* type, void* dest);
     void dequeue(int* type, void* dest, int* len);
+    int size();
     /**
      * handle to an event that is set when the queue is not empty; it is unset
      *   otherwise.

@@ -28,6 +28,7 @@
 JitterBuffer::JitterBuffer(int capacity, int himark, int elementSize, int delay, int interval) : Heap(capacity,elementSize)
 {
     this->lastIndex   = 0;
+    this->windowSize  = capacity/2;
     this->delay       = delay;
     this->himark      = himark;
     this->interval    = interval;
@@ -68,7 +69,7 @@ int JitterBuffer::put(int index, void* src)
     WaitForSingleObject(notFull,INFINITE);
     WaitForSingleObject(access,INFINITE);
 
-    if(index > lastIndex)
+    if(isIndexInReceiveWindow(index))
     {
         // if this is the first element after the buffer is empty,
         // delay...
@@ -131,6 +132,8 @@ int JitterBuffer::get(void* dest)
     // delay if we're out of data
     if(Heap::size() == 0)
     {
+        //lastIndex = 0;
+        Heap::setRelativeZero(lastIndex);
         ResetEvent(canGet);
     }
 
@@ -167,4 +170,35 @@ int JitterBuffer::size()
 int JitterBuffer::getElementSize()
 {
     return Heap::getElementSize();
+}
+
+/**
+ * returns true if the index is accepted; false otherwise
+ *
+ * @date     2015-04-06T08:34:34-0800
+ *
+ * @author   Eric Tsang
+ *
+ * @param    index   index to evaluate, and check if its within the receive
+ *   window.
+ *
+ * @return   true if the index is accepted; false otherwise
+ */
+int JitterBuffer::isIndexInReceiveWindow(int index)
+{
+    int ret;
+
+    // the upper and lower limits of the window. the index has to be between
+    // these numbers, or it is rejected otherwise.
+    int windowHi = index+windowSize;
+    int windowLo = index;
+
+    // when no overflow occurs; accept the index if it is larger than the low, AND
+    // smaller than the high.
+    //
+    // when overflow occurs; accept the index if it is larger than the low, OR
+    // smaller than the high
+    return (windowHi > windowLo)
+        ? (windowLo <= index) && (index <= windowHi)
+        : (windowLo <= index) || (index <= windowHi);
 }
