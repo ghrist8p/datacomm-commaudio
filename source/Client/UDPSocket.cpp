@@ -97,6 +97,7 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 ----------------------------------------------------------------------------------------------------------------------*/
 UDPSocket::~UDPSocket()
 {
+    setsockopt(sd, IPPROTO_IP, IP_DROP_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
 	closesocket(sd);
 	WSACleanup();
 }
