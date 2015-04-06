@@ -21,7 +21,6 @@
 #include "PlayWave.h"
 
 #define MIC_SAMPLE_RATE (44100/2)
-//#define MIC_RECORD_INTERVAL 0.740
 #define MIC_BUFFER_LENGTH DATA_LEN
 
 ClientWindow::ClientWindow(HINSTANCE hInst)

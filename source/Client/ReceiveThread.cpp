@@ -1,6 +1,17 @@
 #include "ReceiveThread.h"
 #include "../Buffer/MessageQueue.h"
 #include "../Buffer/JitterBuffer.h"
+#include "PlaybackTrackerPanel.h"
+#include "ButtonPanel.h"
+#include "FileListItem.h"
+#include "ConnectionWindow.h"
+#include "../Buffer/MessageQueue.h"
+#include "../Buffer/JitterBuffer.h"
+#include "ReceiveThread.h"
+#include "VoiceBufferer.h"
+#include "MicReader.h"
+#include "PlayWave.h"
+#include "../protocol.h"
 
 // static function forward declarations
 
@@ -87,20 +98,20 @@ void ReceiveThread::handleMsgqMsg(ReceiveThread* dis)
     {
     case MUSICSTREAM:
     {
-        LocalDataPacket* packet = (DataPacket*) element;
+        LocalDataPacket* packet = (LocalDataPacket*) element;
         dis->musicJitterBuffer->put(packet->index,packet->data);
         break;
     }
     case MICSTREAM:
     {
-        // makes a new
-        LocalDataPacket* packet = (DataPacket*) element;
-        JitterBuffer* jb = getJitterBuffer(packet.srcAddr)
+        LocalDataPacket* packet = (LocalDataPacket*) element;
+        JitterBuffer* jb = getJitterBuffer(packet->srcAddr);
         jb->put(packet->index,packet->data);
-        MessageQueue* queue = new MessageQueue(1500,MIC_BUFFER_LENGTH);
+        MessageQueue* queue = new MessageQueue(1500,DATA_LEN);
         VoiceBufferer* voiceBufferer = new VoiceBufferer(queue,jb);
         voiceBufferer->start();
-        new PlayWave(50,queue);
+        PlayWave* playWave = new PlayWave(50,queue);
+        playWave->startPlaying(DATA_LEN, MIC_BITS_PER_SAMPLE, NUM_MIC_CHANNELS);
         break;
     }
     default:
@@ -136,7 +147,7 @@ JitterBuffer* getJitterBuffer(unsigned long srcAddr)
     // if the jitter buffer doesn't exist make one, put it into the map
     if(voiceJitterBuffers.find(srcAddr) == voiceJitterBuffers.end())
     {
-        voiceJitterBuffers[srcAddr] = new JitterBuffer();
+        voiceJitterBuffers[srcAddr] = new JitterBuffer(5000,100,DATA_LEN,50,50);;
     }
 
     // return the jitter buffer for the passed srcAddr
