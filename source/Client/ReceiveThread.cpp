@@ -18,7 +18,6 @@
 static int startRoutine(HANDLE* thread, HANDLE stopEvent,
     LPTHREAD_START_ROUTINE routine, void* params);
 static int stopRoutine(HANDLE* thread, HANDLE stopEvent);
-JitterBuffer* getJitterBuffer(unsigned long srcAddr);
 
 // receive thread implementation
 
@@ -105,13 +104,8 @@ void ReceiveThread::handleMsgqMsg(ReceiveThread* dis)
     case MICSTREAM:
     {
         LocalDataPacket* packet = (LocalDataPacket*) element;
-        JitterBuffer* jb = getJitterBuffer(packet->srcAddr);
+        JitterBuffer* jb = dis->getJitterBuffer(packet->srcAddr);
         jb->put(packet->index,packet->data);
-        MessageQueue* queue = new MessageQueue(1500,DATA_LEN);
-        VoiceBufferer* voiceBufferer = new VoiceBufferer(queue,jb);
-        voiceBufferer->start();
-        PlayWave* playWave = new PlayWave(50,queue);
-        playWave->startPlaying(DATA_LEN, MIC_BITS_PER_SAMPLE, NUM_MIC_CHANNELS);
         break;
     }
     default:
@@ -139,19 +133,25 @@ void ReceiveThread::handleMsgqMsg(ReceiveThread* dis)
  * @return   the jitter buffer used to store the voice data from the passed
  *   source address
  */
-JitterBuffer* getJitterBuffer(unsigned long srcAddr)
+JitterBuffer* ReceiveThread::getJitterBuffer(unsigned long srcAddr)
 {
-    // maps source IP addresses to jitter buffers
-    static std::map<unsigned long,JitterBuffer*> voiceJitterBuffers;
+    JitterBuffer* jitterBuffer = voiceJitterBuffers[srcAddr];
 
     // if the jitter buffer doesn't exist make one, put it into the map
-    if(voiceJitterBuffers.find(srcAddr) == voiceJitterBuffers.end())
+    if(jitterBuffer == 0)
     {
-        voiceJitterBuffers[srcAddr] = new JitterBuffer(5000,100,DATA_LEN,50,50);;
+        jitterBuffer = new JitterBuffer(5000,100,DATA_LEN,50,50);
+        MessageQueue* queue = new MessageQueue(1500,DATA_LEN);
+        VoiceBufferer* voiceBufferer = new VoiceBufferer(queue,jitterBuffer);
+        voiceBufferer->start();
+        PlayWave* playWave = new PlayWave(1000,queue);
+        playWave->startPlaying(AUDIO_SAMPLE_RATE,AUDIO_BITS_PER_SAMPLE,NUM_AUDIO_CHANNELS);
+
+        voiceJitterBuffers[srcAddr] = jitterBuffer;
     }
 
     // return the jitter buffer for the passed srcAddr
-    return voiceJitterBuffers[srcAddr];
+    return jitterBuffer;
 }
 
 int startRoutine(HANDLE* thread, HANDLE stopEvent,

@@ -94,6 +94,8 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 	// Copy the server address
 
 	// Connecting to the server
+    char reuseAddr = 1;
+    setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &reuseAddr, sizeof(reuseAddr));
 	if (bind(sd, (struct sockaddr *)&server, sizeof(server)) == -1)
 	{
 		perror("Can't bind name to socket");
@@ -127,6 +129,7 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 ----------------------------------------------------------------------------------------------------------------------*/
 UDPSocket::~UDPSocket()
 {
+    setsockopt(sd, IPPROTO_IP, IP_DROP_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
 	closesocket(sd);
 	WSACleanup();
 }
@@ -343,20 +346,20 @@ DWORD UDPSocket::ThreadStart(void)
 void UDPSocket::setGroup(char* group_address, int mem_flag)
 {
 	char loop = 0;
-	char ttl = 1;
+	char ttl = 2;
 	in_addr interfaceAddr;
-	interfaceAddr.s_addr = INADDR_ANY;
+	interfaceAddr.s_addr = inet_addr(INADDR_ANY);
 	memset(&mreq,0,sizeof(mreq));
 	mreq.imr_multiaddr.s_addr = inet_addr(group_address);
-	mreq.imr_interface.s_addr = INADDR_ANY;
+	mreq.imr_interface.s_addr = inet_addr(INADDR_ANY);
 	int i = 0;
 	int err = 0;
 	if (mem_flag)
 	{
 		i = setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
 		err = GetLastError();
-		// i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
-		// err = GetLastError();
+		i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
+		err = GetLastError();
 		i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
 		err = GetLastError();
 	}
