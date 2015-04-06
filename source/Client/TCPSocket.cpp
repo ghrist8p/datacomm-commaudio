@@ -54,6 +54,8 @@ TCPSocket::TCPSocket(SOCKET socket, MessageQueue* mqueue)
 {
 	sd = socket;
 	msgqueue = mqueue;
+    
+	mutex = CreateMutex(NULL, FALSE, NULL);
 
 	HANDLE ThreadHandle;
 	DWORD ThreadId;

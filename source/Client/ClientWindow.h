@@ -23,7 +23,7 @@ public:
 	virtual ~ClientWindow();
 	virtual void onCreate();
 
-	void addRemoteFile(LPWSTR filename);
+	void addRemoteFile(SongName);
 
 private:
 	static void onClickPlay(void*);

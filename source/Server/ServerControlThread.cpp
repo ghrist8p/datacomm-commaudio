@@ -66,6 +66,11 @@ void ServerControlThread::setPlaylist( Playlist * _playlist )
     }
 }
 
+Playlist * ServerControlThread::getPlaylist()
+{
+    return playlist;
+}
+
 void ServerControlThread::setUDPSocket( UDPSocket * sock )
 {
     if( sock != NULL )
