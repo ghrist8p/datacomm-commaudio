@@ -73,6 +73,8 @@ void PlaybackTrackerPanel::setTrackerPercentage(double percent, bool hasPriority
 		played = buffered;
 	else
 		played = percent;
+
+    InvalidateRect(getHWND(), NULL, TRUE);
 }
 
 bool PlaybackTrackerPanel::onClick(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
