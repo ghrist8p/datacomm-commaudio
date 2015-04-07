@@ -35,8 +35,7 @@
  */
 union MsgqElement
 {
-    int index;
-    char string[STR_LEN];
+    int songId;
 };
 
 /**
@@ -116,30 +115,30 @@ void ClientControlThread::requestDownload(int id)
 {
     // prepare the element for insertion into the message queue
     MsgqElement element;
-    memcpy(&element.string,&id,sizeof( int ));
+    element.songId = id;
 
     // insert the element into the message queue
-    _msgq.enqueue((int)REQUEST_DOWNLOAD,&element);
+    _msgq.enqueue(REQUEST_DOWNLOAD,&element);
 }
 
 void ClientControlThread::cancelDownload(int id)
 {
     // prepare the element for insertion into the message queue
     MsgqElement element;
-    memcpy(&element.string,&id,sizeof( int ));
+    element.songId = id;
 
     // insert the element into the message queue
-    _msgq.enqueue((int)CANCEL_DOWNLOAD,&element);
+    _msgq.enqueue(CANCEL_DOWNLOAD,&element);
 }
 
 void ClientControlThread::requestChangeStream(int id)
 {
     // prepare the element for insertion into the message queue
     MsgqElement element;
-    memcpy(&element.string,&id,sizeof(int));
+    element.songId = id;
 
     // insert the element into the message queue
-    _msgq.enqueue((int)CHANGE_STREAM,&element);
+    _msgq.enqueue(CHANGE_STREAM,&element);
 }
 
 void ClientControlThread::connect(char* ipAddress, unsigned short port)
@@ -273,21 +272,21 @@ void ClientControlThread::_handleMsgqMsg(ClientControlThread* dis)
     case REQUEST_DOWNLOAD:
     {
         RequestPacket packet;
-        memcpy(&packet.index,element.string,sizeof( int ));
+        packet.index = element.songId;
         dis->tcpSock->Send(REQUEST_DOWNLOAD,&packet,sizeof(packet));
         break;
     }
     case CANCEL_DOWNLOAD:
     {
         RequestPacket packet;
-        memcpy(&packet.index,element.string,sizeof( int ));
+        packet.index = element.songId;
         dis->tcpSock->Send(CANCEL_DOWNLOAD,&packet,sizeof(packet));
         break;
     }
     case CHANGE_STREAM:
     {
         RequestPacket packet;
-        memcpy(&packet.index,element.string,sizeof( int ));
+        packet.index = element.songId;
         dis->tcpSock->Send(CHANGE_STREAM,&packet,sizeof(packet));
         break;
     }
