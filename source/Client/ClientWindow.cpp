@@ -97,7 +97,6 @@ DWORD ClientWindow::ThreadStart(void)
 		++(voicePacket.index);
 		micMQueue->dequeue(&useless, voicePacket.data, &length);
         udpSock->Send(MICSTREAM,&voicePacket,sizeof(voicePacket),voiceTargetAddress,MULTICAST_PORT);
-        //udpSock->sendtoGroup(MICSTREAM,&voicePacket,sizeof(voicePacket));
 	}
 }
 
