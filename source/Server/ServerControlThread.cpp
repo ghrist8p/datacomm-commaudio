@@ -124,24 +124,26 @@ DWORD WINAPI ServerControlThread::_threadRoutine( void * params )
         {
 			TCPSocket * sock = thiz->_socks[ handleNum - 1 ];
             int len = sock->getMessageQueue()->peekLen();
-            RequestPacket * data = new RequestPacket;
+			void * data = malloc( DATA_BUFSIZE );
+			RequestPacket * rp = (RequestPacket *) data;
             int type;
             sock->getMessageQueue()->dequeue( &type, data );
             switch( type )
             {
             case CHANGE_STREAM:
-                thiz->_handleMsgChangeStream( data );
+                thiz->_handleMsgChangeStream( rp );
                 break;
             case REQUEST_DOWNLOAD:
-                thiz->_handleMsgRequestDownload( data );
+                thiz->_handleMsgRequestDownload( rp );
                 break;
             case CANCEL_DOWNLOAD:
-                thiz->_handleMsgCancelDownload( data );
+                thiz->_handleMsgCancelDownload( rp );
                 break;
             case DISCONNECT:
                 thiz->_handleMsgDisconnect( handleNum );
                 break;
             }
+			free( data );
 		}
 		else if( handleNum == WAIT_IO_COMPLETION )
 		{

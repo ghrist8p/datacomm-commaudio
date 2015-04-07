@@ -13,7 +13,7 @@ public:
     Playlist( wchar_t * _dir );
     ~Playlist();
     
-    char * getSongPath( int id );
+    wchar_t * getSongPath( int id );
     SongName * getSong( int id );
 
 private:
