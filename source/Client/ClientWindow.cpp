@@ -44,7 +44,7 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	borderPen = (HPEN)CreatePen(PS_SOLID, 1, RGB(128, 0, 128));
 
     voiceTargetAddress[0] = 0;
-    
+
 	recording = false;
 	requestingRecorderStop = false;
 	micMQueue = new MessageQueue(1000,AUDIO_BUFFER_LENGTH);
@@ -68,7 +68,7 @@ DWORD ClientWindow::ThreadStart(void)
 	{
 		++(voicePacket.index);
 		micMQueue->dequeue(&useless, voicePacket.data, &length);
-        udpSock->Send(MUSICSTREAM,&voicePacket,sizeof(voicePacket),voiceTargetAddress,MULTICAST_PORT);
+        udpSock->Send(MICSTREAM,&voicePacket,sizeof(voicePacket),voiceTargetAddress,MULTICAST_PORT);
 	}
 }
 
@@ -237,7 +237,7 @@ void ClientWindow::onCreate()
 
     // create all the buffers and stuff
 	MessageQueue* q1 = new MessageQueue(1500,sizeof(LocalDataPacket));
-	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,AUDIO_BUFFER_LENGTH,50,50);
+	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,AUDIO_BUFFER_LENGTH,50,0);
 	udpSock = new UDPSocket(MULTICAST_PORT,q1);
 	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q1);
 
@@ -324,6 +324,6 @@ bool ClientWindow::onSeek(GuiComponent *_pThis, UINT command, UINT id, WPARAM wP
 	double percent = ((double)wParam) / 1000.0;
 
     pThis->musicfile->seekBuf(percent);
-	
+
 	return true;
 }

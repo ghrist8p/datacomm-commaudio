@@ -555,10 +555,10 @@ void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets
 
 				free(sendSong);
 
-				song = (char*)malloc(speed + 5);
+				song = (char*)malloc(speed);
 
 				//read chunks of data from the file based on the speed selected and send it
-				while (data_read = ReadFile( hSong, song + 5, 1 * speed, NULL, NULL ) > 0)
+				while (data_read = ReadFile( hSong, song, speed, NULL, NULL ) > 0)
 				{
 					if (stopSending)
 					{
@@ -582,7 +582,7 @@ void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets
 			MessageBox(NULL, L"NOT RIFF", L"ERROR", MB_ICONERROR);
 		}
 	}
-	
+
 	CloseHandle( hSong );
 }
 

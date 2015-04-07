@@ -29,7 +29,7 @@
 #define APP_CLIENT 1
 
 // Set to APP_SERVER to build the Server, APP_CLIENT to build the client.
-#define BUILD_TARGET APP_CLIENT
+#define BUILD_TARGET APP_SERVER
 
 #include "Server/ServerWindow.h"
 #include "Client/ConnectionWindow.h"

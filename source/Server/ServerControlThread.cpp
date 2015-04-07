@@ -77,6 +77,7 @@ void ServerControlThread::setUDPSocket( UDPSocket * sock )
     {
         WaitForSingleObject(access,INFINITE);
         udpSocket = sock;
+        udpSocket->setGroup(MULTICAST_ADDR,0);
         ReleaseMutex(access);
     }
 }

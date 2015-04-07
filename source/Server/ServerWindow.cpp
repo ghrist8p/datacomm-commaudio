@@ -11,6 +11,7 @@
 #include "Server.h"
 #include "../Buffer/MessageQueue.h"
 #include "ServerControlThread.h"
+#include "../Client/Sockets.h"
 
 /**
  * element that is put into the message queue.
@@ -35,8 +36,41 @@ ServerWindow::ServerWindow(HINSTANCE hInst)
 	bottomPanelBrush = CreateSolidBrush(RGB(255, 0, 0));
 	pen = CreatePen(0, 2, RGB(0, 0, 255));
 	connected = false;
+
+    DWORD useless;
+    CreateThread(NULL, 0, MicThread, (void*)this, 0, &useless);
 }
 
+DWORD WINAPI ServerWindow::MicThread(LPVOID lpParameter)
+{
+    ServerWindow* This = (ServerWindow*)lpParameter;
+    return This->ThreadStart();
+}
+
+DWORD ServerWindow::ThreadStart(void)
+{
+    int useless;
+    int length;
+
+    DataPacket voicePacket;
+
+    udpSock = new UDPSocket(7392,new MessageQueue(10,10));
+    udpSock->setGroup(MULTICAST_ADDR,0);
+
+    voicePacket.index = 0;
+
+    // continuously send voice data over the network when it becomes available
+    char sound[DATA_LEN];
+    FILE* fp = fopen("C:\\Users\\Eric\\Downloads\\Egoist_-_Extra_Terrestrial_Biological_Entities.wav","rb");
+    while(fread(sound,1,DATA_LEN,fp))
+    {
+        ++(voicePacket.index);
+        memcpy(voicePacket.data, sound, DATA_LEN);
+        udpSock->sendtoGroup(MUSICSTREAM,&voicePacket,sizeof(voicePacket));
+    }
+
+    return 0;
+}
 
 ServerWindow::~ServerWindow()
 {
@@ -125,7 +159,7 @@ void ServerWindow::onCreate()
 	layoutProps.rightMargin = 5;
 	layout->addComponent(inputPanel, &layoutProps);
 
-    
+
 	layout = (GuiLinearLayout*)inputPanel->getLayoutManager();
 	layout->setHorizontal(false);
 
@@ -157,9 +191,9 @@ void ServerWindow::onCreate()
 	tcpPortInput->setPreferredSize(256, 0);
 	layout->addComponent(tcpPortInput, &layoutProps);
 
-    
+
 	layout = (GuiLinearLayout*)inputPanel->getLayoutManager();
-    
+
 	// Add the TCP Input Panel to the Bottom Panel Layout
 	udpInputPanel->init();
 	udpInputPanel->setPreferredSize(400, 30);
@@ -168,7 +202,7 @@ void ServerWindow::onCreate()
 	layoutProps.leftMargin = 5;
 	layoutProps.rightMargin = 5;
 	layout->addComponent(udpInputPanel, &layoutProps);
-    
+
 	layout = (GuiLinearLayout*)udpInputPanel->getLayoutManager();
 	layout->setHorizontal(true);
 
@@ -184,7 +218,7 @@ void ServerWindow::onCreate()
 	udpPortInput->setPreferredSize(256, 0);
 	layout->addComponent(udpPortInput, &layoutProps);
 
-    
+
 	layout = (GuiLinearLayout*)inputPanel->getLayoutManager();
 
 	// Add the TCP Input Panel to the Bottom Panel Layout
