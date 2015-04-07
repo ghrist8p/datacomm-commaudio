@@ -172,6 +172,8 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 
 	data_send[0] = type;
 
+	memcpy(data_send + 1, (char*)data, length);
+
 	WaitResult = WaitForSingleObject(mutex, INFINITE);
 
 	if (WaitResult == WAIT_OBJECT_0)
@@ -392,8 +394,6 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 	char* data_send = (char*)malloc(sizeof(char) * (length + 1));
 
 	data_send[0] = type;
-
-	DataPacket* p = (DataPacket*) data;
 
 	memcpy(data_send + 1, (char*)data, length);
 

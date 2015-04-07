@@ -37,6 +37,8 @@ private:
 	bool recording;
 	bool requestingRecorderStop;
 
+    char voiceTargetAddress[STR_LEN];
+
 	DataPacket voicePacket;
 	MessageQueue *micMQueue;
 	MicReader *micReader;
