@@ -52,33 +52,21 @@ Playlist::~Playlist()
 }
 
 
-char * Playlist::getSongPath( int id )
+wchar_t * Playlist::getSongPath( int id )
 {
     int lastBackSlash = wcslen( sDir );
     while( sDir[ lastBackSlash ] != L'\\' ) --lastBackSlash;
     ++lastBackSlash;
-    char * path = (char *) malloc( lastBackSlash + 1 );
-    memset( path, 0, lastBackSlash + 1 );
-    size_t retval = 0;
-    wcstombs_s( &retval              // size_t        * pReturnValue
-              , path                 // char          * mbstr
-              , lastBackSlash + 1    // size_t          sizeInBytes
-              , sDir                 // const wchar_t * wcstr
-              , lastBackSlash + 1 ); // size_t          count
-
-	wchar_t * debug = new wchar_t[ lastBackSlash + 1 ];
-	wsprintf( debug, L"%s", path );
-	OutputDebugString( debug );
-	delete [] debug;
 
     std::vector< SongName >::iterator it;
     for( it = playlist.begin(); it != playlist.end() && id != it->id; ++it );
 
     if( it != playlist.end() )
     {
-        path = (char *) realloc( path, lastBackSlash + wcslen( it->filepath ) + 1 );
-        sprintf_s( path + lastBackSlash, lastBackSlash + wcslen( it->filepath ) + 1, "%S", it->filepath );
-        return path;
+		wchar_t * output = new wchar_t[ lastBackSlash + wcslen( it->filepath ) + 1 ];
+		memcpy( output, sDir, lastBackSlash * sizeof( wchar_t ) );
+		memcpy( output + lastBackSlash, it->filepath, ( wcslen( it->filepath ) + 1 ) * sizeof( wchar_t ) );
+        return output;
     }
     else
     {
