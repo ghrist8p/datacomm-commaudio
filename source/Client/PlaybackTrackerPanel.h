@@ -3,6 +3,8 @@
 
 #include "../GuiLibrary/GuiPanel.h"
 
+#define WM_SEEKBAR_MOVED (WM_USER+2)
+
 class PlaybackTrackerPanel : public GuiPanel
 {
 public:
