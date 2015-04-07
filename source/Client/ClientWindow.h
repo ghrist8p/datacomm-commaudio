@@ -16,6 +16,7 @@ class ButtonPanel;
 class GuiScrollList;
 class MessageQueue;
 class MicReader;
+class MusicBuffer;
 
 class ClientWindow : public GuiWindow
 {
@@ -43,6 +44,7 @@ private:
 	DataPacket voicePacket;
 	MessageQueue *micMQueue;
 	MicReader *micReader;
+    MusicBuffer* musicfile;
 
 	HBITMAP playButtonUp;
 	HBITMAP playButtonDown;

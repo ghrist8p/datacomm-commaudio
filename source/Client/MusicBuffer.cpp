@@ -171,7 +171,7 @@ void MusicBuffer::readBuf(char* data, int len)
 	}
 
 	double current_rpercentage = (double) (readindex - song_startindex) / currentsong_size;
-	TrackerPanel->setTrackerPercentage(current_rpercentage, true);
+	TrackerPanel->setTrackerPercentage(current_rpercentage, false);
 
 	ReleaseMutex(mutexx);
 }
