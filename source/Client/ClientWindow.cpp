@@ -187,6 +187,7 @@ void ClientWindow::onCreate()
 	trackerPanel->setPercentageBuffered(.75);
 	trackerPanel->setTrackerPercentage(.25);
 	trackerPanel->setBorderPen(nullPen);
+	trackerPanel->addMessageListener(WM_SEEK, ClientWindow::onSeek, this);
 	layout->addComponent(trackerPanel, &layoutProps);
 
 	// Add Control Panel to layout
@@ -318,5 +319,19 @@ bool ClientWindow::onMicStop(GuiComponent *_pThis, UINT command, UINT id, WPARAM
 	pThis->requestingRecorderStop = false;
 	pThis->voicePacket.index = 0;
 
+	return true;
+}
+
+bool ClientWindow::onSeek(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
+{
+	ClientWindow *pThis = (ClientWindow*)_pThis;
+	MessageBox(NULL, L"LOL", L"LOLOLOLOLOLOLOLOLOLOL", MB_ICONEXCLAMATION);
+
+	double percent = ((double)wParam) / 1000.0;
+
+	/*
+		Manuel, do stuff here.
+	*/
+	
 	return true;
 }
