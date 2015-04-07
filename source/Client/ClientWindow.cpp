@@ -58,7 +58,8 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	ClientControlThread * cct = ClientControlThread::getInstance();
 	cct->setClientWindow( this );
 
-	MusicBuffer* musicfile = new MusicBuffer();
+	MusicBuffer* musicfile = new MusicBuffer(this->trackerPanel);
+	musicfile->newSong(99999);
 	MessageQueue* q2 = new MessageQueue(1500,AUDIO_BUFFER_LENGTH);
 	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
 	MusicReader* mreader = new MusicReader(q2, musicfile);

@@ -109,7 +109,7 @@ void MusicBufferer::clearBuffer()
 {
 	//musicfile = fopen("tempmusic.txt", "wb");
 	//fseek(musicfile, 0, SEEK_SET);
-	music_buffer->newSong();
+	//music_buffer->newSong();
 }
 
 /*------------------------------------------------------------------------------------------------------------------
