@@ -206,6 +206,7 @@ VOID CALLBACK ServerControlThread::_sendPlaylistToOne( ULONG_PTR data )
 
 DWORD WINAPI ServerControlThread::_multicastRoutine( void * params )
 {
+
     ServerControlThread * thiz = ServerControlThread::getInstance();
     thiz->udpSocket->sendWave( *((SongName *) params), 60, thiz->_socks );
     return 0;
