@@ -1,3 +1,4 @@
+
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
@@ -19,5 +20,6 @@
 #define ACTUAL_MUSIC '8'
 #define DISCONNECT '9'
 
+#define WM_SEEK (WM_USER + 22)
 
 #endif
