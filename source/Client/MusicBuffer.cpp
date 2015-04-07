@@ -23,6 +23,7 @@
 ----------------------------------------------------------------------------------------------------------------------*/
 
 #include "MusicBuffer.h"
+#include "../Client/PlaybackTrackerPanel.h"
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: MusicBuffer
@@ -43,8 +44,9 @@
 --  This is the constructor for the Music Reader it will allocate memory for the buffer and will instatiate the semaphore
 --	and mutex.
 ----------------------------------------------------------------------------------------------------------------------*/
-MusicBuffer::MusicBuffer()
+MusicBuffer::MusicBuffer(PlaybackTrackerPanel* TrackerP)
 {
+	TrackerPanel = TrackerP;
 	buffer = (char*)malloc(sizeof(char) * SUPERSIZEBUF);
 	writeindex = 0;
 	readindex = 0;
@@ -119,6 +121,9 @@ void MusicBuffer::writeBuf(char* data, int len)
 		writeindex += len;
 	}
 
+	double current_wpercentage = (writeindex - song_startindex) / currentsong_size;
+	TrackerPanel->setPercentageBuffered(current_wpercentage);
+
 	ReleaseMutex(mutexx);
 	ReleaseSemaphore(canRead, 1, NULL);
 }
@@ -165,6 +170,9 @@ void MusicBuffer::readBuf(char* data, int len)
 		readindex += len;
 	}
 
+	double current_rpercentage = (readindex - song_startindex) / currentsong_size;
+	TrackerPanel->setTrackerPercentage(current_rpercentage, true);
+
 	ReleaseMutex(mutexx);
 }
 
@@ -188,11 +196,17 @@ void MusicBuffer::readBuf(char* data, int len)
 --	NOTES:
 --  This function will set the current readindex to the desired one.
 ----------------------------------------------------------------------------------------------------------------------*/
-void MusicBuffer::seekBuf(long index)
+void MusicBuffer::seekBuf(double percentage)
 {
 	WaitForSingleObject(mutexx, INFINITE);
 
-	readindex = index;
+	int index = percentage * currentsong_size;
+	index = song_startindex + index;
+	
+	if (index < writeindex)
+	{
+		readindex = index;
+	}
 
 	ReleaseMutex(mutexx);
 }
@@ -216,10 +230,12 @@ void MusicBuffer::seekBuf(long index)
 --  This function will set the current read index to match the write index. This means a new song has started
 --  and it should stop reading data form the old one.
 ----------------------------------------------------------------------------------------------------------------------*/
-void MusicBuffer::newSong()
+void MusicBuffer::newSong(unsigned long song_size)
 {
 	WaitForSingleObject(mutexx, INFINITE);
 
+	currentsong_size = song_size;
+	song_startindex = writeindex;
 	readindex = writeindex;
 
 	ReleaseMutex(mutexx);
