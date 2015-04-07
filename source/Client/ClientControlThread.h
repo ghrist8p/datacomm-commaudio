@@ -3,6 +3,7 @@
 
 #include "../Buffer/MessageQueue.h"
 #include "ClientWindow.h"
+#include <map>
 
 class TCPSocket;
 
@@ -21,8 +22,8 @@ public:
 protected:
     ClientControlThread();
     ~ClientControlThread();
-    void onDownloadPacket(int index, void* data, int len);
-    void onChangeStream(int index, void* data, int len);
+    void onDownloadPacket(RequestPacket packet);
+    void onChangeStream(RequestPacket packet);
     void onNewSong(SongName song);
 private:
     int _startRoutine(HANDLE* thread, HANDLE stopEvent,
@@ -67,6 +68,10 @@ private:
      * handle to an event object, used to stop the execution of thread.
      */
     HANDLE _threadStopEv;
+    /**
+     * list of SongInformation structures sent to client from server
+     */
+    std::map<int,SongName> _songs;
 };
 
 #endif

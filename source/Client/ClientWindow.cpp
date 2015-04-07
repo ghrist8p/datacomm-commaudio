@@ -23,6 +23,7 @@
 #include "MusicBufferer.h"
 #include "MusicReader.h"
 #include "MusicBuffer.h"
+#include "ClientControlThread.h"
 
 ClientWindow::ClientWindow(HINSTANCE hInst)
 	: GuiWindow(hInst)
@@ -44,7 +45,7 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	borderPen = (HPEN)CreatePen(PS_SOLID, 1, RGB(128, 0, 128));
 
     voiceTargetAddress[0] = 0;
-    
+
 	recording = false;
 	requestingRecorderStop = false;
 	micMQueue = new MessageQueue(1000,AUDIO_BUFFER_LENGTH);
@@ -68,7 +69,7 @@ DWORD ClientWindow::ThreadStart(void)
 	{
 		++(voicePacket.index);
 		micMQueue->dequeue(&useless, voicePacket.data, &length);
-        udpSock->Send(MUSICSTREAM,&voicePacket,sizeof(voicePacket),voiceTargetAddress,MULTICAST_PORT);
+        udpSock->Send(MICSTREAM,&voicePacket,sizeof(voicePacket),voiceTargetAddress,MULTICAST_PORT);
 	}
 }
 
@@ -236,8 +237,8 @@ void ClientWindow::onCreate()
 	layout->addComponent(buttonSpacer2);
 
     // create all the buffers and stuff
-	MessageQueue* q1 = new MessageQueue(1500,sizeof(LocalDataPacket));
-	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,AUDIO_BUFFER_LENGTH,50,50);
+	MessageQueue* q1 = new MessageQueue(1000,sizeof(LocalDataPacket));
+	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,AUDIO_BUFFER_LENGTH,50,0);
 	udpSock = new UDPSocket(MULTICAST_PORT,q1);
 	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q1);
 
@@ -249,12 +250,12 @@ void ClientWindow::onCreate()
 
 	musicfile = new MusicBuffer(trackerPanel);
 	musicfile->newSong(999999);
-	MessageQueue* q2 = new MessageQueue(1500,AUDIO_BUFFER_LENGTH);
+	MessageQueue* q2 = new MessageQueue(100,AUDIO_BUFFER_LENGTH);
 	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
 	MusicReader* mreader = new MusicReader(q2, musicfile);
-	PlayWave* p = new PlayWave(50,q2);
+	musicPlayer = new PlayWave(50,q2);
 
-	p->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
+	musicPlayer->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
 
     DWORD useless;
 	CreateThread(NULL, 0, MicThread, (void*)this, 0, &useless);
@@ -324,6 +325,6 @@ bool ClientWindow::onSeek(GuiComponent *_pThis, UINT command, UINT id, WPARAM wP
 	double percent = ((double)wParam) / 1000.0;
 
     pThis->musicfile->seekBuf(percent);
-	
+
 	return true;
 }

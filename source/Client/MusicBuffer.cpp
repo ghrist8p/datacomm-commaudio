@@ -50,6 +50,7 @@ MusicBuffer::MusicBuffer(PlaybackTrackerPanel* TrackerP)
 	buffer = (char*)malloc(sizeof(char) * SUPERSIZEBUF);
 	writeindex = 0;
 	readindex = 0;
+	song_startindex = 0;
 
 	canRead = CreateSemaphore(NULL, 0, SUPERSIZEBUF, NULL);
 	mutexx = CreateMutex(NULL, FALSE, NULL);
@@ -122,7 +123,7 @@ void MusicBuffer::writeBuf(char* data, int len)
 	}
 
 	double current_wpercentage = (double) (writeindex - song_startindex) / currentsong_size;
-	TrackerPanel->setPercentageBuffered(current_wpercentage);
+	TrackerPanel->setPercentageBuffered(current_wpercentage*1.5);
 
 	ReleaseMutex(mutexx);
 	ReleaseSemaphore(canRead, 1, NULL);
@@ -189,7 +190,7 @@ void MusicBuffer::readBuf(char* data, int len)
 --
 -- INTERFACE: void MusicBuffer::seekBuf(long index)
 --
---  index : location to read form the buffer 
+--  index : location to read form the buffer
 --
 --	RETURNS: nothing.
 --
@@ -202,7 +203,7 @@ void MusicBuffer::seekBuf(double percentage)
 
 	int index = percentage * currentsong_size;
 	index = song_startindex + index;
-	
+
 	/*if (index < writeindex)
 	{
 		readindex = index;

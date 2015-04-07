@@ -4,6 +4,7 @@
 
 #include <winsock2.h>
 #include <windows.h>
+#include <mmsystem.h>
 #include "synchronizationHelper.h"
 #include "Client/Sockets.h"
 

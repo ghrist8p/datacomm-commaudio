@@ -1,7 +1,7 @@
 #ifndef _PLAY_WAVE_H_
 #define _PLAY_WAVE_H_
 
-#include "../common.h"
+#include "../Common.h"
 #include <stdio.h>
 
 class MessageQueue;

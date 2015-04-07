@@ -3,7 +3,8 @@
 
 #include "../GuiLibrary/GuiWindow.h"
 #include "Sockets.h"
-
+#include "../Common.h"
+#include "../Client/PlayWave.h"
 
 class ConnectionWindow;
 class GuiPanel;
@@ -17,9 +18,11 @@ class GuiScrollList;
 class MessageQueue;
 class MicReader;
 class MusicBuffer;
+class ClientControlThread;
 
 class ClientWindow : public GuiWindow
 {
+	friend class ClientControlThread;
 public:
 	ClientWindow(HINSTANCE hInst);
 	virtual ~ClientWindow();
@@ -39,12 +42,13 @@ private:
 	bool recording;
 	bool requestingRecorderStop;
 
-    char voiceTargetAddress[STR_LEN];
+	char voiceTargetAddress[STR_LEN];
 
 	DataPacket voicePacket;
 	MessageQueue *micMQueue;
 	MicReader *micReader;
-    MusicBuffer* musicfile;
+	MusicBuffer* musicfile;
+	PlayWave* musicPlayer;
 
 	HBITMAP playButtonUp;
 	HBITMAP playButtonDown;
