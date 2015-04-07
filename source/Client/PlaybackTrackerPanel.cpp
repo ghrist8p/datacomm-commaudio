@@ -74,7 +74,7 @@ void PlaybackTrackerPanel::setTrackerPercentage(double percent, bool hasPriority
 	else
 		played = percent;
 
-    InvalidateRect(getHWND(), NULL, TRUE);
+	InvalidateRect(getHWND(), NULL, TRUE);
 }
 
 bool PlaybackTrackerPanel::onClick(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
@@ -100,6 +100,7 @@ bool PlaybackTrackerPanel::onClickUp(GuiComponent *pThis, UINT command, UINT id,
 	tracker->trackerBrush = tracker->trackerInactiveBrush;
 	tracker->trackerPen = tracker->trackerInactivePen;
 	InvalidateRect(tracker->getHWND(), NULL, TRUE);
+	SendMessage(tracker->getHWND(), WM_SEEK, (WPARAM)(tracker->played * 1000), 0);
 	return true;
 }
 
