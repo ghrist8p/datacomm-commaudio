@@ -7,6 +7,7 @@
 
 class ConnectionWindow;
 class GuiPanel;
+class GuiTextBox;
 class GuiLabel;
 class GuiButton;
 class GuiStatusBar;
@@ -35,6 +36,8 @@ private:
 
 	bool recording;
 	bool requestingRecorderStop;
+
+	DataPacket voicePacket;
 	MessageQueue *micMQueue;
 	MicReader *micReader;
 
@@ -51,6 +54,8 @@ private:
 
 	GuiPanel *topPanel;
 	GuiPanel *topPanelStretch;
+	GuiLabel *voiceTargetLabel;
+	GuiTextBox *voiceTargetInput;
 	GuiScrollList *fileContainerPanel;
 	GuiPanel *seekPanel;
 	GuiLabel *micTargetLabel;

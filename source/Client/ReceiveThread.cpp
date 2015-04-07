@@ -140,7 +140,7 @@ JitterBuffer* ReceiveThread::getJitterBuffer(unsigned long srcAddr)
     // if the jitter buffer doesn't exist make one, put it into the map
     if(jitterBuffer == 0)
     {
-        jitterBuffer = new JitterBuffer(5000,100,DATA_LEN,50,50);
+        jitterBuffer = new JitterBuffer(5000,100,DATA_LEN,150,0);
         MessageQueue* queue = new MessageQueue(1500,DATA_LEN);
         VoiceBufferer* voiceBufferer = new VoiceBufferer(queue,jitterBuffer);
         voiceBufferer->start();
