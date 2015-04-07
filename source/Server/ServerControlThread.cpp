@@ -124,27 +124,25 @@ DWORD WINAPI ServerControlThread::_threadRoutine( void * params )
 		else if( handleNum > WAIT_OBJECT_0 + 0 && handleNum < WAIT_OBJECT_0 + thiz->_sockHandles.size() )
         {
 			TCPSocket * sock = thiz->_socks[ handleNum - 1 ];
-            int len = sock->getMessageQueue()->peekLen();
-			void * data = malloc( DATA_BUFSIZE );
-			RequestPacket * rp = (RequestPacket *) data;
+
             int type;
-            sock->getMessageQueue()->dequeue( &type, data );
+			TCPPacket packet;
+            sock->getMessageQueue()->dequeue( &type, &packet );
             switch( type )
             {
             case CHANGE_STREAM:
-                thiz->_handleMsgChangeStream( rp );
+				thiz->_handleMsgChangeStream( &packet.requestPacket );
                 break;
             case REQUEST_DOWNLOAD:
-                thiz->_handleMsgRequestDownload( rp );
+                thiz->_handleMsgRequestDownload( &packet.requestPacket );
                 break;
             case CANCEL_DOWNLOAD:
-                thiz->_handleMsgCancelDownload( rp );
+                thiz->_handleMsgCancelDownload( &packet.requestPacket );
                 break;
             case DISCONNECT:
-                thiz->_handleMsgDisconnect( handleNum );
+                thiz->_handleMsgDisconnect( handleNum - 1 );
                 break;
             }
-			free( data );
 		}
 		else if( handleNum == WAIT_IO_COMPLETION )
 		{
@@ -184,7 +182,7 @@ void ServerControlThread::_handleMsgDisconnect( int client )
 {
     WaitForSingleObject( access, INFINITE );
     _socks.erase( _socks.begin() + client );
-    _sockHandles.erase( _sockHandles.begin() + client );
+    _sockHandles.erase( _sockHandles.begin() + client + 1 );
     ReleaseMutex( access );
 }
 

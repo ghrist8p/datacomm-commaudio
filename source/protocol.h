@@ -59,11 +59,6 @@ struct LocalDataPacket
 
 typedef struct LocalDataPacket LocalDataPacket;
 
-struct StringPacket
-{
-	char string[STR_LEN];
-};
-
 typedef struct DataPacket DataPacket;
 
 struct RequestPacket
@@ -81,17 +76,6 @@ struct MessageHeader
 
 typedef struct MessageHeader MessageHeader;
 
-struct SongStream
-{
-	short channels;
-	short bps; //bits per sample
-	unsigned long sample_rate;
-	int id;
-	char songname[STR_LEN];
-};
-
-typedef struct SongStream SongStream;
-
 struct SongName
 {
 	int  id;
@@ -104,5 +88,14 @@ struct SongName
 };
 
 typedef struct SongName SongName;
+
+union TCPPacket
+{
+	SongName songName;
+	RequestPacket requestPacket;
+	DataPacket dataPacket;
+};
+
+typedef union TCPPacket TCPPacket;
 
 #endif
