@@ -203,7 +203,7 @@ void MessageQueue::dequeue(int* type, void* dest, int* len)
     ReleaseSemaphore(canEnqueue,1,NULL);
 
     // get the data from the element
-    memcpy(dest,n->data,elementSize);
+    memcpy(dest,n->data,n->len);
     *type = n->type;
     *len  = n->len;
 

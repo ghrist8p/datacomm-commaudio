@@ -424,7 +424,9 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 			int err;
 			if ((err = WSAGetLastError()) != WSA_IO_PENDING)
 			{
-				MessageBox(NULL, L"WSASend() failed with error", L"ERROR", MB_ICONERROR);
+				wchar_t errorStr[256] = {0};
+				swprintf_s( errorStr, 256, L"WSASend() failed with error: %d", err );
+				MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
 				return 0;
 			}
 		}
@@ -506,20 +508,15 @@ void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets
 
 	if (fp)
 	{
-		sendSong = (char*)malloc(sizeof(char) * SIZE_INDEX);
+		RequestPacket packet;
 
-		sendSong[0] = (songloc.id >> 24) & 0xFF;
-		sendSong[1] = (songloc.id >> 16) & 0xFF;
-		sendSong[2] = (songloc.id >> 8) & 0xFF;
-		sendSong[3] = songloc.id & 0xFF;
+		packet.index = songloc.id;
 
 		//for every client
 		for (int i = 0; i < sockets.size(); i++)
 		{
-			sockets[i]->Send(CHANGE_STREAM, sendSong, SIZE_INDEX);
+			sockets[i]->Send(CHANGE_STREAM, &packet, sizeof(packet));
 		}
-
-		free(sendSong);
 
 		// continuously send voice data over the network when it becomes
 		// available

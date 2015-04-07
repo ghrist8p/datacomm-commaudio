@@ -4,7 +4,7 @@
 #include <vector>
 
 // static function forward declarations
-static int getSongfileInfo(SongName* song, wchar_t* filepath, int id);
+static int getSongfileInfo(SongName* song, wchar_t* filepath, wchar_t* filename, int songId);
 
 // Playlist implementation
 Playlist::Playlist( wchar_t * _dir )
@@ -47,7 +47,7 @@ Playlist::Playlist( wchar_t * _dir )
 
 			// get the song information
 			SongName temp;
-			getSongfileInfo(&temp,directory,++curId);
+			getSongfileInfo(&temp,directory,fileName,++curId);
 			playlist.emplace_back(temp);
 		}
 	} while (FindNextFile(hFind, &ffd) != 0);
@@ -99,20 +99,21 @@ SongName * Playlist::getSong( int id )
 }
 
 // static function implementations
-int getSongfileInfo(SongName* song, wchar_t* filepath, int songId)
+int getSongfileInfo(SongName* song, wchar_t* filepath, wchar_t* filename, int songId)
 {
-	song->id = songId;
-
-	wsprintf(song->filepath,L"%s",filepath);
-	sprintf_s(song->cFilepath,"%S",filepath);
-
 	// bail out if cant open file
+	sprintf_s(song->cFilepath,"%S",filepath);
 	FILE* fp = fopen(song->cFilepath, "rb");
 	if(!fp)
 	{
 		int err = GetLastError();
 		return 1;
 	}
+
+	// set song id and filename
+	song->id = songId;
+	wsprintf(song->filepath,L"%s",filename);
+	sprintf_s(song->cFilepath,"%S",filename);
 
 	// allocate memory to hold the song file meta data.
 	char id[5];
