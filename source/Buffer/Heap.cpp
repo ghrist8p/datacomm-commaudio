@@ -305,7 +305,7 @@ int Heap::comapreIndexes(int index1, int index2)
     // returned at the end of the function. positive number if {index2} is
     // larger than {index1}, 0 is equal, and negative number if {index1} is
     // larger than {index2}.
-    int ret;
+    int ret = 0;
 
     if(index1 > relativeZero)
     {

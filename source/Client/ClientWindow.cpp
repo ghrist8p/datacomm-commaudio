@@ -43,38 +43,11 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	nullPen = (HPEN)CreatePen(PS_SOLID, 0, 0);
 	borderPen = (HPEN)CreatePen(PS_SOLID, 1, RGB(128, 0, 128));
 
+    voiceTargetAddress[0] = 0;
+    
 	recording = false;
 	requestingRecorderStop = false;
 	micMQueue = new MessageQueue(1000,AUDIO_BUFFER_LENGTH);
-
-	MessageQueue* q1 = new MessageQueue(1500,sizeof(LocalDataPacket));
-	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,AUDIO_BUFFER_LENGTH,50,50);
-	udpSock = new UDPSocket(MULTICAST_PORT,q1);
-	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q1);
-
-	udpSock->setGroup(MULTICAST_ADDR,1);
-	recvThread->start();
-
-	ClientControlThread * cct = ClientControlThread::getInstance();
-	cct->setClientWindow( this );
-
-	MusicBuffer* musicfile = new MusicBuffer(this->trackerPanel);
-	musicfile->newSong(99999);
-	MessageQueue* q2 = new MessageQueue(1500,AUDIO_BUFFER_LENGTH);
-	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
-	MusicReader* mreader = new MusicReader(q2, musicfile);
-	PlayWave* p = new PlayWave(50,q2);
-
-	p->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
-
-	HANDLE ThreadHandle;
-	DWORD ThreadId;
-
-	if ((ThreadHandle = CreateThread(NULL, 0, MicThread, (void*)this, 0, &ThreadId)) == NULL)
-	{
-		MessageBox(NULL, L"CreateThread failed with error", L"ERROR", MB_ICONERROR);
-		return;
-	}
 }
 
 DWORD WINAPI ClientWindow::MicThread(LPVOID lpParameter)
@@ -95,7 +68,7 @@ DWORD ClientWindow::ThreadStart(void)
 	{
 		++(voicePacket.index);
 		micMQueue->dequeue(&useless, voicePacket.data, &length);
-		udpSock->sendtoGroup(MICSTREAM, &voicePacket, sizeof(DataPacket));
+        udpSock->Send(MUSICSTREAM,&voicePacket,sizeof(voicePacket),voiceTargetAddress,MULTICAST_PORT);
 	}
 }
 
@@ -260,6 +233,30 @@ void ClientWindow::onCreate()
 	layout->addComponent(playButton);
 	layout->addComponent(stopButton);
 	layout->addComponent(buttonSpacer2);
+
+    // create all the buffers and stuff
+	MessageQueue* q1 = new MessageQueue(1500,sizeof(LocalDataPacket));
+	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,AUDIO_BUFFER_LENGTH,50,50);
+	udpSock = new UDPSocket(MULTICAST_PORT,q1);
+	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q1);
+
+	udpSock->setGroup(MULTICAST_ADDR,1);
+	recvThread->start();
+
+	ClientControlThread * cct = ClientControlThread::getInstance();
+	cct->setClientWindow( this );
+
+	MusicBuffer* musicfile = new MusicBuffer(trackerPanel);
+	musicfile->newSong(999999);
+	MessageQueue* q2 = new MessageQueue(1500,AUDIO_BUFFER_LENGTH);
+	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
+	MusicReader* mreader = new MusicReader(q2, musicfile);
+	PlayWave* p = new PlayWave(50,q2);
+
+	p->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
+
+    DWORD useless;
+	CreateThread(NULL, 0, MicThread, (void*)this, 0, &useless);
 }
 
 void ClientWindow::onClickPlay(void*)
@@ -285,6 +282,19 @@ bool ClientWindow::onClickMic(GuiComponent *_pThis, UINT command, UINT id, WPARA
 		}
 		else
 		{
+			// get target address, and if it is invalid, bail out and show a
+			// message box
+			size_t useless;
+			wcstombs_s(&useless,pThis->voiceTargetAddress,pThis->voiceTargetInput->getText(),STR_LEN);
+			struct sockaddr_in destination;
+			destination.sin_addr.s_addr = inet_addr(pThis->voiceTargetAddress);
+			if (destination.sin_addr.s_addr == INADDR_NONE)
+			{
+				MessageBox(NULL, L"The target ip address entered must be a legal IPv4 address", L"ERROR", MB_ICONERROR);
+				return true;
+			}
+
+			// start recording
 			pThis->micTargetButton->setText(L"Stop Speaking");
 			pThis->recording = true;
 			pThis->micReader->startReading();

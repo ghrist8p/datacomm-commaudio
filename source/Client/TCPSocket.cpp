@@ -8,7 +8,7 @@
 	static DWORD WINAPI TCPThread(LPVOID lpParameter);
 	DWORD ThreadStart(void);
 	static void CALLBACK TCPRoutine(DWORD Error, DWORD BytesTransferred,
-	LPWSAOVERLAPPED Overlapped, DWORD InFlags);	
+	LPWSAOVERLAPPED Overlapped, DWORD InFlags);
 	int Send(char type, void* data, int length);
 --
 -- DATE: April 1, 2015
@@ -54,7 +54,7 @@ TCPSocket::TCPSocket(SOCKET socket, MessageQueue* mqueue)
 {
 	sd = socket;
 	msgqueue = mqueue;
-    
+
 	mutex = CreateMutex(NULL, FALSE, NULL);
 
 	HANDLE ThreadHandle;
@@ -199,22 +199,22 @@ DWORD WINAPI TCPSocket::TCPThread(LPVOID lpParameter)
 DWORD TCPSocket::ThreadStart(void)
 {
 	DWORD Flags;
-	SOCKET_INFORMATION SocketInfo;
+	SOCKET_INFORMATION socketInfo;
 	DWORD RecvBytes;
 	int length;
-		
-	SocketInfo.Socket = sd;
-	ZeroMemory(&(SocketInfo.Overlapped), sizeof(WSAOVERLAPPED));
-	SocketInfo.DataBuf.buf = SocketInfo.Buffer;
-	SocketInfo.mqueue = msgqueue;
+
+	socketInfo.Socket = sd;
+	ZeroMemory(&(socketInfo.Overlapped), sizeof(WSAOVERLAPPED));
+	socketInfo.DataBuf.buf = socketInfo.Buffer;
+	socketInfo.mqueue = msgqueue;
 	Flags = 0;
 
 		while (true)
 		{
-    		SocketInfo.DataBuf.len = sizeof(int)+1;
+    		socketInfo.DataBuf.len = sizeof(int)+1;
             char type;
 
-			if (WSARecv(SocketInfo.Socket, &(SocketInfo.DataBuf), 1, &RecvBytes, &Flags,
+			if (WSARecv(socketInfo.Socket, &(socketInfo.DataBuf), 1, &RecvBytes, &Flags,
 				0, 0) == SOCKET_ERROR)
 			{
                 int err;
@@ -225,11 +225,11 @@ DWORD TCPSocket::ThreadStart(void)
 				}
 			}
 
-            type = SocketInfo.Buffer[0];
-			length = (SocketInfo.Buffer[1] << 24) | (SocketInfo.Buffer[2] << 16) | (SocketInfo.Buffer[3] << 8) | (SocketInfo.Buffer[4]);
-			SocketInfo.DataBuf.len = length;
+            type = socketInfo.Buffer[0];
+			length = (socketInfo.Buffer[1] << 24) | (socketInfo.Buffer[2] << 16) | (socketInfo.Buffer[3] << 8) | (socketInfo.Buffer[4]);
+			socketInfo.DataBuf.len = length;
 
-			if (WSARecv(SocketInfo.Socket, &SocketInfo.DataBuf, 1, &RecvBytes, &Flags,
+			if (WSARecv(socketInfo.Socket, &socketInfo.DataBuf, 1, &RecvBytes, &Flags,
 				0, 0) == SOCKET_ERROR)
 			{
 				if (WSAGetLastError() != WSA_IO_PENDING)
@@ -241,8 +241,8 @@ DWORD TCPSocket::ThreadStart(void)
 			else
 			{
 				char* dataReceived = (char*)malloc(sizeof(char) * length);
-				memcpy(dataReceived, SocketInfo.Buffer, length);
-                SocketInfo.mqueue->enqueue(type, dataReceived, length);
+				memcpy(dataReceived, socketInfo.Buffer, length);
+                socketInfo.mqueue->enqueue(type, dataReceived, length);
 				free(dataReceived);
 			}
 		}
@@ -263,7 +263,7 @@ DWORD TCPSocket::ThreadStart(void)
 --
 --  Error: Errors when receiving
 --  BytesTransferred: Bytes Received
---  Overlapped: Overlapped Structure from the SocketInfo
+--  Overlapped: Overlapped Structure from the socketInfo
 --  InFlags: Flags for the WSA call
 --
 --	NOTES:
@@ -276,12 +276,12 @@ DWORD TCPSocket::ThreadStart(void)
 //	DWORD Flags;
 //	DWORD RecvBytes;
 //
-//	LPSOCKET_INFORMATION SocketInfo = (LPSOCKET_INFORMATION)Overlapped;
+//	LPSOCKET_INFORMATION socketInfo = (LPSOCKET_INFORMATION)Overlapped;
 //
-//	int length = (SocketInfo->Buffer[3] << 24) | (SocketInfo->Buffer[2] << 16) | (SocketInfo->Buffer[1] << 8) | (SocketInfo->Buffer[0]);
-//	SocketInfo->DataBuf.len = length + 1;
+//	int length = (socketInfo.Buffer[3] << 24) | (socketInfo.Buffer[2] << 16) | (socketInfo.Buffer[1] << 8) | (socketInfo.Buffer[0]);
+//	socketInfo.DataBuf.len = length + 1;
 //
-//	if (WSARecv(SocketInfo->Socket, &SocketInfo->DataBuf, 1, &RecvBytes, &Flags,
+//	if (WSARecv(socketInfo.Socket, &socketInfo.DataBuf, 1, &RecvBytes, &Flags,
 //		Overlapped, TCPRoutine) == SOCKET_ERROR)
 //	{
 //		if (WSAGetLastError() != WSA_IO_PENDING)
@@ -292,8 +292,8 @@ DWORD TCPSocket::ThreadStart(void)
 //	}
 //	else
 //	{
-//		int type = SocketInfo->Buffer[0];
-//		SocketInfo->mqueue->enqueue(type, SocketInfo->Buffer);
+//		int type = socketInfo.Buffer[0];
+//		socketInfo.mqueue->enqueue(type, socketInfo.Buffer);
 //	}
 //
 //
@@ -349,7 +349,7 @@ TCPSocket::~TCPSocket()
 int TCPSocket::Send(char type, void* data, int length)
 {
 	DWORD Flags;
-	LPSOCKET_INFORMATION SocketInfo;
+	SOCKET_INFORMATION socketInfo;
 	DWORD bytesSent;
 	DWORD WaitResult;
 	char* data_send = (char*) malloc(sizeof(char) * (length + 5));
@@ -368,21 +368,14 @@ int TCPSocket::Send(char type, void* data, int length)
 
 	if (WaitResult == WAIT_OBJECT_0)
 	{
-		if ((SocketInfo = (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
-			sizeof(SOCKET_INFORMATION))) == NULL)
-		{
-			MessageBox(NULL, L"GlobalAlloc() failed with error", L"ERROR", MB_ICONERROR);
-			return 0;
-		}
-
-		SocketInfo->Socket = sd;
-		ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));
-		SocketInfo->DataBuf.len = length + 5;
-		SocketInfo->DataBuf.buf = data_send;
+		socketInfo.Socket = sd;
+		ZeroMemory(&(socketInfo.Overlapped), sizeof(WSAOVERLAPPED));
+		socketInfo.DataBuf.len = length + 5;
+		socketInfo.DataBuf.buf = data_send;
 		Flags = 0;
 
-		if (WSASend(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &bytesSent, Flags,
-			&(SocketInfo->Overlapped), 0) == SOCKET_ERROR)
+		if (WSASend(socketInfo.Socket, &(socketInfo.DataBuf), 1, &bytesSent, Flags,
+			&(socketInfo.Overlapped), 0) == SOCKET_ERROR)
 		{
 			if (WSAGetLastError() != WSA_IO_PENDING)
 			{
@@ -402,7 +395,7 @@ int TCPSocket::Send(char type, void* data, int length)
 		MessageBox(NULL, L"Error in the mutex", L"ERROR", MB_ICONERROR);
         int err = GetLastError();
 		return 0;
-	}	
+	}
 
 }
 
