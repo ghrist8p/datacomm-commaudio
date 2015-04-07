@@ -18,6 +18,7 @@
 #include "../handlerHelper.h"
 #include "../protocol.h"
 #include "MusicBuffer.h"
+#include "PlayWave.h"
 
 /*
  * message queue constructor parameters
@@ -162,19 +163,26 @@ void ClientControlThread::setClientWindow( ClientWindow * theWindow )
     _window = theWindow;
 }
 
-void ClientControlThread::onDownloadPacket(int index, void* data, int len)
+void ClientControlThread::onDownloadPacket( RequestPacket packet )
 {
     // TODO: implement stufffff!!!!!
 }
 
-void ClientControlThread::onChangeStream(int index, void* data, int len)
+void ClientControlThread::onChangeStream( RequestPacket packet )
 {
-    // TODO: implement stufffff!!!!!
+    // get the song
+    SongName song = _songs[packet.index];
+
+    // set the speaker settings and stuff according to the song parameters
+    _window->musicfile->newSong(song.size);
+    _window->musicPlayer->stopPlaying();
+    _window->musicPlayer->startPlaying(song.sample_rate,song.bps,song.channels);
 }
 
 void ClientControlThread::onNewSong( SongName song )
 {
     _window->addRemoteFile( song );
+    _songs[song.id] = song;
 }
 
 int ClientControlThread::_startRoutine(HANDLE* thread, HANDLE stopEvent,
@@ -311,18 +319,14 @@ void ClientControlThread::_handleSockMsgqMsg(ClientControlThread* dis)
     {
     case DOWNLOAD:
         OutputDebugString(L"DOWNLOAD\n");
-        // TODO: parse packet, and fill in callback parameters
-        dis->onDownloadPacket(0,0,0);
+        dis->onDownloadPacket( *((RequestPacket *)element.data) );
         break;
     case CHANGE_STREAM:
         OutputDebugString(L"CHANGE_STREAM\n");
-        dis->_window->musicfile->newSong(999999);
-        // TODO: parse packet, and fill in callback parameters
-        dis->onChangeStream(0,0,0);
+        dis->onChangeStream( *((RequestPacket *)element.data) );
         break;
     case NEW_SONG:
         OutputDebugString(L"NEW_SONG\n");
-        // TODO: parse packet, and fill in callback parameters
         dis->onNewSong( *((SongName *)element.data) );
         break;
     default:

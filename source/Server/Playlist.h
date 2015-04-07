@@ -1,8 +1,7 @@
 #ifndef PLAYLIST_H
 #define PLAYLIST_H
 
-#include <Windows.h>
-
+#include "../common.h"
 #include "../protocol.h"
 
 class Playlist

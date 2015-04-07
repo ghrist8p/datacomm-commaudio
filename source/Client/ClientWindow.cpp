@@ -253,9 +253,9 @@ void ClientWindow::onCreate()
 	MessageQueue* q2 = new MessageQueue(100,AUDIO_BUFFER_LENGTH);
 	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
 	MusicReader* mreader = new MusicReader(q2, musicfile);
-	PlayWave* p = new PlayWave(50,q2);
+	musicPlayer = new PlayWave(50,q2);
 
-	p->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
+	musicPlayer->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
 
     DWORD useless;
 	CreateThread(NULL, 0, MicThread, (void*)this, 0, &useless);

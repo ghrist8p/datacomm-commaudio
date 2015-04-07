@@ -34,8 +34,8 @@
  */
 struct DataPacket
 {
-    int index;
-    char data[DATA_LEN];
+	int index;
+	char data[DATA_LEN];
 };
 
 typedef struct DataPacket DataPacket;
@@ -52,31 +52,31 @@ typedef struct DataPacket DataPacket;
  */
 struct LocalDataPacket
 {
-    int index;
-    unsigned long srcAddr;
-    char data[DATA_LEN];
+	int index;
+	unsigned long srcAddr;
+	char data[DATA_LEN];
 };
 
 typedef struct LocalDataPacket LocalDataPacket;
 
 struct StringPacket
 {
-    char string[STR_LEN];
+	char string[STR_LEN];
 };
 
 typedef struct DataPacket DataPacket;
 
 struct RequestPacket
 {
-    int index;
+	int index;
 };
 
 typedef struct RequestPacket RequestPacket;
 
 struct MessageHeader
 {
-    uint32_t size;
-    uint8_t type;
+	uint32_t size;
+	uint8_t type;
 };
 
 typedef struct MessageHeader MessageHeader;
@@ -84,7 +84,7 @@ typedef struct MessageHeader MessageHeader;
 struct SongStream
 {
 	short channels;
-	short bps; //bit rae
+	short bps; //bits per sample
 	unsigned long sample_rate;
 	int id;
 	char songname[STR_LEN];
@@ -95,7 +95,12 @@ typedef struct SongStream SongStream;
 struct SongName
 {
 	int  id;
+	short channels;
+	short bps; //bits per sample
+	unsigned long sample_rate;
+	unsigned long size;
 	wchar_t filepath[STR_LEN];
+	char cFilepath[STR_LEN];
 };
 
 typedef struct SongName SongName;

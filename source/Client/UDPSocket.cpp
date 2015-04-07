@@ -342,24 +342,28 @@ DWORD UDPSocket::ThreadStart(void)
 ----------------------------------------------------------------------------------------------------------------------*/
 void UDPSocket::setGroup(char* group_address, int mem_flag)
 {
-	char loop = 0;
-	char ttl = 2;
-	in_addr interfaceAddr;
-	interfaceAddr.s_addr = inet_addr(INADDR_ANY);
 	memset(&mreq,0,sizeof(mreq));
 	mreq.imr_multiaddr.s_addr = inet_addr(group_address);
 	mreq.imr_interface.s_addr = inet_addr(INADDR_ANY);
-	int i = 0;
-	int err = 0;
-	if (mem_flag)
+
+	char loop;
+	char ttl = 2;
+
+    in_addr interfaceAddr;
+	interfaceAddr.s_addr = inet_addr(INADDR_ANY);
+
+    if (mem_flag)
 	{
-		i = setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
-		err = GetLastError();
-		i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
-		err = GetLastError();
-		i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
-		err = GetLastError();
+        loop = 0;
 	}
+    else
+    {
+        loop = 1;
+    }
+
+    setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
+    setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
+    setsockopt(sd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
 	setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char*)&interfaceAddr, sizeof(interfaceAddr));
 }
 
@@ -500,83 +504,47 @@ void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets
 	char* song;
 	stopSending = false;
 
-	if (fp) {
+	if (fp)
+	{
+		sendSong = (char*)malloc(sizeof(char) * SIZE_INDEX);
 
-		char id[5];
-		unsigned long size;
-		short format_tag, channels, block_align, bits_per_sample;
-		unsigned long format_length, sample_rate, avg_bytes_sec, data_size;
-		int data_read = 0;
+		sendSong[0] = (songloc.id >> 24) & 0xFF;
+		sendSong[1] = (songloc.id >> 16) & 0xFF;
+		sendSong[2] = (songloc.id >> 8) & 0xFF;
+		sendSong[3] = songloc.id & 0xFF;
 
-		fread(id, sizeof(char), 4, fp);
-		id[4] = '\0';
-
-		if (!strcmp(id, "RIFF")) {
-			fread(&size, sizeof(unsigned long), 1, fp);
-			fread(id, sizeof(char), 4, fp);
-			id[4] = '\0';
-
-			if (!strcmp(id, "WAVE")) {
-				//get wave headers
-				fread(id, sizeof(char), 4, fp);
-				fread(&format_length, sizeof(unsigned long), 1, fp);
-				fread(&format_tag, sizeof(short), 1, fp);
-				fread(&channels, sizeof(short), 1, fp);
-				fread(&sample_rate, sizeof(unsigned long), 1, fp);
-				fread(&avg_bytes_sec, sizeof(unsigned long), 1, fp);
-				fread(&block_align, sizeof(short), 1, fp);
-				fread(&bits_per_sample, sizeof(short), 1, fp);
-				fread(id, sizeof(char), 4, fp);
-				fread(&data_size, sizeof(unsigned long), 1, fp);
-
-				sendSong = (char*)malloc(sizeof(char) * SIZE_INDEX);
-
-				sendSong[0] = (songloc.id >> 24) & 0xFF;
-				sendSong[1] = (songloc.id >> 16) & 0xFF;
-				sendSong[2] = (songloc.id >> 8) & 0xFF;
-				sendSong[3] = songloc.id & 0xFF;
-
-				//for every client
-				for (int i = 0; i < sockets.size(); i++)
-				{
-					sockets[i]->Send(CHANGE_STREAM, sendSong, SIZE_INDEX);
-				}
-
-				free(sendSong);
-
-                // continuously send voice data over the network when it becomes available
-                DataPacket voicePacket;
-                int count = 0;
-                voicePacket.index = 0;
-                char sound[DATA_LEN];
-                while(fread(sound,1,DATA_LEN,fp))
-                {
-                	if(stopSending)
-                	{
-                		break;
-                	}
-                    ++(voicePacket.index);
-                    memcpy(voicePacket.data, sound, DATA_LEN);
-                    sendtoGroup(MUSICSTREAM,&voicePacket,sizeof(voicePacket));
-                    if(count > 3)
-                    {
-                        count = 0;
-                        Sleep(1);
-                    }
-                }
-			}
-			else
-			{
-				MessageBox(NULL, L"NOT WAVE", L"ERROR", MB_ICONERROR);
-			}
-		}
-		else
+		//for every client
+		for (int i = 0; i < sockets.size(); i++)
 		{
-			MessageBox(NULL, L"NOT RIFF", L"ERROR", MB_ICONERROR);
+			sockets[i]->Send(CHANGE_STREAM, sendSong, SIZE_INDEX);
 		}
+
+		free(sendSong);
+
+		// continuously send voice data over the network when it becomes
+		// available
+		DataPacket voicePacket;
+		int count = 0;
+		voicePacket.index = 0;
+		char sound[DATA_LEN];
+		while(fread(sound,1,DATA_LEN,fp))
+		{
+			if(stopSending)
+			{
+				break;
+			}
+			++(voicePacket.index);
+			memcpy(voicePacket.data, sound, DATA_LEN);
+			sendtoGroup(MUSICSTREAM,&voicePacket,sizeof(voicePacket));
+			if(count > 3)
+			{
+				count = 0;
+				Sleep(1);
+			}
+		}
+		fclose(fp);
 	}
 
-	fclose(fp);
 
 	// struct SongStream songInfo;
 	// char* sendSong;
