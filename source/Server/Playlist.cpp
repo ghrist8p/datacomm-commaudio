@@ -58,13 +58,18 @@ char * Playlist::getSongPath( int id )
     while( sDir[ lastBackSlash ] != L'\\' ) --lastBackSlash;
     ++lastBackSlash;
     char * path = (char *) malloc( lastBackSlash + 1 );
-    memset( path, 0, lastBackSlash + 2 );
+    memset( path, 0, lastBackSlash + 1 );
     size_t retval = 0;
     wcstombs_s( &retval              // size_t        * pReturnValue
               , path                 // char          * mbstr
               , lastBackSlash + 1    // size_t          sizeInBytes
               , sDir                 // const wchar_t * wcstr
-              , lastBackSlash + 1 ); // size_t          count 
+              , lastBackSlash + 1 ); // size_t          count
+
+	wchar_t * debug = new wchar_t[ lastBackSlash + 1 ];
+	wsprintf( debug, L"%s", path );
+	OutputDebugString( debug );
+	delete [] debug;
 
     std::vector< SongName >::iterator it;
     for( it = playlist.begin(); it != playlist.end() && id != it->id; ++it );
