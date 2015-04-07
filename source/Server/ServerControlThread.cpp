@@ -66,6 +66,11 @@ void ServerControlThread::setPlaylist( Playlist * _playlist )
     }
 }
 
+Playlist * ServerControlThread::getPlaylist()
+{
+    return playlist;
+}
+
 void ServerControlThread::setUDPSocket( UDPSocket * sock )
 {
     if( sock != NULL )
@@ -106,22 +111,22 @@ DWORD WINAPI ServerControlThread::_threadRoutine( void * params )
     while(!breakLoop)
     {
         int handleNum = 0;
-        switch( handleNum = WaitForMultipleObjectsEx(  thiz->_sockHandles.size()
-                                                    , &thiz->_sockHandles[ 0 ]
-                                                    , FALSE
-                                                    , INFINITE
-                                                    , TRUE ) )
-        {
-        case WAIT_IO_COMPLETION:
-            break;
-        case WAIT_OBJECT_0+0:   // stop event triggered
+		handleNum = WaitForMultipleObjectsEx(  thiz->_sockHandles.size()
+                                            , &thiz->_sockHandles[ 0 ]
+                                            , FALSE
+                                            , INFINITE
+                                            , TRUE );
+		if( handleNum == WAIT_OBJECT_0 + 0 )
+		{
             breakLoop = TRUE;
-            break;
-        default:
-            int len = thiz->_socks[ handleNum ]->getMessageQueue()->peekLen();
+		}
+		else if( handleNum > WAIT_OBJECT_0 + 0 && handleNum < WAIT_OBJECT_0 + thiz->_sockHandles.size() )
+        {
+			TCPSocket * sock = thiz->_socks[ handleNum - 1 ];
+            int len = sock->getMessageQueue()->peekLen();
             RequestPacket * data = new RequestPacket;
             int type;
-            thiz->_socks[ handleNum ]->getMessageQueue()->dequeue( &type, data );
+            sock->getMessageQueue()->dequeue( &type, data );
             switch( type )
             {
             case CHANGE_STREAM:
@@ -137,8 +142,19 @@ DWORD WINAPI ServerControlThread::_threadRoutine( void * params )
                 thiz->_handleMsgDisconnect( handleNum );
                 break;
             }
-            break;
-        }
+		}
+		else if( handleNum == WAIT_IO_COMPLETION )
+		{
+		
+		}
+		else
+		{
+			wchar_t errorStr[256] = {0};
+			swprintf( errorStr, 256, L"WaitForMultipleObjectsEx() failed: %d\n"
+									 L"thiz->_sockHandles.size(): %d", handleNum, thiz->_sockHandles.size() );
+			MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
+			return false;
+		}
     }
     return 0;
 }
@@ -201,6 +217,7 @@ VOID CALLBACK ServerControlThread::_sendPlaylistToOne( ULONG_PTR data )
 
 DWORD WINAPI ServerControlThread::_multicastRoutine( void * params )
 {
+
     ServerControlThread * thiz = ServerControlThread::getInstance();
     thiz->udpSocket->sendWave( *((SongName *) params), 60, thiz->_socks );
     return 0;

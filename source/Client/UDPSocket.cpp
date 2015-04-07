@@ -31,6 +31,7 @@
 
 #include "Sockets.h"
 #include "../Buffer/MessageQueue.h"
+#include "../Server/ServerControlThread.h"
 
 using namespace std;
 
@@ -94,17 +95,17 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 	// Copy the server address
 
 	// Connecting to the server
-    char reuseAddr = 1;
-    setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &reuseAddr, sizeof(reuseAddr));
+	char reuseAddr = 1;
+	setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &reuseAddr, sizeof(reuseAddr));
 	if (bind(sd, (struct sockaddr *)&server, sizeof(server)) == -1)
 	{
-		perror("Can't bind name to socket");
+		OutputDebugString(L"Can't bind name to socket");
 		exit(1);
 	}
 
 	if ((ThreadHandle = CreateThread(NULL, 0, UDPThread, (void*)this, 0, &ThreadId)) == NULL)
 	{
-		printf("CreateThread failed with error %d\n", GetLastError());
+		OutputDebugString(L"CreateThread failed with error %d\n");
 		return;
 	}
 }
@@ -129,7 +130,7 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 ----------------------------------------------------------------------------------------------------------------------*/
 UDPSocket::~UDPSocket()
 {
-    setsockopt(sd, IPPROTO_IP, IP_DROP_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
+	setsockopt(sd, IPPROTO_IP, IP_DROP_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
 	closesocket(sd);
 	WSACleanup();
 }
@@ -171,11 +172,7 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 
 	data_send[0] = type;
 
-	//message len
-	/*data_send[1] = (length >> 24) & 0xFF;
-	data_send[2] = (length >> 16) & 0xFF;
-	data_send[3] = (length >> 8) & 0xFF;
-	data_send[4] = length & 0xFF;*/
+	memcpy(data_send + 1, (char*)data, length);
 
 	WaitResult = WaitForSingleObject(mutex, INFINITE);
 
@@ -398,8 +395,6 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 
 	data_send[0] = type;
 
-	DataPacket* p = (DataPacket*) data;
-
 	memcpy(data_send + 1, (char*)data, length);
 
 	WaitResult = WaitForSingleObject(mutex, INFINITE);
@@ -492,7 +487,10 @@ MessageQueue* UDPSocket::getMessageQueue()
 ----------------------------------------------------------------------------------------------------------------------*/
 void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets)
 {
-	FILE* fp = fopen(songloc.filepath, "rb");
+	ServerControlThread * sct = ServerControlThread::getInstance();
+	char * path = sct->getPlaylist()->getSongPath( songloc.id );
+	FILE* fp = fopen(path, "rb");
+	free( path );
 	struct SongStream songInfo;
 	char* sendSong;
 	char* song;

@@ -24,7 +24,7 @@ public:
 	virtual ~ClientWindow();
 	virtual void onCreate();
 
-	void addRemoteFile(LPWSTR filename);
+	void addRemoteFile(SongName);
 
 private:
 	static void onClickPlay(void*);
@@ -37,6 +37,8 @@ private:
 
 	bool recording;
 	bool requestingRecorderStop;
+
+    char voiceTargetAddress[STR_LEN];
 
 	DataPacket voicePacket;
 	MessageQueue *micMQueue;

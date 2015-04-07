@@ -35,8 +35,7 @@
  */
 union MsgqElement
 {
-    int index;
-    char string[STR_LEN];
+    int songId;
 };
 
 /**
@@ -112,34 +111,34 @@ ClientControlThread::~ClientControlThread()
  *
  * @param    file   [description]
  */
-void ClientControlThread::requestDownload(char* file)
+void ClientControlThread::requestDownload(int id)
 {
     // prepare the element for insertion into the message queue
     MsgqElement element;
-    memcpy(&element.string,file,STR_LEN);
+    element.songId = id;
 
     // insert the element into the message queue
-    _msgq.enqueue((int)REQUEST_DOWNLOAD,&element);
+    _msgq.enqueue(REQUEST_DOWNLOAD,&element);
 }
 
-void ClientControlThread::cancelDownload(char* file)
+void ClientControlThread::cancelDownload(int id)
 {
     // prepare the element for insertion into the message queue
     MsgqElement element;
-    memcpy(&element.string,file,STR_LEN);
+    element.songId = id;
 
     // insert the element into the message queue
-    _msgq.enqueue((int)CANCEL_DOWNLOAD,&element);
+    _msgq.enqueue(CANCEL_DOWNLOAD,&element);
 }
 
-void ClientControlThread::requestChangeStream(char* file)
+void ClientControlThread::requestChangeStream(int id)
 {
     // prepare the element for insertion into the message queue
     MsgqElement element;
-    memcpy(&element.string,file,STR_LEN);
+    element.songId = id;
 
     // insert the element into the message queue
-    _msgq.enqueue((int)CHANGE_STREAM,&element);
+    _msgq.enqueue(CHANGE_STREAM,&element);
 }
 
 void ClientControlThread::connect(char* ipAddress, unsigned short port)
@@ -157,6 +156,11 @@ void ClientControlThread::disconnect()
     _stopRoutine(&_thread,_threadStopEv);
 }
 
+void ClientControlThread::setClientWindow( ClientWindow * theWindow )
+{
+    _window = theWindow;
+}
+
 void ClientControlThread::onDownloadPacket(int index, void* data, int len)
 {
     // TODO: implement stufffff!!!!!
@@ -167,9 +171,9 @@ void ClientControlThread::onChangeStream(int index, void* data, int len)
     // TODO: implement stufffff!!!!!
 }
 
-void ClientControlThread::onNewSong(char* file)
+void ClientControlThread::onNewSong( SongName song )
 {
-    // TODO: implement stufffff!!!!!
+    _window->addRemoteFile( song );
 }
 
 int ClientControlThread::_startRoutine(HANDLE* thread, HANDLE stopEvent,
@@ -267,22 +271,22 @@ void ClientControlThread::_handleMsgqMsg(ClientControlThread* dis)
     {
     case REQUEST_DOWNLOAD:
     {
-        StringPacket packet;
-        memcpy(packet.string,element.string,STR_LEN);
+        RequestPacket packet;
+        packet.index = element.songId;
         dis->tcpSock->Send(REQUEST_DOWNLOAD,&packet,sizeof(packet));
         break;
     }
     case CANCEL_DOWNLOAD:
     {
-        StringPacket packet;
-        memcpy(packet.string,element.string,STR_LEN);
+        RequestPacket packet;
+        packet.index = element.songId;
         dis->tcpSock->Send(CANCEL_DOWNLOAD,&packet,sizeof(packet));
         break;
     }
     case CHANGE_STREAM:
     {
-        StringPacket packet;
-        memcpy(packet.string,element.string,STR_LEN);
+        RequestPacket packet;
+        packet.index = element.songId;
         dis->tcpSock->Send(CHANGE_STREAM,&packet,sizeof(packet));
         break;
     }
@@ -299,7 +303,7 @@ void ClientControlThread::_handleSockMsgqMsg(ClientControlThread* dis)
     SockMsgqElement element;
 
     // get the message queue message
-    dis->_sockMsgq.dequeue((int*)&msgType,&element);
+    dis->_sockMsgq.dequeue(&msgType,&element);
 
     // process the message queue message according to its type
     switch(msgType)
@@ -317,7 +321,7 @@ void ClientControlThread::_handleSockMsgqMsg(ClientControlThread* dis)
     case NEW_SONG:
         OutputDebugString(L"NEW_SONG\n");
         // TODO: parse packet, and fill in callback parameters
-        dis->onNewSong(0);
+        dis->onNewSong( *((SongName *)element.data) );
         break;
     default:
         fprintf(stderr,"WARNING: received unknown message type: %d\n",msgType);

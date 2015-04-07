@@ -43,25 +43,31 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	nullPen = (HPEN)CreatePen(PS_SOLID, 0, 0);
 	borderPen = (HPEN)CreatePen(PS_SOLID, 1, RGB(128, 0, 128));
 
+    voiceTargetAddress[0] = 0;
+
 	recording = false;
 	requestingRecorderStop = false;
 	micMQueue = new MessageQueue(1000,AUDIO_BUFFER_LENGTH);
 
 	MessageQueue* q1 = new MessageQueue(1500,sizeof(LocalDataPacket));
-	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,AUDIO_BUFFER_LENGTH,50,0);
+	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,AUDIO_BUFFER_LENGTH,50,50);
 	udpSock = new UDPSocket(MULTICAST_PORT,q1);
 	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q1);
 
 	udpSock->setGroup(MULTICAST_ADDR,1);
 	recvThread->start();
 
-	MusicBuffer* musicfile = new MusicBuffer();
+	ClientControlThread * cct = ClientControlThread::getInstance();
+	cct->setClientWindow( this );
+
+	MusicBuffer* musicfile = new MusicBuffer(this->trackerPanel);
+	musicfile->newSong(99999);
 	MessageQueue* q2 = new MessageQueue(1500,AUDIO_BUFFER_LENGTH);
 	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
 	MusicReader* mreader = new MusicReader(q2, musicfile);
-	PlayWave* playWave = new PlayWave(1000, q2);
+	PlayWave* p = new PlayWave(50,q2);
 
-	playWave->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
+	p->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
 
 	HANDLE ThreadHandle;
 	DWORD ThreadId;
@@ -91,7 +97,7 @@ DWORD ClientWindow::ThreadStart(void)
 	{
 		++(voicePacket.index);
 		micMQueue->dequeue(&useless, voicePacket.data, &length);
-		udpSock->sendtoGroup(MICSTREAM, &voicePacket, sizeof(DataPacket));
+        udpSock->Send(MICSTREAM,&voicePacket,sizeof(voicePacket),voiceTargetAddress,MULTICAST_PORT);
 	}
 }
 
@@ -123,9 +129,9 @@ ClientWindow::~ClientWindow()
 	DeleteObject(borderPen);
 }
 
-void ClientWindow::addRemoteFile(LPWSTR filename)
+void ClientWindow::addRemoteFile(SongName song)
 {
-	fileContainerPanel->addItem(new FileListItem(fileContainerPanel, this, hInst, filename));
+	fileContainerPanel->addItem(new FileListItem(fileContainerPanel, this, hInst, song));
 }
 
 void ClientWindow::onCreate()
@@ -174,13 +180,6 @@ void ClientWindow::onCreate()
 	layoutProps.weight = 1;
 	fileContainerPanel->setPreferredSize(0, 0);
 	layout->addComponent(fileContainerPanel, &layoutProps);
-
-	// Add some files to the list view
-	addRemoteFile(L"This_Was_A_TRIUMPH_DUH_NUH_NUH_NUH_DUH.wav");
-	addRemoteFile(L"This_Was_A_TRIUMPH_DUH_NUH_NUH_NUH_DUH_1.wav");
-	addRemoteFile(L"This_Was_A_TRIUMPH_DUH_NUH_NUH_NUH_DUH_2.wav");
-	addRemoteFile(L"This_Was_A_TRIUMPH_DUH_NUH_NUH_NUH_DUH_3.wav");
-	addRemoteFile(L"This_Was_A_TRIUMPH_DUH_NUH_NUH_NUH_DUH_4.wav");
 
 	// Add Tracker Panel to layout
 	trackerPanel->init();
@@ -289,6 +288,19 @@ bool ClientWindow::onClickMic(GuiComponent *_pThis, UINT command, UINT id, WPARA
 		}
 		else
 		{
+			// get target address, and if it is invalid, bail out and show a
+			// message box
+			size_t useless;
+			wcstombs_s(&useless,pThis->voiceTargetAddress,pThis->voiceTargetInput->getText(),STR_LEN);
+			struct sockaddr_in destination;
+			destination.sin_addr.s_addr = inet_addr(pThis->voiceTargetAddress);
+			if (destination.sin_addr.s_addr == INADDR_NONE)
+			{
+				MessageBox(NULL, L"The target ip address entered must be a legal IPv4 address", L"ERROR", MB_ICONERROR);
+				return true;
+			}
+
+			// start recording
 			pThis->micTargetButton->setText(L"Stop Speaking");
 			pThis->recording = true;
 			pThis->micReader->startReading();
@@ -305,7 +317,7 @@ bool ClientWindow::onMicStop(GuiComponent *_pThis, UINT command, UINT id, WPARAM
 	pThis->micTargetButton->setText(L"Start Speaking");
 	pThis->recording = false;
 	pThis->requestingRecorderStop = false;
-    pThis->voicePacket.index = 0;
+	pThis->voicePacket.index = 0;
 
 	return true;
 }
