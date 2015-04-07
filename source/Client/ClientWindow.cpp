@@ -247,7 +247,7 @@ void ClientWindow::onCreate()
 	ClientControlThread * cct = ClientControlThread::getInstance();
 	cct->setClientWindow( this );
 
-	MusicBuffer* musicfile = new MusicBuffer(trackerPanel);
+	musicfile = new MusicBuffer(trackerPanel);
 	musicfile->newSong(999999);
 	MessageQueue* q2 = new MessageQueue(1500,AUDIO_BUFFER_LENGTH);
 	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
@@ -320,13 +320,10 @@ bool ClientWindow::onMicStop(GuiComponent *_pThis, UINT command, UINT id, WPARAM
 bool ClientWindow::onSeek(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
 {
 	ClientWindow *pThis = (ClientWindow*)_pThis;
-	MessageBox(NULL, L"LOL", L"LOLOLOLOLOLOLOLOLOLOL", MB_ICONEXCLAMATION);
 
 	double percent = ((double)wParam) / 1000.0;
 
-	/*
-		Manuel, do stuff here.
-	*/
+    pThis->musicfile->seekBuf(percent);
 	
 	return true;
 }
