@@ -89,6 +89,17 @@ struct SongName
 
 typedef struct SongName SongName;
 
+struct SongStream
+{
+	short channels;
+	short bps; //bits per sample
+	unsigned long sample_rate;
+	int id;
+	char songname[STR_LEN];
+};
+
+typedef struct SongStream SongStream;
+
 union TCPPacket
 {
 	SongName songName;
