@@ -54,6 +54,8 @@ TCPSocket::TCPSocket(SOCKET socket, MessageQueue* mqueue)
 {
 	sd = socket;
 	msgqueue = mqueue;
+    
+	mutex = CreateMutex(NULL, FALSE, NULL);
 
 	HANDLE ThreadHandle;
 	DWORD ThreadId;
@@ -197,30 +199,22 @@ DWORD WINAPI TCPSocket::TCPThread(LPVOID lpParameter)
 DWORD TCPSocket::ThreadStart(void)
 {
 	DWORD Flags;
-	LPSOCKET_INFORMATION SocketInfo;
+	SOCKET_INFORMATION SocketInfo;
 	DWORD RecvBytes;
 	int length;
-
-
-		if ((SocketInfo = (LPSOCKET_INFORMATION)GlobalAlloc(GPTR,
-			sizeof(SOCKET_INFORMATION))) == NULL)
-		{
-			MessageBox(NULL, L"GlobalAlloc() failed with error", L"ERROR", MB_ICONERROR);
-			return FALSE;
-		}
-
-		SocketInfo->Socket = sd;
-		ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));
-		SocketInfo->DataBuf.buf = SocketInfo->Buffer;
-		SocketInfo->mqueue = msgqueue;
-		Flags = 0;
+		
+	SocketInfo.Socket = sd;
+	ZeroMemory(&(SocketInfo.Overlapped), sizeof(WSAOVERLAPPED));
+	SocketInfo.DataBuf.buf = SocketInfo.Buffer;
+	SocketInfo.mqueue = msgqueue;
+	Flags = 0;
 
 		while (true)
 		{
-    		SocketInfo->DataBuf.len = sizeof(int)+1;
+    		SocketInfo.DataBuf.len = sizeof(int)+1;
             char type;
 
-			if (WSARecv(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags,
+			if (WSARecv(SocketInfo.Socket, &(SocketInfo.DataBuf), 1, &RecvBytes, &Flags,
 				0, 0) == SOCKET_ERROR)
 			{
                 int err;
@@ -231,11 +225,11 @@ DWORD TCPSocket::ThreadStart(void)
 				}
 			}
 
-            type = SocketInfo->Buffer[0];
-			length = (SocketInfo->Buffer[1] << 24) | (SocketInfo->Buffer[2] << 16) | (SocketInfo->Buffer[3] << 8) | (SocketInfo->Buffer[4]);
-			SocketInfo->DataBuf.len = length;
+            type = SocketInfo.Buffer[0];
+			length = (SocketInfo.Buffer[1] << 24) | (SocketInfo.Buffer[2] << 16) | (SocketInfo.Buffer[3] << 8) | (SocketInfo.Buffer[4]);
+			SocketInfo.DataBuf.len = length;
 
-			if (WSARecv(SocketInfo->Socket, &SocketInfo->DataBuf, 1, &RecvBytes, &Flags,
+			if (WSARecv(SocketInfo.Socket, &SocketInfo.DataBuf, 1, &RecvBytes, &Flags,
 				0, 0) == SOCKET_ERROR)
 			{
 				if (WSAGetLastError() != WSA_IO_PENDING)
@@ -247,8 +241,8 @@ DWORD TCPSocket::ThreadStart(void)
 			else
 			{
 				char* dataReceived = (char*)malloc(sizeof(char) * length);
-				memcpy(dataReceived, SocketInfo->Buffer, length);
-                SocketInfo->mqueue->enqueue(type, dataReceived, length);
+				memcpy(dataReceived, SocketInfo.Buffer, length);
+                SocketInfo.mqueue->enqueue(type, dataReceived, length);
 				free(dataReceived);
 			}
 		}

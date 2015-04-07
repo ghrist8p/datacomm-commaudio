@@ -2,12 +2,12 @@
 #include "ClientControlThread.h"
 #include "../GuiLibrary/GuiScrollList.h"
 
-FileListItem::FileListItem(GuiScrollList *list, ClientWindow *clientWindow, HINSTANCE hInst, LPWSTR filename)
+FileListItem::FileListItem(GuiScrollList *list, ClientWindow *clientWindow, HINSTANCE hInst, SongName song)
 	: GuiScrollListItem(list)
 {
 	this->clientWindow = clientWindow;
 	this->setHeight(64);
-	this->filename = filename;
+	this->song = song;
 	this->downloading = true;
 	background = (HBRUSH)CreateSolidBrush(RGB(20, 20, 20));
 
@@ -54,7 +54,7 @@ void FileListItem::paint(HDC hdc, LPRECT drawingArea)
 	// Draw Filename
 	SetTextColor(hdc, RGB(0, 168, 232));
 	SetBkMode(hdc, TRANSPARENT);
-	DrawText(hdc, this->filename, -1, &textArea, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+	DrawText(hdc, this->song.filepath, -1, &textArea, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
 
 	// Draw Stream Button
 	buffer = CreateCompatibleDC(hdc);
@@ -83,30 +83,30 @@ void FileListItem::onClick(int x, int y)
 {
 	// allocate c style filename string converted from wide char string
     size_t retval;
-	char* cFilename = (char*) malloc(wcslen(filename)+1);
-    wcstombs_s( &retval               // size_t *pReturnValue,
-              , cFilename             // char *mbstr,
-              , wcslen(filename)+1    // size_t sizeInBytes,
-              , filename              // const wchar_t *wcstr,
-              , wcslen(filename)+1 ); // size_t count
+    char* cFilename = (char*) malloc(wcslen(song.filepath)+1);
+    wcstombs_s( &retval                    // size_t *pReturnValue,
+              , cFilename                  // char *mbstr,
+              , wcslen(song.filepath)+1    // size_t sizeInBytes,
+              , song.filepath              // const wchar_t *wcstr,
+              , wcslen(song.filepath)+1 ); // size_t count
 
 	// handle the click event
 	if (pointInPlayButton(x, y))
 	{
 		// Request Song Playback
-		ClientControlThread::getInstance()->requestChangeStream(cFilename);
+        ClientControlThread::getInstance()->requestChangeStream(song.id);
 	}
 	else if (pointInSaveButton(x, y))
 	{
 		// request song download
 		if (downloading)
 		{
-			ClientControlThread::getInstance()->cancelDownload(cFilename);
+			ClientControlThread::getInstance()->cancelDownload(song.id);
 			markAsDownloadingStopped();
 		}
 		else
 		{
-			ClientControlThread::getInstance()->requestDownload(cFilename);
+			ClientControlThread::getInstance()->requestDownload(song.id);
 			markAsDownloading();
 		}
 	}

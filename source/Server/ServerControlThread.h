@@ -16,6 +16,7 @@ public:
     void start();
     void stop();
     void setPlaylist( Playlist * );
+    Playlist * getPlaylist();
     void sendPlaylistToAll( void );
     void setUDPSocket( UDPSocket * );
 protected:

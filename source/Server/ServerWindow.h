@@ -24,14 +24,26 @@ public:
 private:
 	GuiListBox *connectedClients;
 	GuiPanel *bottomPanel;
+
 	GuiPanel *leftPaddingPanel;
-	GuiPanel *inputPanel;
+    
+    GuiPanel *inputPanel;
+
+	GuiPanel *tcpInputPanel;
+	GuiPanel *udpInputPanel;
+	GuiPanel *playlistInputPanel;
+
 	GuiLabel *tcpPortLabel;
 	GuiLabel *udpPortLabel;
+	GuiLabel *playlistLabel;
+
 	GuiTextBox *tcpPortInput;
 	GuiTextBox *udpPortInput;
+	GuiTextBox *playlistInput;
+
 	GuiButton *connectionButton;
-	HFONT labelFont;
+	
+    HFONT labelFont;
 	HBRUSH bottomPanelBrush;
 	HPEN pen;
     
