@@ -424,7 +424,9 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 			int err;
 			if ((err = WSAGetLastError()) != WSA_IO_PENDING)
 			{
-				MessageBox(NULL, L"WSASend() failed with error", L"ERROR", MB_ICONERROR);
+				wchar_t errorStr[256] = {0};
+				swprintf_s( errorStr, 256, L"WSASend() failed with error: %d", err );
+				MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
 				return 0;
 			}
 		}
