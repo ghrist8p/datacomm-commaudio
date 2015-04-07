@@ -47,11 +47,20 @@ ServerWindow::~ServerWindow()
 	delete connectedClients;
 	delete bottomPanel;
 	delete leftPaddingPanel;
-	delete inputPanel;
+
+    delete inputPanel;
+
+	delete tcpInputPanel;
+	delete udpInputPanel;
+	delete playlistInputPanel;
+
 	delete tcpPortLabel;
     delete udpPortLabel;
+    delete playlistLabel;
+
 	delete tcpPortInput;
 	delete udpPortInput;
+	delete playlistInput;
 	delete connectionButton;
 }
 
@@ -65,12 +74,22 @@ void ServerWindow::onCreate()
 	connectedClients = new GuiListBox(hInst, this);
 	bottomPanel = new GuiPanel(hInst, this);
 	leftPaddingPanel = new GuiPanel(hInst, bottomPanel);
-	inputPanel = new GuiPanel(hInst, bottomPanel);
-	tcpPortLabel = new GuiLabel(hInst, inputPanel);
-	udpPortLabel = new GuiLabel(hInst, inputPanel);
-	tcpPortInput = new GuiTextBox(hInst, inputPanel, false);
-	udpPortInput = new GuiTextBox(hInst, inputPanel, false);
-	connectionButton = new GuiButton(hInst, inputPanel, IDB_CONNECTION_TOGGLE);
+
+    inputPanel = new GuiPanel(hInst, bottomPanel);
+
+	tcpInputPanel = new GuiPanel(hInst, inputPanel);
+	udpInputPanel = new GuiPanel(hInst, inputPanel);
+	playlistInputPanel = new GuiPanel(hInst, inputPanel);
+
+	tcpPortLabel = new GuiLabel(hInst, tcpInputPanel);
+	udpPortLabel = new GuiLabel(hInst, udpInputPanel);
+	playlistLabel = new GuiLabel(hInst, playlistInputPanel);
+
+	tcpPortInput = new GuiTextBox(hInst, tcpInputPanel, false);
+	udpPortInput = new GuiTextBox(hInst, udpInputPanel, false);
+	playlistInput = new GuiTextBox(hInst, playlistInputPanel, false);
+
+	connectionButton = new GuiButton(hInst, bottomPanel, IDB_CONNECTION_TOGGLE);
 
 	// Get the windows default vertical linear layout
 	GuiLinearLayout *layout = (GuiLinearLayout*)getLayoutManager();
@@ -86,29 +105,41 @@ void ServerWindow::onCreate()
 
 	// Add Bottom Panel to the Window Layout
 	bottomPanel->init();
-	bottomPanel->setPreferredSize(0, 38);
+	bottomPanel->setPreferredSize(0, 100);
+	bottomPanel->addCommandListener(BN_CLICKED, toggleConnection, this);
 	layout->addComponent(bottomPanel);
 
 	// Get the Bottom Panel Layout
 	layout = (GuiLinearLayout*)bottomPanel->getLayoutManager();
-	layout->setHorizontal(false);
+	layout->setHorizontal(true);
 
 	// Add the Left Padding Panel to the Bottom Panel Layout
 	leftPaddingPanel->init();
 	//layout->addComponent(leftPaddingPanel, &layoutProps);
 
-	// Add the TCP Input Panel to the Bottom Panel Layout
 	inputPanel->init();
-	inputPanel->setPreferredSize(700, 0);
-	inputPanel->addCommandListener(BN_CLICKED, toggleConnection, this);
+	inputPanel->setPreferredSize(400, 120);
 	layoutProps.bottomMargin = 5;
 	layoutProps.topMargin = 5;
 	layoutProps.leftMargin = 5;
 	layoutProps.rightMargin = 5;
 	layout->addComponent(inputPanel, &layoutProps);
 
-	// Get the Input Panel Layout
+    
 	layout = (GuiLinearLayout*)inputPanel->getLayoutManager();
+	layout->setHorizontal(false);
+
+	// Add the TCP Input Panel to the Bottom Panel Layout
+	tcpInputPanel->init();
+	tcpInputPanel->setPreferredSize(400, 30);
+	layoutProps.bottomMargin = 0;
+	layoutProps.topMargin = 0;
+	layoutProps.leftMargin = 5;
+	layoutProps.rightMargin = 5;
+	layout->addComponent(tcpInputPanel, &layoutProps);
+
+	// Get the Input Panel Layout
+	layout = (GuiLinearLayout*)tcpInputPanel->getLayoutManager();
 	layout->setHorizontal(true);
 
 	// Add Inputs to TCP Input Panel
@@ -120,23 +151,67 @@ void ServerWindow::onCreate()
 	tcpPortLabel->setText(L"TCP:");
 	layoutProps.leftMargin = 0;
 	layoutProps.rightMargin = 0;
-	layoutProps.topMargin = 5;
+	layoutProps.topMargin = 0;
 	layout->addComponent(tcpPortLabel, &layoutProps);
 	tcpPortInput->init();
 	tcpPortInput->setPreferredSize(256, 0);
 	layout->addComponent(tcpPortInput, &layoutProps);
+
+    
+	layout = (GuiLinearLayout*)inputPanel->getLayoutManager();
+    
+	// Add the TCP Input Panel to the Bottom Panel Layout
+	udpInputPanel->init();
+	udpInputPanel->setPreferredSize(400, 30);
+	layoutProps.bottomMargin = 0;
+	layoutProps.topMargin = 0;
+	layoutProps.leftMargin = 5;
+	layoutProps.rightMargin = 5;
+	layout->addComponent(udpInputPanel, &layoutProps);
+    
+	layout = (GuiLinearLayout*)udpInputPanel->getLayoutManager();
+	layout->setHorizontal(true);
 
 	udpPortLabel->init();
 	createLabelFont();
 	udpPortLabel->setText(L"UDP:");
 	layoutProps.leftMargin = 0;
 	layoutProps.rightMargin = 0;
-	layoutProps.topMargin = 5;
+	layoutProps.topMargin = 0;
 	layout->addComponent(udpPortLabel, &layoutProps);
 
 	udpPortInput->init();
 	udpPortInput->setPreferredSize(256, 0);
 	layout->addComponent(udpPortInput, &layoutProps);
+
+    
+	layout = (GuiLinearLayout*)inputPanel->getLayoutManager();
+
+	// Add the TCP Input Panel to the Bottom Panel Layout
+	playlistInputPanel->init();
+	playlistInputPanel->setPreferredSize(400, 30);
+	layoutProps.bottomMargin = 0;
+	layoutProps.topMargin = 0;
+	layoutProps.leftMargin = 5;
+	layoutProps.rightMargin = 5;
+	layout->addComponent(playlistInputPanel, &layoutProps);
+
+	layout = (GuiLinearLayout*)playlistInputPanel->getLayoutManager();
+	layout->setHorizontal(true);
+
+	playlistLabel->init();
+	createLabelFont();
+	playlistLabel->setText(L"Playlist:");
+	layoutProps.leftMargin = 0;
+	layoutProps.rightMargin = 0;
+	layoutProps.topMargin = 0;
+	layout->addComponent(playlistLabel, &layoutProps);
+
+	playlistInput->init();
+	playlistInput->setPreferredSize(256, 0);
+	layout->addComponent(playlistInput, &layoutProps);
+
+    layout = (GuiLinearLayout*)bottomPanel->getLayoutManager();
 
 	connectionButton->init();
 	connectionButton->setText(L"Start");
@@ -305,17 +380,20 @@ void ServerWindow::newConnHandler( TCPConnection * connection, void * data )
 
 bool ServerWindow::toggleConnection(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
 {
-
 	ServerWindow *serverWindow = (ServerWindow*) pThis;
+    ServerControlThread * sct = ServerControlThread::getInstance();
 
 	/**
 	 * STOP SERVER LISTENING HERE
 	 */
 	if (serverWindow->connected)
 	{
+        serverWindow->connectedClients->addItem(L"Stoping...", -1);
+
 		serverWindow->server->disconnect();
 		serverWindow->tcpPortInput->setEnabled(true);
 		serverWindow->udpPortInput->setEnabled(true);
+		serverWindow->playlistInput->setEnabled(true);
 		serverWindow->connectionButton->setText(L"Start Server");
 		serverWindow->connected = false;
 	}
@@ -324,6 +402,17 @@ bool ServerWindow::toggleConnection(GuiComponent *pThis, UINT command, UINT id, 
 	*/
 	else
 	{
+        serverWindow->connectedClients->addItem(L"Starting...", -1);
+
+        sct->setPlaylist( new Playlist( serverWindow->playlistInput->getText() ) );
+
+        for( std::vector< SongName >::iterator it = sct->getPlaylist()->playlist.begin()
+           ; it != sct->getPlaylist()->playlist.end()
+           ; ++it )
+        {
+            serverWindow->connectedClients->addItem( it->filepath, -1 );
+        }
+
 		unsigned short tcpPort = _wtoi(serverWindow->tcpPortInput->getText());
 		unsigned short udpPort = _wtoi(serverWindow->udpPortInput->getText());
 		unsigned short groupAddress = inet_addr(MULTICAST_ADDR);
@@ -331,12 +420,12 @@ bool ServerWindow::toggleConnection(GuiComponent *pThis, UINT command, UINT id, 
 		serverWindow->server = new Server(tcpPort, newConnHandler, serverWindow, groupAddress, udpPort);
 		if (serverWindow->server->startTCP())
 		{
-            ServerControlThread * sct = ServerControlThread::getInstance();
             sct->setUDPSocket( new UDPSocket( udpPort, new MessageQueue( MSGQ_CAPACITY, MSGQ_ELEM_SIZE ) ) );
             sct->start();
 
 		    serverWindow->tcpPortInput->setEnabled(false);
 		    serverWindow->udpPortInput->setEnabled(false);
+		    serverWindow->playlistInput->setEnabled(false);
 		    serverWindow->connectionButton->setText(L"Close Server");
 		    serverWindow->connected = true;
 		}

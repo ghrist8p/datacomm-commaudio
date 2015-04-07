@@ -166,7 +166,6 @@ DWORD MusicBufferer::ThreadStart(void)
 	{
 		WaitForSingleObject(music_jitter->canGet,INFINITE);
 		music_jitter->get(music_data);
-		//fwrite(music_data, 1, elementSize, musicfile);
 		music_buffer->writeBuf(music_data, elementSize);
 	}
 }

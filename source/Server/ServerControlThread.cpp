@@ -66,6 +66,11 @@ void ServerControlThread::setPlaylist( Playlist * _playlist )
     }
 }
 
+Playlist * ServerControlThread::getPlaylist()
+{
+    return playlist;
+}
+
 void ServerControlThread::setUDPSocket( UDPSocket * sock )
 {
     if( sock != NULL )
@@ -201,6 +206,7 @@ VOID CALLBACK ServerControlThread::_sendPlaylistToOne( ULONG_PTR data )
 
 DWORD WINAPI ServerControlThread::_multicastRoutine( void * params )
 {
+
     ServerControlThread * thiz = ServerControlThread::getInstance();
     thiz->udpSocket->sendWave( *((SongName *) params), 60, thiz->_socks );
     return 0;

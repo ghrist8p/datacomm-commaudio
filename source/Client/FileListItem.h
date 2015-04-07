@@ -9,7 +9,7 @@ class ClientWindow;
 class FileListItem : public GuiScrollListItem
 {
 public:
-	FileListItem(GuiScrollList *list, ClientWindow *clientWindow, HINSTANCE hInst, LPWSTR filename);
+	FileListItem(GuiScrollList *list, ClientWindow *clientWindow, HINSTANCE hInst, SongName filename);
 	virtual ~FileListItem();
 	
 	void setColours(HBRUSH bg, HPEN brdr, COLORREF fnt);
@@ -33,7 +33,7 @@ private:
 	HBITMAP cancelSave;
 	HBITMAP stream;
 	COLORREF font;
-	LPWSTR filename;
+	SongName song;
 	HCURSOR hoverCursor;
 	HCURSOR arrowCursor;
 };

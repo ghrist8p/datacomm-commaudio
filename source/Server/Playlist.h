@@ -8,10 +8,12 @@
 class Playlist
 {
     friend class ServerControlThread;
+    friend class ServerWindow;
 public:
     Playlist( wchar_t * _dir );
     ~Playlist();
-
+    
+    char * getSongPath( int id );
     SongName * getSong( int id );
 
 private:
