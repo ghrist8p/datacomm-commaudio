@@ -17,6 +17,7 @@
 #include "Sockets.h"
 #include "../handlerHelper.h"
 #include "../protocol.h"
+#include "MusicBuffer.h"
 
 /*
  * message queue constructor parameters
@@ -315,6 +316,7 @@ void ClientControlThread::_handleSockMsgqMsg(ClientControlThread* dis)
         break;
     case CHANGE_STREAM:
         OutputDebugString(L"CHANGE_STREAM\n");
+        dis->_window->musicfile->newSong(999999);
         // TODO: parse packet, and fill in callback parameters
         dis->onChangeStream(0,0,0);
         break;

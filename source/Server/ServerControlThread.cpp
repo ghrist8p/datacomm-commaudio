@@ -148,7 +148,7 @@ DWORD WINAPI ServerControlThread::_threadRoutine( void * params )
 		}
 		else if( handleNum == WAIT_IO_COMPLETION )
 		{
-		
+
 		}
 		else
 		{
@@ -165,6 +165,7 @@ DWORD WINAPI ServerControlThread::_threadRoutine( void * params )
 void ServerControlThread::_handleMsgChangeStream( RequestPacket * data )
 {
     udpSocket->stopSong();
+    WaitForSingleObject(_multicastThread,5000);
     DWORD useless;
     _multicastThread = CreateThread( 0, 0, _multicastRoutine, playlist->getSong( data->index ), 0, &useless );
 }

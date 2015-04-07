@@ -37,40 +37,47 @@ ServerWindow::ServerWindow(HINSTANCE hInst)
 	pen = CreatePen(0, 2, RGB(0, 0, 255));
 	connected = false;
 
-    DWORD useless;
-    CreateThread(NULL, 0, MicThread, (void*)this, 0, &useless);
+    // DWORD useless;
+    // CreateThread(NULL, 0, MicThread, (void*)this, 0, &useless);
 }
 
-DWORD WINAPI ServerWindow::MicThread(LPVOID lpParameter)
-{
-    ServerWindow* This = (ServerWindow*)lpParameter;
-    return This->ThreadStart();
-}
+// DWORD WINAPI ServerWindow::MicThread(LPVOID lpParameter)
+// {
+//     ServerWindow* This = (ServerWindow*)lpParameter;
+//     return This->ThreadStart();
+// }
 
-DWORD ServerWindow::ThreadStart(void)
-{
-    int useless;
-    int length;
+// DWORD ServerWindow::ThreadStart(void)
+// {
+//     int useless;
+//     int length;
 
-    DataPacket voicePacket;
+//     DataPacket voicePacket;
 
-    udpSock = new UDPSocket(7392,new MessageQueue(10,10));
-    udpSock->setGroup(MULTICAST_ADDR,0);
+//     udpSock = new UDPSocket(7392,new MessageQueue(10,10));
+//     udpSock->setGroup(MULTICAST_ADDR,0);
 
-    voicePacket.index = 0;
+//     voicePacket.index = 0;
 
-    // continuously send voice data over the network when it becomes available
-    char sound[DATA_LEN];
-    FILE* fp = fopen("C:\\Users\\Eric\\Downloads\\Egoist_-_Extra_Terrestrial_Biological_Entities.wav","rb");
-    while(fread(sound,1,DATA_LEN,fp))
-    {
-        ++(voicePacket.index);
-        memcpy(voicePacket.data, sound, DATA_LEN);
-        udpSock->sendtoGroup(MUSICSTREAM,&voicePacket,sizeof(voicePacket));
-    }
+//     int count = 0;
 
-    return 0;
-}
+//     // continuously send voice data over the network when it becomes available
+//     char sound[DATA_LEN];
+//     FILE* fp = fopen("C:\\Users\\Eric\\Downloads\\Egoist_-_Extra_Terrestrial_Biological_Entities.wav","rb");
+//     while(fread(sound,1,DATA_LEN,fp))
+//     {
+//         ++(voicePacket.index);
+//         memcpy(voicePacket.data, sound, DATA_LEN);
+//         udpSock->sendtoGroup(MUSICSTREAM,&voicePacket,sizeof(voicePacket));
+//         if(count > 3)
+//         {
+//             count = 0;
+//             Sleep(1);
+//         }
+//     }
+
+//     return 0;
+// }
 
 ServerWindow::~ServerWindow()
 {

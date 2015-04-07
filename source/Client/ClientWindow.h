@@ -17,9 +17,11 @@ class GuiScrollList;
 class MessageQueue;
 class MicReader;
 class MusicBuffer;
+class ClientControlThread;
 
 class ClientWindow : public GuiWindow
 {
+	friend class ClientControlThread;
 public:
 	ClientWindow(HINSTANCE hInst);
 	virtual ~ClientWindow();

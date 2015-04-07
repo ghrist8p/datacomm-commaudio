@@ -489,13 +489,10 @@ void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets
 {
 	ServerControlThread * sct = ServerControlThread::getInstance();
 	wchar_t * path = sct->getPlaylist()->getSongPath( songloc.id );
-	HANDLE hSong = CreateFile( path					   // _In_     LPCTSTR               lpFileName
-							 , GENERIC_READ			   // _In_     DWORD                 dwDesiredAccess
-							 , FILE_SHARE_READ         // _In_     DWORD                 dwShareMode
-							 , NULL                    // _In_opt_ LPSECURITY_ATTRIBUTES lpSecurityAttributes
-							 , OPEN_EXISTING           // _In_     DWORD                 dwCreationDisposition
-							 , FILE_ATTRIBUTE_NORMAL   // _In_     DWORD                 dwFlagsAndAttributes
-							 , NULL );                 // _In_opt_ HANDLE                hTemplateFile
+    char mbspath[STR_LEN];
+    sprintf(mbspath,"%S",path);
+	FILE* fp = fopen(mbspath, "rb");
+
 	free( path );
 
 	struct SongStream songInfo;
@@ -503,15 +500,7 @@ void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets
 	char* song;
 	stopSending = false;
 
-	if ( hSong == INVALID_HANDLE_VALUE )
-	{
-        wchar_t errorStr[256] = {0};
-        swprintf( errorStr, 256, L"CreateFile() failed: %d", GetLastError() );
-        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
-		return;
-	}
-	else
-	{
+	if (fp) {
 
 		char id[5];
 		unsigned long size;
@@ -519,26 +508,26 @@ void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets
 		unsigned long format_length, sample_rate, avg_bytes_sec, data_size;
 		int data_read = 0;
 
-		ReadFile( hSong, id, sizeof( char ) * 4, NULL, NULL );
+		fread(id, sizeof(char), 4, fp);
 		id[4] = '\0';
 
 		if (!strcmp(id, "RIFF")) {
-			ReadFile( hSong, &size, sizeof(unsigned long) * 1, NULL, NULL );
-			ReadFile( hSong, id, sizeof(char) * 4, NULL, NULL );
+			fread(&size, sizeof(unsigned long), 1, fp);
+			fread(id, sizeof(char), 4, fp);
 			id[4] = '\0';
 
 			if (!strcmp(id, "WAVE")) {
 				//get wave headers
-				ReadFile( hSong, id, sizeof(char) * 4, NULL, NULL );
-				ReadFile( hSong, &format_length, sizeof(unsigned long) * 1, NULL, NULL );
-				ReadFile( hSong, &format_tag, sizeof(short) * 1, NULL, NULL );
-				ReadFile( hSong, &channels, sizeof(short) * 1, NULL, NULL );
-				ReadFile( hSong, &sample_rate, sizeof(unsigned long) * 1, NULL, NULL );
-				ReadFile( hSong, &avg_bytes_sec, sizeof(unsigned long) * 1, NULL, NULL );
-				ReadFile( hSong, &block_align, sizeof(short) * 1, NULL, NULL );
-				ReadFile( hSong, &bits_per_sample, sizeof(short) * 1, NULL, NULL );
-				ReadFile( hSong, id, sizeof(char) * 4, NULL, NULL );
-				ReadFile( hSong, &data_size, sizeof(unsigned long) * 1, NULL, NULL );
+				fread(id, sizeof(char), 4, fp);
+				fread(&format_length, sizeof(unsigned long), 1, fp);
+				fread(&format_tag, sizeof(short), 1, fp);
+				fread(&channels, sizeof(short), 1, fp);
+				fread(&sample_rate, sizeof(unsigned long), 1, fp);
+				fread(&avg_bytes_sec, sizeof(unsigned long), 1, fp);
+				fread(&block_align, sizeof(short), 1, fp);
+				fread(&bits_per_sample, sizeof(short), 1, fp);
+				fread(id, sizeof(char), 4, fp);
+				fread(&data_size, sizeof(unsigned long), 1, fp);
 
 				sendSong = (char*)malloc(sizeof(char) * SIZE_INDEX);
 
@@ -555,22 +544,26 @@ void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets
 
 				free(sendSong);
 
-				song = (char*)malloc(speed);
-
-				//read chunks of data from the file based on the speed selected and send it
-				while (data_read = ReadFile( hSong, song, speed, NULL, NULL ) > 0)
-				{
-					if (stopSending)
-					{
-						return;
-					}
-
-					sendtoGroup(MUSICSTREAM, song, data_read);
-				}
-
-				free(song);
-
-				stopSending = false;
+                // continuously send voice data over the network when it becomes available
+                DataPacket voicePacket;
+                int count = 0;
+                voicePacket.index = 0;
+                char sound[DATA_LEN];
+                while(fread(sound,1,DATA_LEN,fp))
+                {
+                	if(stopSending)
+                	{
+                		break;
+                	}
+                    ++(voicePacket.index);
+                    memcpy(voicePacket.data, sound, DATA_LEN);
+                    sendtoGroup(MUSICSTREAM,&voicePacket,sizeof(voicePacket));
+                    if(count > 3)
+                    {
+                        count = 0;
+                        Sleep(1);
+                    }
+                }
 			}
 			else
 			{
@@ -583,7 +576,94 @@ void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets
 		}
 	}
 
-	CloseHandle( hSong );
+	fclose(fp);
+
+	// struct SongStream songInfo;
+	// char* sendSong;
+	// char* song;
+	// stopSending = false;
+
+	// if ( hSong == INVALID_HANDLE_VALUE )
+	// {
+ //        wchar_t errorStr[256] = {0};
+ //        swprintf( errorStr, 256, L"CreateFile() failed: %d", GetLastError() );
+ //        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
+	// 	return;
+	// }
+	// else
+	// {
+
+	// 	char id[5];
+	// 	unsigned long size;
+	// 	short format_tag, channels, block_align, bits_per_sample;
+	// 	unsigned long format_length, sample_rate, avg_bytes_sec, data_size;
+	// 	int data_read = 0;
+
+	// 	ReadFile( hSong, id, sizeof( char ) * 4, NULL, NULL );
+	// 	id[4] = '\0';
+
+	// 	if (!strcmp(id, "RIFF")) {
+	// 		ReadFile( hSong, &size, sizeof(unsigned long) * 1, NULL, NULL );
+	// 		ReadFile( hSong, id, sizeof(char) * 4, NULL, NULL );
+	// 		id[4] = '\0';
+
+	// 		if (!strcmp(id, "WAVE")) {
+	// 			//get wave headers
+	// 			ReadFile( hSong, id, sizeof(char) * 4, NULL, NULL );
+	// 			ReadFile( hSong, &format_length, sizeof(unsigned long) * 1, NULL, NULL );
+	// 			ReadFile( hSong, &format_tag, sizeof(short) * 1, NULL, NULL );
+	// 			ReadFile( hSong, &channels, sizeof(short) * 1, NULL, NULL );
+	// 			ReadFile( hSong, &sample_rate, sizeof(unsigned long) * 1, NULL, NULL );
+	// 			ReadFile( hSong, &avg_bytes_sec, sizeof(unsigned long) * 1, NULL, NULL );
+	// 			ReadFile( hSong, &block_align, sizeof(short) * 1, NULL, NULL );
+	// 			ReadFile( hSong, &bits_per_sample, sizeof(short) * 1, NULL, NULL );
+	// 			ReadFile( hSong, id, sizeof(char) * 4, NULL, NULL );
+	// 			ReadFile( hSong, &data_size, sizeof(unsigned long) * 1, NULL, NULL );
+
+	// 			sendSong = (char*)malloc(sizeof(char) * SIZE_INDEX);
+
+	// 			sendSong[0] = (songloc.id >> 24) & 0xFF;
+	// 			sendSong[1] = (songloc.id >> 16) & 0xFF;
+	// 			sendSong[2] = (songloc.id >> 8) & 0xFF;
+	// 			sendSong[3] = songloc.id & 0xFF;
+
+	// 			//for every client
+	// 			for (int i = 0; i < sockets.size(); i++)
+	// 			{
+	// 				sockets[i]->Send(CHANGE_STREAM, sendSong, SIZE_INDEX);
+	// 			}
+
+	// 			free(sendSong);
+
+	// 			song = (char*)malloc(speed);
+
+	// 			//read chunks of data from the file based on the speed selected and send it
+	// 			while (data_read = ReadFile( hSong, song, speed, NULL, NULL ) > 0)
+	// 			{
+	// 				if (stopSending)
+	// 				{
+	// 					return;
+	// 				}
+
+	// 				sendtoGroup(MUSICSTREAM, song, data_read);
+	// 			}
+
+	// 			free(song);
+
+	// 			stopSending = false;
+	// 		}
+	// 		else
+	// 		{
+	// 			MessageBox(NULL, L"NOT WAVE", L"ERROR", MB_ICONERROR);
+	// 		}
+	// 	}
+	// 	else
+	// 	{
+	// 		MessageBox(NULL, L"NOT RIFF", L"ERROR", MB_ICONERROR);
+	// 	}
+	// }
+
+	// CloseHandle( hSong );
 }
 
 /*------------------------------------------------------------------------------------------------------------------

@@ -62,8 +62,8 @@ private:
                                 , DWORD cbTransferred
                                 , LPWSAOVERLAPPED lpOverlapped
                                 , DWORD dwFlags );
-    static DWORD WINAPI MicThread(LPVOID lpParameter);
-    DWORD ThreadStart(void);
+    // static DWORD WINAPI MicThread(LPVOID lpParameter);
+    // DWORD ThreadStart(void);
 	static bool toggleConnection(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval);
     static void newConnHandler( TCPConnection * server, void * data );
 };
