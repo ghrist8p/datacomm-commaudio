@@ -121,7 +121,7 @@ void MusicBuffer::writeBuf(char* data, int len)
 		writeindex += len;
 	}
 
-	double current_wpercentage = (writeindex - song_startindex) / currentsong_size;
+	double current_wpercentage = (double) (writeindex - song_startindex) / currentsong_size;
 	TrackerPanel->setPercentageBuffered(current_wpercentage);
 
 	ReleaseMutex(mutexx);
@@ -170,8 +170,8 @@ void MusicBuffer::readBuf(char* data, int len)
 		readindex += len;
 	}
 
-	double current_rpercentage = (readindex - song_startindex) / currentsong_size;
-	TrackerPanel->setTrackerPercentage(current_rpercentage, true);
+	double current_rpercentage = (double) (readindex - song_startindex) / currentsong_size;
+	TrackerPanel->setTrackerPercentage(current_rpercentage, false);
 
 	ReleaseMutex(mutexx);
 }
@@ -203,10 +203,12 @@ void MusicBuffer::seekBuf(double percentage)
 	int index = percentage * currentsong_size;
 	index = song_startindex + index;
 	
-	if (index < writeindex)
+	/*if (index < writeindex)
 	{
 		readindex = index;
-	}
+	}*/
+
+    readindex = index;
 
 	ReleaseMutex(mutexx);
 }

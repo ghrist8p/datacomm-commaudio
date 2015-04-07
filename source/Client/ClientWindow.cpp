@@ -44,39 +44,10 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	borderPen = (HPEN)CreatePen(PS_SOLID, 1, RGB(128, 0, 128));
 
     voiceTargetAddress[0] = 0;
-
+    
 	recording = false;
 	requestingRecorderStop = false;
 	micMQueue = new MessageQueue(1000,AUDIO_BUFFER_LENGTH);
-
-	MessageQueue* q1 = new MessageQueue(1500,sizeof(LocalDataPacket));
-	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,AUDIO_BUFFER_LENGTH,50,50);
-	udpSock = new UDPSocket(MULTICAST_PORT,q1);
-	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q1);
-
-	udpSock->setGroup(MULTICAST_ADDR,1);
-	recvThread->start();
-
-	ClientControlThread * cct = ClientControlThread::getInstance();
-	cct->setClientWindow( this );
-
-	MusicBuffer* musicfile = new MusicBuffer(this->trackerPanel);
-	musicfile->newSong(99999);
-	MessageQueue* q2 = new MessageQueue(1500,AUDIO_BUFFER_LENGTH);
-	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
-	MusicReader* mreader = new MusicReader(q2, musicfile);
-	PlayWave* p = new PlayWave(50,q2);
-
-	p->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
-
-	HANDLE ThreadHandle;
-	DWORD ThreadId;
-
-	if ((ThreadHandle = CreateThread(NULL, 0, MicThread, (void*)this, 0, &ThreadId)) == NULL)
-	{
-		MessageBox(NULL, L"CreateThread failed with error", L"ERROR", MB_ICONERROR);
-		return;
-	}
 }
 
 DWORD WINAPI ClientWindow::MicThread(LPVOID lpParameter)
@@ -97,7 +68,7 @@ DWORD ClientWindow::ThreadStart(void)
 	{
 		++(voicePacket.index);
 		micMQueue->dequeue(&useless, voicePacket.data, &length);
-        udpSock->Send(MICSTREAM,&voicePacket,sizeof(voicePacket),voiceTargetAddress,MULTICAST_PORT);
+        udpSock->Send(MUSICSTREAM,&voicePacket,sizeof(voicePacket),voiceTargetAddress,MULTICAST_PORT);
 	}
 }
 
@@ -263,6 +234,30 @@ void ClientWindow::onCreate()
 	layout->addComponent(playButton);
 	layout->addComponent(stopButton);
 	layout->addComponent(buttonSpacer2);
+
+    // create all the buffers and stuff
+	MessageQueue* q1 = new MessageQueue(1500,sizeof(LocalDataPacket));
+	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,AUDIO_BUFFER_LENGTH,50,50);
+	udpSock = new UDPSocket(MULTICAST_PORT,q1);
+	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q1);
+
+	udpSock->setGroup(MULTICAST_ADDR,1);
+	recvThread->start();
+
+	ClientControlThread * cct = ClientControlThread::getInstance();
+	cct->setClientWindow( this );
+
+	musicfile = new MusicBuffer(trackerPanel);
+	musicfile->newSong(999999);
+	MessageQueue* q2 = new MessageQueue(1500,AUDIO_BUFFER_LENGTH);
+	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
+	MusicReader* mreader = new MusicReader(q2, musicfile);
+	PlayWave* p = new PlayWave(50,q2);
+
+	p->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
+
+    DWORD useless;
+	CreateThread(NULL, 0, MicThread, (void*)this, 0, &useless);
 }
 
 void ClientWindow::onClickPlay(void*)
@@ -325,13 +320,10 @@ bool ClientWindow::onMicStop(GuiComponent *_pThis, UINT command, UINT id, WPARAM
 bool ClientWindow::onSeek(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
 {
 	ClientWindow *pThis = (ClientWindow*)_pThis;
-	MessageBox(NULL, L"LOL", L"LOLOLOLOLOLOLOLOLOLOL", MB_ICONEXCLAMATION);
 
 	double percent = ((double)wParam) / 1000.0;
 
-	/*
-		Manuel, do stuff here.
-	*/
+    pThis->musicfile->seekBuf(percent);
 	
 	return true;
 }
