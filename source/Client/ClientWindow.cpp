@@ -43,6 +43,8 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	nullPen = (HPEN)CreatePen(PS_SOLID, 0, 0);
 	borderPen = (HPEN)CreatePen(PS_SOLID, 1, RGB(128, 0, 128));
 
+    voiceTargetAddress[0] = 0;
+
 	recording = false;
 	requestingRecorderStop = false;
 	micMQueue = new MessageQueue(1000,AUDIO_BUFFER_LENGTH);
@@ -94,7 +96,8 @@ DWORD ClientWindow::ThreadStart(void)
 	{
 		++(voicePacket.index);
 		micMQueue->dequeue(&useless, voicePacket.data, &length);
-		udpSock->sendtoGroup(MICSTREAM, &voicePacket, sizeof(DataPacket));
+        udpSock->Send(MICSTREAM,&voicePacket,sizeof(voicePacket),voiceTargetAddress,MULTICAST_PORT);
+        //udpSock->sendtoGroup(MICSTREAM,&voicePacket,sizeof(voicePacket));
 	}
 }
 
@@ -284,6 +287,19 @@ bool ClientWindow::onClickMic(GuiComponent *_pThis, UINT command, UINT id, WPARA
 		}
 		else
 		{
+			// get target address, and if it is invalid, bail out and show a
+			// message box
+			size_t useless;
+			wcstombs_s(&useless,pThis->voiceTargetAddress,pThis->voiceTargetInput->getText(),STR_LEN);
+			struct sockaddr_in destination;
+			destination.sin_addr.s_addr = inet_addr(pThis->voiceTargetAddress);
+			if (destination.sin_addr.s_addr == INADDR_NONE)
+			{
+				MessageBox(NULL, L"The target ip address entered must be a legal IPv4 address", L"ERROR", MB_ICONERROR);
+				return true;
+			}
+
+			// start recording
 			pThis->micTargetButton->setText(L"Stop Speaking");
 			pThis->recording = true;
 			pThis->micReader->startReading();
