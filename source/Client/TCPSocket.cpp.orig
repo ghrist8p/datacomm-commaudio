@@ -226,7 +226,11 @@ DWORD TCPSocket::ThreadStart(void)
 			}
 
             type = socketInfo.Buffer[0];
+<<<<<<< HEAD
 			length = *(int*)&socketInfo.Buffer[1];
+=======
+			length =  *(int*)&socketInfo.Buffer[1];
+>>>>>>> g/dev
 			socketInfo.DataBuf.len = length;
 
 			if (WSARecv(socketInfo.Socket, &socketInfo.DataBuf, 1, &RecvBytes, &Flags,
@@ -242,7 +246,8 @@ DWORD TCPSocket::ThreadStart(void)
 			{
 				char* dataReceived = (char*)malloc(sizeof(char) * length);
 				memcpy(dataReceived, socketInfo.Buffer, length);
-				socketInfo.mqueue->enqueue(type, dataReceived, length);
+				SongName * pSong = ( SongName * ) dataReceived;
+                socketInfo.mqueue->enqueue(type, dataReceived, length);
 				free(dataReceived);
 			}
 		}
@@ -355,8 +360,12 @@ int TCPSocket::Send(char type, void* data, int length)
 	char* data_send = (char*) malloc(sizeof(char) * (length + 5));
 
 	data_send[0] = type;
+<<<<<<< HEAD
 	memcpy(&data_send[1],&length,sizeof(length));
 
+=======
+	memcpy(data_send + 1, &length, sizeof(length));
+>>>>>>> g/dev
 	memcpy(data_send + 5, (char*)data, length);
 
 	WaitResult = WaitForSingleObject( mutex, INFINITE);

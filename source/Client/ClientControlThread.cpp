@@ -309,30 +309,32 @@ void ClientControlThread::_handleSockMsgqMsg(ClientControlThread* dis)
 {
     // allocate memory to hold message queue message
     int msgType;
-    SockMsgqElement element;
+    void* element = malloc(dis->_sockMsgq.elementSize);
 
     // get the message queue message
-    dis->_sockMsgq.dequeue(&msgType,&element);
+    dis->_sockMsgq.dequeue(&msgType,element);
 
     // process the message queue message according to its type
     switch(msgType)
     {
     case DOWNLOAD:
         OutputDebugString(L"DOWNLOAD\n");
-        dis->onDownloadPacket( *((RequestPacket *)element.data) );
+        dis->onDownloadPacket( *((RequestPacket *)element) );
         break;
     case CHANGE_STREAM:
         OutputDebugString(L"CHANGE_STREAM\n");
-        dis->onChangeStream( *((RequestPacket *)element.data) );
+        dis->onChangeStream( *((RequestPacket *)element) );
         break;
     case NEW_SONG:
         OutputDebugString(L"NEW_SONG\n");
-        dis->onNewSong( *((SongName *)element.data) );
+        dis->onNewSong( *((SongName *)element) );
         break;
     default:
         fprintf(stderr,"WARNING: received unknown message type: %d\n",msgType);
         break;
     }
+
+	free(element);
 }
 
 /*
