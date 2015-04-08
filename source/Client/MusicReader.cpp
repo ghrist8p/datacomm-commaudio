@@ -129,14 +129,19 @@ DWORD WINAPI MusicReader::fileThread(LPVOID lpParameter)
 DWORD MusicReader::ThreadStart(void)
 {
 	//music_file = fopen("tempmusic.txt", "rb");
+	int ret;
 	int len;
 	len = msgqueue->elementSize;
 	char* music_data = (char*)malloc(sizeof(char) * len);
 	
 	while (true)
 	{
-		musicbuffer->readBuf(music_data, len);
-		msgqueue->enqueue(ACTUAL_MUSIC, music_data, len);
+		ret = musicbuffer->readBuf(music_data, len);
+
+		if (ret)
+		{
+			msgqueue->enqueue(ACTUAL_MUSIC, music_data, len);
+		}
 	}
 
 	return true;
