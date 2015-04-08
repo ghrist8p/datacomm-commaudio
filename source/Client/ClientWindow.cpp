@@ -267,7 +267,7 @@ void ClientWindow::onCreate()
 void ClientWindow::onClickPlay(void*)
 {
 	curClientWindow->musicfile->resumeEnqueue();
-	//curClientWindow->musicPlayer->resumePlaying();
+	curClientWindow->musicPlayer->resumePlaying();
 }
 void ClientWindow::onClickStop(void*)
 {
