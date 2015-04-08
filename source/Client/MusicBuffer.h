@@ -3,6 +3,7 @@
 #define SUPERSIZEBUF	99999999
 
 class PlaybackTrackerPanel;
+class PlayWave;
 
 class MusicBuffer
 {
@@ -15,11 +16,12 @@ private:
 	int playing;
 
 	PlaybackTrackerPanel* TrackerPanel;
+	PlayWave* musicplayer;
 	HANDLE canRead;
 	HANDLE mutexx;
 
 public:
-	MusicBuffer(PlaybackTrackerPanel* TrackerP);
+	MusicBuffer(PlaybackTrackerPanel* TrackerP, PlayWave* musicplaya);
 	~MusicBuffer();
 	void writeBuf(char* data, int len);
 	int readBuf(char* data, int len);
