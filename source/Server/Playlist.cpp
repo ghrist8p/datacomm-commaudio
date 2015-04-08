@@ -25,7 +25,7 @@ Playlist::Playlist( wchar_t * _dir )
 		wchar_t errorStr[256] = {0};
 		swprintf( errorStr, 256, L"FindFirstFile() failed: %d", GetLastError() );
 		#ifdef DEBUG
-		MessageBox(NULL, errorStr, L"Error", MB_ICONERROR));
+		MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
 		#endif
 		return;
 	}
@@ -131,7 +131,7 @@ int getSongfileInfo(SongName* song, wchar_t* filepath, wchar_t* filename, int so
 	if (strcmp(id, "RIFF"))
 	{
 		#ifdef DEBUG
-		MessageBox(NULL, L"NOT WAVE", L"ERROR", MB_ICONERROR));
+		MessageBox(NULL, L"NOT WAVE", L"ERROR", MB_ICONERROR);
 		#endif
 		fclose(fp);
 		return 1;
@@ -147,7 +147,7 @@ int getSongfileInfo(SongName* song, wchar_t* filepath, wchar_t* filename, int so
 	if (strcmp(id, "WAVE"))
 	{
 		#ifdef DEBUG
-		MessageBox(NULL, L"NOT RIFF", L"ERROR", MB_ICONERROR));
+		MessageBox(NULL, L"NOT RIFF", L"ERROR", MB_ICONERROR);
 		#endif
 		fclose(fp);
 		return 1;

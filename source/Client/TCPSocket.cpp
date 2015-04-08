@@ -63,7 +63,7 @@ TCPSocket::TCPSocket(SOCKET socket, MessageQueue* mqueue)
 	if ((ThreadHandle = CreateThread(NULL, 0, TCPThread, (void*)this, 0, &ThreadId)) == NULL)
 	{
 		#ifdef DEBUG
-		MessageBox(NULL, L"CreateThread failed with error", L"ERROR", MB_ICONERROR));
+		MessageBox(NULL, L"CreateThread failed with error", L"ERROR", MB_ICONERROR);
 		#endif
 		return;
 	}
@@ -112,7 +112,7 @@ TCPSocket::TCPSocket(char* host, int port, MessageQueue* mqueue)
 	if (error != 0) //No usable DLL
 	{
 		#ifdef DEBUG
-		MessageBox(NULL, L"DLL not found- Read Help guide for more information", L"ERROR", MB_ICONERROR));
+		MessageBox(NULL, L"DLL not found- Read Help guide for more information", L"ERROR", MB_ICONERROR);
 		#endif
 		return;
 	}
@@ -122,7 +122,7 @@ TCPSocket::TCPSocket(char* host, int port, MessageQueue* mqueue)
 		WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET)
 	{
 		#ifdef DEBUG
-		MessageBox(NULL, L"Socket cannot be created- Read Help guide for more information", L"ERROR", MB_ICONERROR));
+		MessageBox(NULL, L"Socket cannot be created- Read Help guide for more information", L"ERROR", MB_ICONERROR);
 		#endif
 		return;
 	}
@@ -135,7 +135,7 @@ TCPSocket::TCPSocket(char* host, int port, MessageQueue* mqueue)
 	if ((hp = gethostbyname(host)) == NULL)
 	{
 		#ifdef DEBUG
-		MessageBox(NULL, L"Unknown server address- Read Help guide for more information", L"ERROR", MB_ICONERROR));
+		MessageBox(NULL, L"Unknown server address- Read Help guide for more information", L"ERROR", MB_ICONERROR);
 		#endif
 		return;
 	}
@@ -147,7 +147,7 @@ TCPSocket::TCPSocket(char* host, int port, MessageQueue* mqueue)
 	if (connect(sd, (struct sockaddr *)&server, sizeof(server)) == -1)
 	{
 		#ifdef DEBUG
-		MessageBox(NULL, L"Cannot connect to server- Read Help guide for more information", L"ERROR", MB_ICONERROR));
+		MessageBox(NULL, L"Cannot connect to server- Read Help guide for more information", L"ERROR", MB_ICONERROR);
 		#endif
 		return;
 	}
@@ -157,7 +157,7 @@ TCPSocket::TCPSocket(char* host, int port, MessageQueue* mqueue)
 	if ((ThreadHandle = CreateThread(NULL, 0, TCPThread, (void*)this, 0, &ThreadId)) == NULL)
 	{
 		#ifdef DEBUG
-		MessageBox(NULL, L"CreateThread failed with error", L"ERROR", MB_ICONERROR));
+		MessageBox(NULL, L"CreateThread failed with error", L"ERROR", MB_ICONERROR);
 		#endif
 		return;
 	}
@@ -233,7 +233,7 @@ DWORD TCPSocket::ThreadStart(void)
 				if ((err = WSAGetLastError()) != WSA_IO_PENDING)
 				{
 					#ifdef DEBUG
-					MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR));
+					MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
 					#endif
 					return FALSE;
 				}
@@ -249,7 +249,7 @@ DWORD TCPSocket::ThreadStart(void)
 				if (WSAGetLastError() != WSA_IO_PENDING)
 				{
 					#ifdef DEBUG
-					MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR));
+					MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
 					#endif
 					return 0;
 				}
@@ -391,7 +391,7 @@ int TCPSocket::Send(char type, void* data, int length)
 			if (WSAGetLastError() != WSA_IO_PENDING)
 			{
 				#ifdef DEBUG
-				MessageBox(NULL, L"WSASend() failed with error", L"ERROR", MB_ICONERROR));
+				MessageBox(NULL, L"WSASend() failed with error", L"ERROR", MB_ICONERROR);
 				#endif
 				return 0;
 			}
@@ -406,7 +406,7 @@ int TCPSocket::Send(char type, void* data, int length)
 	else
 	{
 		#ifdef DEBUG
-		MessageBox(NULL, L"Error in the mutex", L"ERROR", MB_ICONERROR));
+		MessageBox(NULL, L"Error in the mutex", L"ERROR", MB_ICONERROR);
 		#endif
         int err = GetLastError();
 		return 0;
