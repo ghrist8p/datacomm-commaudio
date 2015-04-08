@@ -74,6 +74,7 @@ PlayWave::PlayWave(int capacity, MessageQueue* msgq)
 	this->lastAudioPacketAccess = CreateMutex(NULL, FALSE, NULL);
 	this->canEnqueue = CreateSemaphore(NULL,capacity,capacity,NULL);
 	this->canDequeue = CreateSemaphore(NULL,0,capacity,NULL);
+	this->volume = 0xFFFF;
 }
 
 /**
@@ -113,6 +114,7 @@ int PlayWave::startPlaying(
 	if(ret == MMSYSERR_NOERROR)
 	{
 		startRoutine(&playThread,playThreadStopEv,playRoutine,this);
+		setVolume(*(short*)&volume);
 	}
 	else
 	{
@@ -126,6 +128,17 @@ int PlayWave::startPlaying(
 int PlayWave::resumePlaying()
 {
 	return startPlaying(wfx.nSamplesPerSec,wfx.wBitsPerSample,wfx.nChannels);
+}
+
+void PlayWave::setVolume(char volume)
+{
+	char* chrPtr = (char*) &this->volume;
+	chrPtr[0] = volume;
+	chrPtr[1] = volume;
+	if(speakers != 0)
+	{
+        waveOutSetVolume(speakers,this->volume);
+	}
 }
 
 /**
