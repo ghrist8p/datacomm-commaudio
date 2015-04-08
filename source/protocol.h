@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <vector>
 
-#define MULTICAST_ADDR "224.0.0.1"
+#define MULTICAST_ADDR "239.255.0.240"
 
 #define MULTICAST_PORT 7778
 

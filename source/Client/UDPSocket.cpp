@@ -424,6 +424,12 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 		address.sin_port        = htons(MULTICAST_PORT);
 		address.sin_addr.s_addr = inet_addr("192.168.0.20");
 
+		//sockaddr_in address;
+		//memset(&address,0,sizeof(address));
+		//address.sin_family      = AF_INET;
+		//address.sin_port        = htons(MULTICAST_PORT);
+		//address.sin_addr.s_addr = inet_addr("192.168.0.20");
+
 		if (WSASendTo(socketInfo.Socket, &(socketInfo.DataBuf), 1, &SendBytes, Flags, (struct sockaddr*)&address, sizeof(address),
 			0, 0) == SOCKET_ERROR)
 		{
