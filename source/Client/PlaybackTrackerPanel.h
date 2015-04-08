@@ -27,6 +27,7 @@ private:
 
 	double buffered;
 	double played;
+	int trackerPosition;
 	HPEN inactivePen;
 	HPEN bufferedPen;
 	HBRUSH bufferedBrush;

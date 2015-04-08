@@ -344,13 +344,13 @@ void UDPSocket::setGroup(char* group_address, int mem_flag)
 {
 	memset(&mreq,0,sizeof(mreq));
 	mreq.imr_multiaddr.s_addr = inet_addr(group_address);
-	mreq.imr_interface.s_addr = inet_addr(INADDR_ANY);
+	mreq.imr_interface.s_addr = INADDR_ANY;
 
 	char loop;
 	char ttl = 2;
 
     in_addr interfaceAddr;
-	interfaceAddr.s_addr = inet_addr(INADDR_ANY);
+	interfaceAddr.s_addr = INADDR_ANY;
 
     if (mem_flag)
 	{

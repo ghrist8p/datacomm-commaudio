@@ -124,7 +124,7 @@ void MusicBuffer::writeBuf(char* data, int len)
 	}
 
 	double current_wpercentage = (double) (writeindex - song_startindex) / currentsong_size;
-	TrackerPanel->setPercentageBuffered(current_wpercentage*1.5);
+	TrackerPanel->setPercentageBuffered(current_wpercentage);
 
 	ReleaseMutex(mutexx);
 	ReleaseSemaphore(canRead, 1, NULL);
