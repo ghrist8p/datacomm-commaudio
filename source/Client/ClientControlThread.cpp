@@ -346,6 +346,9 @@ bool ClientControlThread::onClose(GuiComponent *_pThis, UINT command, UINT id, W
 	void * blah = malloc( 1 );
     cct->tcpSock->Send( DISCONNECT, blah, 0 );
 	free( blah );
+
+	PostQuitMessage(0);
+
 	return true;
 }
 
