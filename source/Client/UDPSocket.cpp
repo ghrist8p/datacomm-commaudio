@@ -416,7 +416,8 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 		memset(&address,0,sizeof(address));
 		address.sin_family      = AF_INET;
 		address.sin_port        = htons(MULTICAST_PORT);
-		address.sin_addr.s_addr = mreq.imr_multiaddr.s_addr;
+        memcpy(&address.sin_addr,&mreq.imr_multiaddr,sizeof(mreq.imr_multiaddr));
+        address.sin_addr.s_addr = inet_addr(MULTICAST_ADDR);
 
 		if (WSASendTo(socketInfo.Socket, &(socketInfo.DataBuf), 1, &SendBytes, Flags, (struct sockaddr*)&address, sizeof(address),
 			0, 0) == SOCKET_ERROR)
