@@ -237,7 +237,7 @@ void ClientWindow::onCreate()
 	layout->addComponent(buttonSpacer2);
 
     // create all the buffers and stuff
-	MessageQueue* q1 = new MessageQueue(1000,sizeof(LocalDataPacket));
+	MessageQueue* q1 = new MessageQueue(100,sizeof(LocalDataPacket));
 	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,AUDIO_BUFFER_LENGTH,50,0);
 	udpSock = new UDPSocket(MULTICAST_PORT,q1);
 	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q1);
@@ -249,11 +249,10 @@ void ClientWindow::onCreate()
 	cct->setClientWindow( this );
 
 	musicfile = new MusicBuffer(trackerPanel);
-	//musicfile->newSong(999999);
 	MessageQueue* q2 = new MessageQueue(100,AUDIO_BUFFER_LENGTH);
 	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
 	MusicReader* mreader = new MusicReader(q2, musicfile);
-	musicPlayer = new PlayWave(50,q2);
+	musicPlayer = new PlayWave(15000,q2);
 
 	musicPlayer->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
 
