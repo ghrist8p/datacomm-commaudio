@@ -28,7 +28,7 @@
 JitterBuffer::JitterBuffer(int capacity, int himark, int elementSize, int delay, int interval) : Heap(capacity,elementSize)
 {
     this->lastIndex   = 0;
-    this->windowSize  = capacity/2;
+    this->windowSize  = capacity;
     this->delay       = delay;
     this->himark      = himark;
     this->interval    = interval;
@@ -81,9 +81,19 @@ int JitterBuffer::put(int index, void* src)
         // put the new element into the heap
         Heap::insert(index,src);
         ReleaseSemaphore(notEmpty,1,NULL);
+
+        // reset the strike counter
+        strikes = 0;
     }
     else
     {
+        // if we strike too many times, set the last index to index
+        if(strikes++ > 100)
+        {
+            lastIndex = index;
+        }
+
+        // nothing was actually removed from the buffer, so increment notFull
         ReleaseSemaphore(notFull,1,NULL);
     }
 
@@ -125,15 +135,25 @@ int JitterBuffer::get(void* dest)
     WaitForSingleObject(canGet,INFINITE);
 
     // copy data from root to destination
-    Heap::remove(&lastIndex,dest);
-    ReleaseSemaphore(notFull,1,NULL);
+    int tempIndex;
+    Heap::peek(&tempIndex,dest);
+    Heap::setRelativeZero(lastIndex);
+
+    // remove data from buffer if consumed, don't remove otherwise, because we're padding the data.
+    if(++lastIndex == tempIndex)
+    {
+        Heap::remove();
+        ReleaseSemaphore(notFull,1,NULL);
+    }
+    else
+    {
+        ReleaseSemaphore(notEmpty,1,NULL);
+    }
 
     // reset the canGet event, and set it after
     // delay if we're out of data
     if(Heap::size() == 0)
     {
-        //lastIndex = 0;
-        Heap::setRelativeZero(lastIndex);
         ResetEvent(canGet);
     }
 
@@ -186,12 +206,10 @@ int JitterBuffer::getElementSize()
  */
 int JitterBuffer::isIndexInReceiveWindow(int index)
 {
-    int ret;
-
     // the upper and lower limits of the window. the index has to be between
     // these numbers, or it is rejected otherwise.
-    int windowHi = index+windowSize;
-    int windowLo = index;
+    int windowHi = lastIndex+windowSize;
+    int windowLo = lastIndex;
 
     // when no overflow occurs; accept the index if it is larger than the low, AND
     // smaller than the high.
