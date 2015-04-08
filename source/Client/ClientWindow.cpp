@@ -237,7 +237,7 @@ void ClientWindow::onCreate()
 	layout->addComponent(buttonSpacer2);
 
     // create all the buffers and stuff
-	MessageQueue* q1 = new MessageQueue(1000,sizeof(LocalDataPacket));
+	MessageQueue* q1 = new MessageQueue(100,sizeof(LocalDataPacket));
 	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,AUDIO_BUFFER_LENGTH,50,0);
 	udpSock = new UDPSocket(MULTICAST_PORT,q1);
 	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q1);
