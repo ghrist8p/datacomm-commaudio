@@ -123,6 +123,11 @@ int PlayWave::startPlaying(
 	return ret;
 }
 
+int PlayWave::resumePlaying()
+{
+	return startPlaying(wfx.nSamplesPerSec,wfx.wBitsPerSample,wfx.nChannels);
+}
+
 /**
  * stops the playing thread, then waits for the cleanup thread to stop as well,
  *   before closing the device and returning.
