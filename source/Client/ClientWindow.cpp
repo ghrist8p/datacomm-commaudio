@@ -252,11 +252,12 @@ void ClientWindow::onCreate()
 	ClientControlThread * cct = ClientControlThread::getInstance();
 	cct->setClientWindow( this );
 
-	musicfile = new MusicBuffer(trackerPanel);
 	MessageQueue* q2 = new MessageQueue(100,AUDIO_BUFFER_LENGTH);
+	musicPlayer = new PlayWave(200,q2);
+	musicfile = new MusicBuffer(trackerPanel, musicPlayer);	
 	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
 	MusicReader* mreader = new MusicReader(q2, musicfile);
-	musicPlayer = new PlayWave(200,q2);
+	
 
 	musicPlayer->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
 

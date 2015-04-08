@@ -363,7 +363,6 @@ LRESULT CALLBACK GuiComponent::WndProc(HWND hwnd, UINT message, WPARAM wParam, L
 					}
 					return 0;
 				}
-
 			case WM_SIZE:
 			case WM_SIZING:
 				pThis->resize();
@@ -420,5 +419,6 @@ bool GuiComponent::drawBackground(GuiComponent *pThis, UINT command, UINT id, WP
 
 bool GuiComponent::returnOne(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
 {
+	*retval = 1;
 	return true;
 }
