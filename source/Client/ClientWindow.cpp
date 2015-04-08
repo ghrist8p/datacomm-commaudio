@@ -249,7 +249,7 @@ void ClientWindow::onCreate()
 	cct->setClientWindow( this );
 
 	musicfile = new MusicBuffer(trackerPanel);
-	musicfile->newSong(999999);
+	//musicfile->newSong(999999);
 	MessageQueue* q2 = new MessageQueue(100,AUDIO_BUFFER_LENGTH);
 	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
 	MusicReader* mreader = new MusicReader(q2, musicfile);
@@ -263,12 +263,12 @@ void ClientWindow::onCreate()
 
 void ClientWindow::onClickPlay(void*)
 {
-	MessageBox(NULL, L"CLICKED PLAY!", L"YAY!", MB_ICONINFORMATION);
+	//GETINSTANCE->musicfile->resumeEnqueue();
 }
 
 void ClientWindow::onClickStop(void*)
 {
-	MessageBox(NULL, L"CLICKED STOP!", L"BOO!", MB_ICONINFORMATION);
+	//GETINSTANCE->musicfile->stopEnqueue();
 }
 
 bool ClientWindow::onClickMic(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)

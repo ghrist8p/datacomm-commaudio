@@ -51,6 +51,7 @@ MusicBuffer::MusicBuffer(PlaybackTrackerPanel* TrackerP)
 	writeindex = 0;
 	readindex = 0;
 	song_startindex = 0;
+	playing = 1;
 
 	canRead = CreateSemaphore(NULL, 0, SUPERSIZEBUF, NULL);
 	mutexx = CreateMutex(NULL, FALSE, NULL);
@@ -150,31 +151,37 @@ void MusicBuffer::writeBuf(char* data, int len)
 --	NOTES:
 --  This function will read the data into the pointer passed. it is guarded by a mutex and a semaphore.
 ----------------------------------------------------------------------------------------------------------------------*/
-void MusicBuffer::readBuf(char* data, int len)
+int MusicBuffer::readBuf(char* data, int len)
 {
-	unsigned long rdifference;
-
-	WaitForSingleObject(canRead, INFINITE);
-	WaitForSingleObject(mutexx, INFINITE);
-
-	if (readindex + len > SUPERSIZEBUF)
+	if (playing)
 	{
-		rdifference = readindex + len - SUPERSIZEBUF - 1;
-		memcpy(data, buffer + readindex, rdifference);
-		readindex = 0;
-		memcpy(data + rdifference, buffer + readindex, len - rdifference);
-		readindex = len - rdifference;
-	}
-	else
-	{
-		memcpy(data, buffer + readindex, len);
-		readindex += len;
+		unsigned long rdifference;
+
+		WaitForSingleObject(canRead, INFINITE);
+		WaitForSingleObject(mutexx, INFINITE);
+
+		if (readindex + len > SUPERSIZEBUF)
+		{
+			rdifference = readindex + len - SUPERSIZEBUF - 1;
+			memcpy(data, buffer + readindex, rdifference);
+			readindex = 0;
+			memcpy(data + rdifference, buffer + readindex, len - rdifference);
+			readindex = len - rdifference;
+		}
+		else
+		{
+			memcpy(data, buffer + readindex, len);
+			readindex += len;
+		}
+
+		double current_rpercentage = (double)(readindex - song_startindex) / currentsong_size;
+		TrackerPanel->setTrackerPercentage(current_rpercentage, false);
+
+		ReleaseMutex(mutexx);
+		return 1;
 	}
 
-	double current_rpercentage = (double) (readindex - song_startindex) / currentsong_size;
-	TrackerPanel->setTrackerPercentage(current_rpercentage, false);
-
-	ReleaseMutex(mutexx);
+	return 0;
 }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -242,4 +249,14 @@ void MusicBuffer::newSong(unsigned long song_size)
 	readindex = writeindex;
 
 	ReleaseMutex(mutexx);
+}
+
+void MusicBuffer::stopEnqueue()
+{
+	playing = 0;
+}
+
+void MusicBuffer::resumeEnqueue()
+{
+	playing = 1;
 }
