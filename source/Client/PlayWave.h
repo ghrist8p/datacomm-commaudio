@@ -15,6 +15,7 @@ public:
 	PlayWave(int capacity, MessageQueue* msgq);
 	~PlayWave();
 	int startPlaying(int samplesPerSecond, int bitsPerSample, int numChannels);
+	int resumePlaying();
 	int stopPlaying();
 
 private:
