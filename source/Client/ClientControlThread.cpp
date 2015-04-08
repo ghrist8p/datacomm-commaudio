@@ -19,6 +19,7 @@
 #include "../protocol.h"
 #include "MusicBuffer.h"
 #include "PlayWave.h"
+#include "../Client/FileTransferer.h"
 
 /*
  * message queue constructor parameters
@@ -93,6 +94,7 @@ ClientControlThread::ClientControlThread()
     // initialize instance variables
     _threadStopEv = CreateEvent(NULL,TRUE,FALSE,NULL);
     _thread       = INVALID_HANDLE_VALUE;
+	fileTransferer = new FileTransferer(NULL);
 }
 
 /**
@@ -165,9 +167,9 @@ void ClientControlThread::setClientWindow( ClientWindow * theWindow )
 	_window->addMessageListener(WM_CLOSE, ClientControlThread::onClose, _window);
 }
 
-void ClientControlThread::onDownloadPacket( RequestPacket packet )
+void ClientControlThread::onDownloadPacket( FileTransferData packet )
 {
-    // TODO: implement stufffff!!!!!
+	fileTransferer->recvFile((char*)&packet);
 }
 
 void ClientControlThread::onChangeStream( RequestPacket packet )
@@ -175,9 +177,9 @@ void ClientControlThread::onChangeStream( RequestPacket packet )
     // get the song
     SongName song = _songs[packet.index];
 
-    // set the speaker settings and stuff according to the song parameters
-    _window->musicfile->newSong(song.size);
+    // set the speaker settings and stuff according to the song parameters 
     _window->musicPlayer->stopPlaying();
+	_window->musicfile->newSong(song.size);
     _window->musicPlayer->startPlaying(song.sample_rate,song.bps,song.channels);
 }
 
@@ -321,7 +323,7 @@ void ClientControlThread::_handleSockMsgqMsg(ClientControlThread* dis)
     {
     case DOWNLOAD:
         OutputDebugString(L"DOWNLOAD\n");
-        dis->onDownloadPacket( *((RequestPacket *)element) );
+        dis->onDownloadPacket( *((FileTransferData *)element) );
         break;
     case CHANGE_STREAM:
         OutputDebugString(L"CHANGE_STREAM\n");
