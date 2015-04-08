@@ -45,7 +45,7 @@
 --  This is the constructor for the Music Reader it will allocate memory for the buffer and will instatiate the semaphore
 --	and mutex.
 ----------------------------------------------------------------------------------------------------------------------*/
-MusicBuffer::MusicBuffer(PlaybackTrackerPanel* TrackerP, MusicPlayer* musicplaya)
+MusicBuffer::MusicBuffer(PlaybackTrackerPanel* TrackerP, PlayWave* musicplaya)
 {
 	musicplayer = musicplaya;
 	TrackerPanel = TrackerP;
