@@ -74,7 +74,7 @@ bool ButtonPanel::onClick(GuiComponent *pThis, UINT command, UINT id, WPARAM wPa
 	
 	buttonPanel->mouseDown = true;
 	buttonPanel->buttonState = buttonPanel->down;
-	InvalidateRect(buttonPanel->getHWND(), NULL, TRUE);
+	InvalidateRect(buttonPanel->getHWND(), NULL, FALSE);
 
 	return false;
 }
@@ -87,7 +87,7 @@ bool ButtonPanel::onClickUp(GuiComponent *pThis, UINT command, UINT id, WPARAM w
 	{
 		buttonPanel->mouseDown = false;
 		buttonPanel->buttonState = buttonPanel->up;
-		InvalidateRect(buttonPanel->getHWND(), NULL, TRUE);
+		InvalidateRect(buttonPanel->getHWND(), NULL, FALSE);
 
 		// Call Click Listener
 		buttonPanel->clickListener(pThis);
@@ -106,7 +106,7 @@ bool ButtonPanel::onMouseMove(GuiComponent *pThis, UINT command, UINT id, WPARAM
 	if (button->mouseDown)
 	{
 		button->buttonState = button->down;
-		InvalidateRect(button->getHWND(), NULL, TRUE);
+		InvalidateRect(button->getHWND(), NULL, FALSE);
 	}
 
 	return false;
@@ -120,7 +120,7 @@ bool ButtonPanel::onMouseLeave(GuiComponent *pThis, UINT command, UINT id, WPARA
 	if (!button->mouseDown)
 	{
 		button->buttonState = button->up;
-		InvalidateRect(button->getHWND(), NULL, TRUE);
+		InvalidateRect(button->getHWND(), NULL, FALSE);
 	}
 
 	return false;

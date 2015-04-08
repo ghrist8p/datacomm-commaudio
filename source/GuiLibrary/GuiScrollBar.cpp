@@ -51,7 +51,7 @@ void GuiScrollBar::setTrackPosition(double percent)
 void GuiScrollBar::setContentSize(double size)
 {
 	contentSize = size;
-	InvalidateRect(getHWND(), NULL, TRUE);
+	InvalidateRect(getHWND(), NULL, FALSE);
 }
 
 void GuiScrollBar::setListener(IGuiScrollBarListener *listener)
@@ -125,7 +125,7 @@ bool GuiScrollBar::onClick(GuiComponent *pThis, UINT command, UINT id, WPARAM wP
 		scrollbar->clickOffset = scrollbar->trackerRect.top - HIWORD(lParam);
 	}
 
-	InvalidateRect(scrollbar->getHWND(), NULL, TRUE);
+	InvalidateRect(scrollbar->getHWND(), NULL, FALSE);
 
 	return true;
 }
@@ -134,7 +134,7 @@ bool GuiScrollBar::onClickUp(GuiComponent *pThis, UINT command, UINT id, WPARAM 
 {
 	GuiScrollBar *scrollbar = (GuiScrollBar*)pThis;
 	scrollbar->active = false;
-	InvalidateRect(scrollbar->getHWND(), NULL, TRUE);
+	InvalidateRect(scrollbar->getHWND(), NULL, FALSE);
 
 	return true;
 }
