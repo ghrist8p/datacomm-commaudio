@@ -3,6 +3,7 @@
 
 #include "../Buffer/MessageQueue.h"
 #include "Playlist.h"
+#include "../protocol.h"
 
 class UDPSocket;
 
