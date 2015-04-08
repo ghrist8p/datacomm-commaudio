@@ -125,23 +125,8 @@ int JitterBuffer::get(void* dest)
     WaitForSingleObject(canGet,INFINITE);
 
     // copy data from root to destination
-    int tempIndex;
-    Heap::peek(&tempIndex,dest);
-
-    // remove data from buffer if consumed, don't remove otherwise, because we're padding the data.
-    if(++lastIndex == tempIndex)
-    {
-        Heap::remove();
-        ReleaseSemaphore(notFull,1,NULL);
-    }
-    else
-    {
-        ReleaseSemaphore(notEmpty,1,NULL);
-    }
-
-    // // copy data from root to destination
-    // Heap::remove(&lastIndex,dest);
-    // ReleaseSemaphore(notFull,1,NULL);
+    Heap::remove(&lastIndex,dest);
+    ReleaseSemaphore(notFull,1,NULL);
 
     // reset the canGet event, and set it after
     // delay if we're out of data
