@@ -34,7 +34,9 @@ void GuiComponent::setup(LPCWSTR winClass, LPCWSTR menuClass, DWORD winStyle)
 {
 	if (initialized)
 	{
-		MessageBox(NULL, L"Component already initialized.", L"Internal Error", MB_ICONERROR);
+		#ifdef DEBUG
+		MessageBox(NULL, L"Component already initialized.", L"Internal Error", MB_ICONERROR));
+		#endif
 		return;
 	}
 
@@ -50,7 +52,9 @@ void GuiComponent::setStyles(DWORD winStyles)
 {
 	if (initialized)
 	{
-		MessageBox(NULL, L"Component already initialized.", L"Internal Error", MB_ICONERROR);
+		#ifdef DEBUG
+		MessageBox(NULL, L"Component already initialized.", L"Internal Error", MB_ICONERROR));
+		#endif
 		return;
 	}
 
