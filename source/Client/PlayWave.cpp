@@ -341,10 +341,7 @@ void PlayWave::handleMsgqMsg()
 	{
 		lastAudioPacket->dwUser = (DWORD_PTR) audioPacket;
 	}
-	else
-	{
-		startCleanupRoutine(this,audioPacket);
-	}
+    startCleanupRoutine(this,audioPacket);
 	lastAudioPacket = audioPacket;
 
 	// release synchronization objects
@@ -381,10 +378,6 @@ DWORD WINAPI PlayWave::cleanupRoutine(void* params)
 			#ifdef DEBUG
 			OutputDebugString(L"cleanup thread waiting\n");
 			#endif
-            //if(WaitForSingleObject(p->dis->cleanupThreadEv,CHECK_FOR_FREEING_INTERVAL) == WAIT_OBJECT_0)
-            //{
-            //    break;
-            //}
 			Sleep(CHECK_FOR_FREEING_INTERVAL);
 		}
 
