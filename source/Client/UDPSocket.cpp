@@ -537,7 +537,7 @@ void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets
 			if(count++ > 11)
 			{
 				count = 0;
-				Sleep(1);
+				Sleep(5);
 			}
 		}
 		fclose(fp);
