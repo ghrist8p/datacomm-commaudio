@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <vector>
 
-#define MULTICAST_ADDR "224.0.0.1"
+#define MULTICAST_ADDR "239.255.0.240"
 
 #define MULTICAST_PORT 7778
 
@@ -14,7 +14,7 @@
 
 #define STREAM_PACKET 9
 
-#define DATA_LEN 60
+#define DATA_LEN 256
 
 #define STR_LEN 128
 
@@ -34,8 +34,8 @@
  */
 struct DataPacket
 {
-    int index;
-    char data[DATA_LEN];
+	int index;
+	char data[DATA_LEN];
 };
 
 typedef struct DataPacket DataPacket;
@@ -52,39 +52,47 @@ typedef struct DataPacket DataPacket;
  */
 struct LocalDataPacket
 {
-    int index;
-    unsigned long srcAddr;
-    char data[DATA_LEN];
+	int index;
+	unsigned long srcAddr;
+	char data[DATA_LEN];
 };
 
 typedef struct LocalDataPacket LocalDataPacket;
-
-struct StringPacket
-{
-    char string[STR_LEN];
-};
 
 typedef struct DataPacket DataPacket;
 
 struct RequestPacket
 {
-    int index;
+	int index;
 };
 
 typedef struct RequestPacket RequestPacket;
 
 struct MessageHeader
 {
-    uint32_t size;
-    uint8_t type;
+	uint32_t size;
+	uint8_t type;
 };
 
 typedef struct MessageHeader MessageHeader;
 
+struct SongName
+{
+	int  id;
+	short channels;
+	short bps; //bits per sample
+	unsigned long sample_rate;
+	unsigned long size;
+	wchar_t filepath[STR_LEN];
+	char cFilepath[STR_LEN];
+};
+
+typedef struct SongName SongName;
+
 struct SongStream
 {
 	short channels;
-	short bps; //bit rae
+	short bps; //bits per sample
 	unsigned long sample_rate;
 	int id;
 	char songname[STR_LEN];
@@ -92,12 +100,13 @@ struct SongStream
 
 typedef struct SongStream SongStream;
 
-struct SongName
+union TCPPacket
 {
-	int  id;
-	wchar_t filepath[STR_LEN];
+	SongName songName;
+	RequestPacket requestPacket;
+	DataPacket dataPacket;
 };
 
-typedef struct SongName SongName;
+typedef union TCPPacket TCPPacket;
 
 #endif

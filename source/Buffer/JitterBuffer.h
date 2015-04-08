@@ -24,6 +24,10 @@ public:
 private:
     int isIndexInReceiveWindow(int index);
     /**
+     * number of consecutive {puts} calls that were rejected due to a bad index.
+     */
+    int strikes;
+    /**
      * holds the last index removed from the jitter buffer.
      */
     int lastIndex;

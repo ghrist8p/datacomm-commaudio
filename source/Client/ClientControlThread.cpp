@@ -17,6 +17,8 @@
 #include "Sockets.h"
 #include "../handlerHelper.h"
 #include "../protocol.h"
+#include "MusicBuffer.h"
+#include "PlayWave.h"
 
 /*
  * message queue constructor parameters
@@ -161,19 +163,26 @@ void ClientControlThread::setClientWindow( ClientWindow * theWindow )
     _window = theWindow;
 }
 
-void ClientControlThread::onDownloadPacket(int index, void* data, int len)
+void ClientControlThread::onDownloadPacket( RequestPacket packet )
 {
     // TODO: implement stufffff!!!!!
 }
 
-void ClientControlThread::onChangeStream(int index, void* data, int len)
+void ClientControlThread::onChangeStream( RequestPacket packet )
 {
-    // TODO: implement stufffff!!!!!
+    // get the song
+    SongName song = _songs[packet.index];
+
+    // set the speaker settings and stuff according to the song parameters
+    _window->musicfile->newSong(song.size);
+    _window->musicPlayer->stopPlaying();
+    _window->musicPlayer->startPlaying(song.sample_rate,song.bps,song.channels);
 }
 
 void ClientControlThread::onNewSong( SongName song )
 {
     _window->addRemoteFile( song );
+    _songs[song.id] = song;
 }
 
 int ClientControlThread::_startRoutine(HANDLE* thread, HANDLE stopEvent,
@@ -300,33 +309,32 @@ void ClientControlThread::_handleSockMsgqMsg(ClientControlThread* dis)
 {
     // allocate memory to hold message queue message
     int msgType;
-    SockMsgqElement element;
+    void* element = malloc(dis->_sockMsgq.elementSize);
 
     // get the message queue message
-    dis->_sockMsgq.dequeue(&msgType,&element);
+    dis->_sockMsgq.dequeue(&msgType,element);
 
     // process the message queue message according to its type
     switch(msgType)
     {
     case DOWNLOAD:
         OutputDebugString(L"DOWNLOAD\n");
-        // TODO: parse packet, and fill in callback parameters
-        dis->onDownloadPacket(0,0,0);
+        dis->onDownloadPacket( *((RequestPacket *)element) );
         break;
     case CHANGE_STREAM:
         OutputDebugString(L"CHANGE_STREAM\n");
-        // TODO: parse packet, and fill in callback parameters
-        dis->onChangeStream(0,0,0);
+        dis->onChangeStream( *((RequestPacket *)element) );
         break;
     case NEW_SONG:
         OutputDebugString(L"NEW_SONG\n");
-        // TODO: parse packet, and fill in callback parameters
-        dis->onNewSong( *((SongName *)element.data) );
+        dis->onNewSong( *((SongName *)element) );
         break;
     default:
         fprintf(stderr,"WARNING: received unknown message type: %d\n",msgType);
         break;
     }
+
+	free(element);
 }
 
 /*

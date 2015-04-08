@@ -342,24 +342,28 @@ DWORD UDPSocket::ThreadStart(void)
 ----------------------------------------------------------------------------------------------------------------------*/
 void UDPSocket::setGroup(char* group_address, int mem_flag)
 {
-	char loop = 0;
-	char ttl = 2;
-	in_addr interfaceAddr;
-	interfaceAddr.s_addr = inet_addr(INADDR_ANY);
 	memset(&mreq,0,sizeof(mreq));
 	mreq.imr_multiaddr.s_addr = inet_addr(group_address);
 	mreq.imr_interface.s_addr = inet_addr(INADDR_ANY);
-	int i = 0;
-	int err = 0;
-	if (mem_flag)
+
+	char loop;
+	char ttl = 2;
+
+    in_addr interfaceAddr;
+	interfaceAddr.s_addr = inet_addr(INADDR_ANY);
+
+    if (mem_flag)
 	{
-		i = setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
-		err = GetLastError();
-		i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
-		err = GetLastError();
-		i = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
-		err = GetLastError();
+        loop = 0;
 	}
+    else
+    {
+        loop = 1;
+    }
+
+    setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq));
+    setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
+    setsockopt(sd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
 	setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char*)&interfaceAddr, sizeof(interfaceAddr));
 }
 
@@ -410,9 +414,10 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 
 		sockaddr_in address;
 		memset(&address,0,sizeof(address));
-		address.sin_family = AF_INET;
-		address.sin_port   = htons(MULTICAST_PORT);
-		memcpy(&address.sin_addr,&mreq.imr_multiaddr,sizeof(struct in_addr));
+		address.sin_family      = AF_INET;
+		address.sin_port        = htons(MULTICAST_PORT);
+        memcpy(&address.sin_addr,&mreq.imr_multiaddr,sizeof(mreq.imr_multiaddr));
+        address.sin_addr.s_addr = inet_addr(MULTICAST_ADDR);
 
 		if (WSASendTo(socketInfo.Socket, &(socketInfo.DataBuf), 1, &SendBytes, Flags, (struct sockaddr*)&address, sizeof(address),
 			0, 0) == SOCKET_ERROR)
@@ -420,7 +425,9 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 			int err;
 			if ((err = WSAGetLastError()) != WSA_IO_PENDING)
 			{
-				MessageBox(NULL, L"WSASend() failed with error", L"ERROR", MB_ICONERROR);
+				wchar_t errorStr[256] = {0};
+				swprintf_s( errorStr, 256, L"WSASend() failed with error: %d", err );
+				MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
 				return 0;
 			}
 		}
@@ -488,87 +495,141 @@ MessageQueue* UDPSocket::getMessageQueue()
 void UDPSocket::sendWave(SongName songloc, int speed, vector<TCPSocket*> sockets)
 {
 	ServerControlThread * sct = ServerControlThread::getInstance();
-	char * path = sct->getPlaylist()->getSongPath( songloc.id );
-	FILE* fp = fopen(path, "rb");
+	wchar_t * path = sct->getPlaylist()->getSongPath( songloc.id );
+    char mbspath[STR_LEN];
+    sprintf(mbspath,"%S",path);
+	FILE* fp = fopen(mbspath, "rb");
+
 	free( path );
+
 	struct SongStream songInfo;
 	char* sendSong;
 	char* song;
 	stopSending = false;
 
-	if (fp) {
+	if (fp)
+	{
+		RequestPacket packet;
 
-		char id[5];
-		unsigned long size;
-		short format_tag, channels, block_align, bits_per_sample;
-		unsigned long format_length, sample_rate, avg_bytes_sec, data_size;
-		int data_read = 0;
+		packet.index = songloc.id;
 
-		fread(id, sizeof(char), 4, fp);
-		id[4] = '\0';
-
-		if (!strcmp(id, "RIFF")) {
-			fread(&size, sizeof(unsigned long), 1, fp);
-			fread(id, sizeof(char), 4, fp);
-			id[4] = '\0';
-
-			if (!strcmp(id, "WAVE")) {
-				//get wave headers
-				fread(id, sizeof(char), 4, fp);
-				fread(&format_length, sizeof(unsigned long), 1, fp);
-				fread(&format_tag, sizeof(short), 1, fp);
-				fread(&channels, sizeof(short), 1, fp);
-				fread(&sample_rate, sizeof(unsigned long), 1, fp);
-				fread(&avg_bytes_sec, sizeof(unsigned long), 1, fp);
-				fread(&block_align, sizeof(short), 1, fp);
-				fread(&bits_per_sample, sizeof(short), 1, fp);
-				fread(id, sizeof(char), 4, fp);
-				fread(&data_size, sizeof(unsigned long), 1, fp);
-
-				sendSong = (char*)malloc(sizeof(char) * SIZE_INDEX);
-
-				sendSong[0] = (songloc.id >> 24) & 0xFF;
-				sendSong[1] = (songloc.id >> 16) & 0xFF;
-				sendSong[2] = (songloc.id >> 8) & 0xFF;
-				sendSong[3] = songloc.id & 0xFF;
-
-				//for every client
-				for (int i = 0; i < sockets.size(); i++)
-				{
-					sockets[i]->Send(CHANGE_STREAM, sendSong, SIZE_INDEX);
-				}
-
-				free(sendSong);
-
-				song = (char*)malloc(speed + 5);
-
-				//read chunks of data from the file based on the speed selected and send it
-				while (data_read = fread(song + 5, 1, speed, fp) > 0)
-				{
-					if (stopSending)
-					{
-						return;
-					}
-
-					sendtoGroup(MUSICSTREAM, song, data_read);
-				}
-
-				free(song);
-
-				stopSending = false;
-			}
-			else
-			{
-				MessageBox(NULL, L"NOT WAVE", L"ERROR", MB_ICONERROR);
-			}
-		}
-		else
+		//for every client
+		for (int i = 0; i < sockets.size(); i++)
 		{
-			MessageBox(NULL, L"NOT RIFF", L"ERROR", MB_ICONERROR);
+			sockets[i]->Send(CHANGE_STREAM, &packet, sizeof(packet));
 		}
+
+		// continuously send voice data over the network when it becomes
+		// available
+		DataPacket voicePacket;
+		int count = 0;
+		voicePacket.index = 0;
+		char sound[DATA_LEN];
+		while(fread(sound,1,DATA_LEN,fp))
+		{
+			if(stopSending)
+			{
+				break;
+			}
+			++(voicePacket.index);
+			memcpy(voicePacket.data, sound, DATA_LEN);
+			sendtoGroup(MUSICSTREAM,&voicePacket,sizeof(voicePacket));
+			if(count++ > 11)
+			{
+				count = 0;
+				Sleep(5);
+			}
+		}
+		fclose(fp);
 	}
 
-	fclose(fp);
+
+	// struct SongStream songInfo;
+	// char* sendSong;
+	// char* song;
+	// stopSending = false;
+
+	// if ( hSong == INVALID_HANDLE_VALUE )
+	// {
+ //        wchar_t errorStr[256] = {0};
+ //        swprintf( errorStr, 256, L"CreateFile() failed: %d", GetLastError() );
+ //        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
+	// 	return;
+	// }
+	// else
+	// {
+
+	// 	char id[5];
+	// 	unsigned long size;
+	// 	short format_tag, channels, block_align, bits_per_sample;
+	// 	unsigned long format_length, sample_rate, avg_bytes_sec, data_size;
+	// 	int data_read = 0;
+
+	// 	ReadFile( hSong, id, sizeof( char ) * 4, NULL, NULL );
+	// 	id[4] = '\0';
+
+	// 	if (!strcmp(id, "RIFF")) {
+	// 		ReadFile( hSong, &size, sizeof(unsigned long) * 1, NULL, NULL );
+	// 		ReadFile( hSong, id, sizeof(char) * 4, NULL, NULL );
+	// 		id[4] = '\0';
+
+	// 		if (!strcmp(id, "WAVE")) {
+	// 			//get wave headers
+	// 			ReadFile( hSong, id, sizeof(char) * 4, NULL, NULL );
+	// 			ReadFile( hSong, &format_length, sizeof(unsigned long) * 1, NULL, NULL );
+	// 			ReadFile( hSong, &format_tag, sizeof(short) * 1, NULL, NULL );
+	// 			ReadFile( hSong, &channels, sizeof(short) * 1, NULL, NULL );
+	// 			ReadFile( hSong, &sample_rate, sizeof(unsigned long) * 1, NULL, NULL );
+	// 			ReadFile( hSong, &avg_bytes_sec, sizeof(unsigned long) * 1, NULL, NULL );
+	// 			ReadFile( hSong, &block_align, sizeof(short) * 1, NULL, NULL );
+	// 			ReadFile( hSong, &bits_per_sample, sizeof(short) * 1, NULL, NULL );
+	// 			ReadFile( hSong, id, sizeof(char) * 4, NULL, NULL );
+	// 			ReadFile( hSong, &data_size, sizeof(unsigned long) * 1, NULL, NULL );
+
+	// 			sendSong = (char*)malloc(sizeof(char) * SIZE_INDEX);
+
+	// 			sendSong[0] = (songloc.id >> 24) & 0xFF;
+	// 			sendSong[1] = (songloc.id >> 16) & 0xFF;
+	// 			sendSong[2] = (songloc.id >> 8) & 0xFF;
+	// 			sendSong[3] = songloc.id & 0xFF;
+
+	// 			//for every client
+	// 			for (int i = 0; i < sockets.size(); i++)
+	// 			{
+	// 				sockets[i]->Send(CHANGE_STREAM, sendSong, SIZE_INDEX);
+	// 			}
+
+	// 			free(sendSong);
+
+	// 			song = (char*)malloc(speed);
+
+	// 			//read chunks of data from the file based on the speed selected and send it
+	// 			while (data_read = ReadFile( hSong, song, speed, NULL, NULL ) > 0)
+	// 			{
+	// 				if (stopSending)
+	// 				{
+	// 					return;
+	// 				}
+
+	// 				sendtoGroup(MUSICSTREAM, song, data_read);
+	// 			}
+
+	// 			free(song);
+
+	// 			stopSending = false;
+	// 		}
+	// 		else
+	// 		{
+	// 			MessageBox(NULL, L"NOT WAVE", L"ERROR", MB_ICONERROR);
+	// 		}
+	// 	}
+	// 	else
+	// 	{
+	// 		MessageBox(NULL, L"NOT RIFF", L"ERROR", MB_ICONERROR);
+	// 	}
+	// }
+
+	// CloseHandle( hSong );
 }
 
 /*------------------------------------------------------------------------------------------------------------------

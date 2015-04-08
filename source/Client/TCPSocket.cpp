@@ -226,7 +226,7 @@ DWORD TCPSocket::ThreadStart(void)
 			}
 
             type = socketInfo.Buffer[0];
-			length = (socketInfo.Buffer[1] << 24) | (socketInfo.Buffer[2] << 16) | (socketInfo.Buffer[3] << 8) | (socketInfo.Buffer[4]);
+			length = *(int*)&socketInfo.Buffer[1];
 			socketInfo.DataBuf.len = length;
 
 			if (WSARecv(socketInfo.Socket, &socketInfo.DataBuf, 1, &RecvBytes, &Flags,
@@ -242,7 +242,7 @@ DWORD TCPSocket::ThreadStart(void)
 			{
 				char* dataReceived = (char*)malloc(sizeof(char) * length);
 				memcpy(dataReceived, socketInfo.Buffer, length);
-                socketInfo.mqueue->enqueue(type, dataReceived, length);
+				socketInfo.mqueue->enqueue(type, dataReceived, length);
 				free(dataReceived);
 			}
 		}
@@ -355,12 +355,7 @@ int TCPSocket::Send(char type, void* data, int length)
 	char* data_send = (char*) malloc(sizeof(char) * (length + 5));
 
 	data_send[0] = type;
-
-	//message len
-	data_send[1] = (length >> 24) & 0xFF;
-	data_send[2] = (length >> 16) & 0xFF;
-	data_send[3] = (length >> 8) & 0xFF;
-	data_send[4] = length & 0xFF;
+	memcpy(&data_send[1],&length,sizeof(length));
 
 	memcpy(data_send + 5, (char*)data, length);
 

@@ -50,6 +50,8 @@ MusicBuffer::MusicBuffer(PlaybackTrackerPanel* TrackerP)
 	buffer = (char*)malloc(sizeof(char) * SUPERSIZEBUF);
 	writeindex = 0;
 	readindex = 0;
+	song_startindex = 0;
+	playing = 1;
 
 	canRead = CreateSemaphore(NULL, 0, SUPERSIZEBUF, NULL);
 	mutexx = CreateMutex(NULL, FALSE, NULL);
@@ -122,7 +124,7 @@ void MusicBuffer::writeBuf(char* data, int len)
 	}
 
 	double current_wpercentage = (double) (writeindex - song_startindex) / currentsong_size;
-	TrackerPanel->setPercentageBuffered(current_wpercentage);
+	TrackerPanel->setPercentageBuffered(current_wpercentage*1.5);
 
 	ReleaseMutex(mutexx);
 	ReleaseSemaphore(canRead, 1, NULL);
@@ -149,31 +151,37 @@ void MusicBuffer::writeBuf(char* data, int len)
 --	NOTES:
 --  This function will read the data into the pointer passed. it is guarded by a mutex and a semaphore.
 ----------------------------------------------------------------------------------------------------------------------*/
-void MusicBuffer::readBuf(char* data, int len)
+int MusicBuffer::readBuf(char* data, int len)
 {
-	unsigned long rdifference;
-
-	WaitForSingleObject(canRead, INFINITE);
-	WaitForSingleObject(mutexx, INFINITE);
-
-	if (readindex + len > SUPERSIZEBUF)
+	if (playing)
 	{
-		rdifference = readindex + len - SUPERSIZEBUF - 1;
-		memcpy(data, buffer + readindex, rdifference);
-		readindex = 0;
-		memcpy(data + rdifference, buffer + readindex, len - rdifference);
-		readindex = len - rdifference;
-	}
-	else
-	{
-		memcpy(data, buffer + readindex, len);
-		readindex += len;
+		unsigned long rdifference;
+
+		WaitForSingleObject(canRead, INFINITE);
+		WaitForSingleObject(mutexx, INFINITE);
+
+		if (readindex + len > SUPERSIZEBUF)
+		{
+			rdifference = readindex + len - SUPERSIZEBUF - 1;
+			memcpy(data, buffer + readindex, rdifference);
+			readindex = 0;
+			memcpy(data + rdifference, buffer + readindex, len - rdifference);
+			readindex = len - rdifference;
+		}
+		else
+		{
+			memcpy(data, buffer + readindex, len);
+			readindex += len;
+		}
+
+		double current_rpercentage = (double)(readindex - song_startindex) / currentsong_size;
+		TrackerPanel->setTrackerPercentage(current_rpercentage, false);
+
+		ReleaseMutex(mutexx);
+		return 1;
 	}
 
-	double current_rpercentage = (double) (readindex - song_startindex) / currentsong_size;
-	TrackerPanel->setTrackerPercentage(current_rpercentage, false);
-
-	ReleaseMutex(mutexx);
+	return 0;
 }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -189,7 +197,7 @@ void MusicBuffer::readBuf(char* data, int len)
 --
 -- INTERFACE: void MusicBuffer::seekBuf(long index)
 --
---  index : location to read form the buffer 
+--  index : location to read form the buffer
 --
 --	RETURNS: nothing.
 --
@@ -202,7 +210,7 @@ void MusicBuffer::seekBuf(double percentage)
 
 	int index = percentage * currentsong_size;
 	index = song_startindex + index;
-	
+
 	/*if (index < writeindex)
 	{
 		readindex = index;
@@ -241,4 +249,14 @@ void MusicBuffer::newSong(unsigned long song_size)
 	readindex = writeindex;
 
 	ReleaseMutex(mutexx);
+}
+
+void MusicBuffer::stopEnqueue()
+{
+	playing = 0;
+}
+
+void MusicBuffer::resumeEnqueue()
+{
+	playing = 1;
 }

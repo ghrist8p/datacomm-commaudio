@@ -1,8 +1,7 @@
 #ifndef PLAYLIST_H
 #define PLAYLIST_H
 
-#include <Windows.h>
-
+#include "../common.h"
 #include "../protocol.h"
 
 class Playlist
@@ -13,7 +12,7 @@ public:
     Playlist( wchar_t * _dir );
     ~Playlist();
     
-    char * getSongPath( int id );
+    wchar_t * getSongPath( int id );
     SongName * getSong( int id );
 
 private:

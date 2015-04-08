@@ -77,6 +77,7 @@ void ServerControlThread::setUDPSocket( UDPSocket * sock )
     {
         WaitForSingleObject(access,INFINITE);
         udpSocket = sock;
+        udpSocket->setGroup(MULTICAST_ADDR,0);
         ReleaseMutex(access);
     }
 }
@@ -123,29 +124,29 @@ DWORD WINAPI ServerControlThread::_threadRoutine( void * params )
 		else if( handleNum > WAIT_OBJECT_0 + 0 && handleNum < WAIT_OBJECT_0 + thiz->_sockHandles.size() )
         {
 			TCPSocket * sock = thiz->_socks[ handleNum - 1 ];
-            int len = sock->getMessageQueue()->peekLen();
-            RequestPacket * data = new RequestPacket;
+
             int type;
-            sock->getMessageQueue()->dequeue( &type, data );
+			TCPPacket packet;
+            sock->getMessageQueue()->dequeue( &type, &packet );
             switch( type )
             {
             case CHANGE_STREAM:
-                thiz->_handleMsgChangeStream( data );
+				thiz->_handleMsgChangeStream( &packet.requestPacket );
                 break;
             case REQUEST_DOWNLOAD:
-                thiz->_handleMsgRequestDownload( data );
+                thiz->_handleMsgRequestDownload( &packet.requestPacket );
                 break;
             case CANCEL_DOWNLOAD:
-                thiz->_handleMsgCancelDownload( data );
+                thiz->_handleMsgCancelDownload( &packet.requestPacket );
                 break;
             case DISCONNECT:
-                thiz->_handleMsgDisconnect( handleNum );
+                thiz->_handleMsgDisconnect( handleNum - 1 );
                 break;
             }
 		}
 		else if( handleNum == WAIT_IO_COMPLETION )
 		{
-		
+
 		}
 		else
 		{
@@ -162,6 +163,7 @@ DWORD WINAPI ServerControlThread::_threadRoutine( void * params )
 void ServerControlThread::_handleMsgChangeStream( RequestPacket * data )
 {
     udpSocket->stopSong();
+    WaitForSingleObject(_multicastThread,5000);
     DWORD useless;
     _multicastThread = CreateThread( 0, 0, _multicastRoutine, playlist->getSong( data->index ), 0, &useless );
 }
@@ -180,7 +182,7 @@ void ServerControlThread::_handleMsgDisconnect( int client )
 {
     WaitForSingleObject( access, INFINITE );
     _socks.erase( _socks.begin() + client );
-    _sockHandles.erase( _sockHandles.begin() + client );
+    _sockHandles.erase( _sockHandles.begin() + client + 1 );
     ReleaseMutex( access );
 }
 

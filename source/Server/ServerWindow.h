@@ -12,6 +12,7 @@ class GuiLabel;
 class GuiButton;
 class GuiTextBox;
 class TCPSocket;
+class UDPSocket;
 struct TCPConnection;
 
 class ServerWindow : public GuiWindow
@@ -26,7 +27,7 @@ private:
 	GuiPanel *bottomPanel;
 
 	GuiPanel *leftPaddingPanel;
-    
+
     GuiPanel *inputPanel;
 
 	GuiPanel *tcpInputPanel;
@@ -42,15 +43,17 @@ private:
 	GuiTextBox *playlistInput;
 
 	GuiButton *connectionButton;
-	
+
     HFONT labelFont;
 	HBRUSH bottomPanelBrush;
 	HPEN pen;
-    
+
 	void createLabelFont();
 
     Server * server;
 	bool connected;
+
+    UDPSocket* udpSock;
 
     uint8_t * receiveMessage(  TCPConnection * from );
 
@@ -59,7 +62,8 @@ private:
                                 , DWORD cbTransferred
                                 , LPWSAOVERLAPPED lpOverlapped
                                 , DWORD dwFlags );
-
+    // static DWORD WINAPI MicThread(LPVOID lpParameter);
+    // DWORD ThreadStart(void);
 	static bool toggleConnection(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval);
     static void newConnHandler( TCPConnection * server, void * data );
 };

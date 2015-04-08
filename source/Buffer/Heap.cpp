@@ -38,7 +38,7 @@ void Heap::insert(int index, void* src)
     // put the new element into the heap
     void* payload = malloc(elementSize);
     memcpy(payload,src,elementSize);
-    data.emplace_back(index,payload);
+    data.emplace_back(std::pair<int,void*>(index,payload));
 
     // maintain the heap structure
     heapify();
