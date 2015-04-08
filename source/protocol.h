@@ -14,7 +14,7 @@
 
 #define STREAM_PACKET 9
 
-#define DATA_LEN 512
+#define DATA_LEN 256
 
 #define STR_LEN 128
 
