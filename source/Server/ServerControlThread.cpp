@@ -154,7 +154,7 @@ DWORD WINAPI ServerControlThread::_threadRoutine( void * params )
 			swprintf( errorStr, 256, L"WaitForMultipleObjectsEx() failed: %d\n"
 									 L"thiz->_sockHandles.size(): %d", handleNum, thiz->_sockHandles.size() );
 			#ifdef DEBUG
-			MessageBox(NULL, errorStr, L"Error", MB_ICONERROR));
+			MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
 			#endif
 			return false;
 		}

@@ -352,7 +352,7 @@ uint8_t * ServerWindow::receiveMessage( TCPConnection * from )
         wchar_t errorStr[256] = {0};
         swprintf( errorStr, 256, L"WSAWaitForMultipleEvents() failed: %d", WSAGetLastError() );
         #ifdef DEBUG
-        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR));
+        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
         #endif
     }
 
@@ -380,7 +380,7 @@ uint8_t * ServerWindow::receiveMessage( TCPConnection * from )
         wchar_t errorStr[256] = {0};
         swprintf( errorStr, 256, L"WSAWaitForMultipleEvents() failed: %d", WSAGetLastError() );
         #ifdef DEBUG
-        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR));
+        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
         #endif
     }
 

@@ -298,7 +298,7 @@ bool ClientWindow::onClickMic(GuiComponent *_pThis, UINT command, UINT id, WPARA
 			if (destination.sin_addr.s_addr == INADDR_NONE)
 			{
 				#ifdef DEBUG
-				MessageBox(NULL, L"The target ip address entered must be a legal IPv4 address", L"ERROR", MB_ICONERROR));
+				MessageBox(NULL, L"The target ip address entered must be a legal IPv4 address", L"ERROR", MB_ICONERROR);
 				#endif
 				return true;
 			}
