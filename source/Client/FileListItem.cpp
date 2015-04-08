@@ -130,13 +130,13 @@ void FileListItem::onMouseMove(int x, int y)
 void FileListItem::markAsDownloading()
 {
 	downloading = true;
-	InvalidateRect(list->getHWND(), NULL, true);
+	InvalidateRect(list->getHWND(), NULL, false);
 }
 
 void FileListItem::markAsDownloadingStopped()
 {
 	downloading = false;
-	InvalidateRect(list->getHWND(), NULL, true);
+	InvalidateRect(list->getHWND(), NULL, false);
 }
 
 bool FileListItem::pointInSaveButton(int x, int y)
