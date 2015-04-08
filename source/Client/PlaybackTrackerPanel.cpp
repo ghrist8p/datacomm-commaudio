@@ -57,7 +57,7 @@ void PlaybackTrackerPanel::setPercentageBuffered(double percent)
 		buffered = percent;
 
 	// If buffer is now smaller than tracker, update the tracker
-	setTrackerPercentage(buffered, true);
+	setTrackerPercentage(played, true);
 }
 
 void PlaybackTrackerPanel::setTrackerPercentage(double percent, bool hasPriority)
@@ -74,7 +74,9 @@ void PlaybackTrackerPanel::setTrackerPercentage(double percent, bool hasPriority
 	else
 		played = percent;
 
-	InvalidateRect(getHWND(), NULL, TRUE);
+	RECT rect;
+	GetClientRect(getHWND(), &rect);
+	InvalidateRect(getHWND(), &rect, TRUE);
 }
 
 bool PlaybackTrackerPanel::onClick(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
@@ -86,7 +88,10 @@ bool PlaybackTrackerPanel::onClick(GuiComponent *pThis, UINT command, UINT id, W
 	tracker->trackerBrush = tracker->trackerActiveBrush;
 	tracker->trackerPen = tracker->trackerActivePen;
 	tracker->setTrackerPercentage(percent, true);
-	InvalidateRect(tracker->getHWND(), NULL, TRUE);
+
+	RECT rect;
+	GetClientRect(tracker->getHWND(), &rect);
+	InvalidateRect(tracker->getHWND(), &rect, TRUE);
 
 	tracker->mouseDown = true;
 
@@ -99,7 +104,10 @@ bool PlaybackTrackerPanel::onClickUp(GuiComponent *pThis, UINT command, UINT id,
 	tracker->mouseDown = false;
 	tracker->trackerBrush = tracker->trackerInactiveBrush;
 	tracker->trackerPen = tracker->trackerInactivePen;
-	InvalidateRect(tracker->getHWND(), NULL, TRUE);
+
+	RECT rect;
+	GetClientRect(tracker->getHWND(), &rect);
+	InvalidateRect(tracker->getHWND(), &rect, TRUE);
 	SendMessage(tracker->getHWND(), WM_SEEK, (WPARAM)(tracker->played * 1000), 0);
 	return true;
 }
@@ -117,7 +125,9 @@ bool PlaybackTrackerPanel::onMouseMove(GuiComponent *pThis, UINT command, UINT i
 	{
 		double percent = ((double)xPos) / tracker->getWidth();
 		tracker->setTrackerPercentage(percent, true);
-		InvalidateRect(tracker->getHWND(), NULL, TRUE);
+		RECT rect;
+		GetClientRect(tracker->getHWND(), &rect);
+		InvalidateRect(tracker->getHWND(), &rect, TRUE);
 	}
 
 	return false;
@@ -132,7 +142,9 @@ bool PlaybackTrackerPanel::onMouseLeave(GuiComponent *pThis, UINT command, UINT 
 	{
 		tracker->trackerBrush = tracker->trackerInactiveBrush;
 		tracker->trackerPen = tracker->trackerInactivePen;
-		InvalidateRect(tracker->getHWND(), NULL, TRUE);
+		RECT rect;
+		GetClientRect(tracker->getHWND(), &rect);
+		InvalidateRect(tracker->getHWND(), &rect, TRUE);
 	}
 
 	return false;
