@@ -134,7 +134,8 @@ int getSongfileInfo(SongName* song, wchar_t* filepath, wchar_t* filename, int so
 	}
 
 	// get RIFF headers
-	fread(&size, sizeof(unsigned long), 1, fp);
+	fread(&song->size, sizeof(unsigned long), 1, fp);
+	song->size = song->size - 44;
 	fread(id, sizeof(char), 4, fp);
 	id[4] = '\0';
 
