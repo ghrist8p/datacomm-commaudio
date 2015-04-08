@@ -19,6 +19,7 @@ class MessageQueue;
 class MicReader;
 class MusicBuffer;
 class ClientControlThread;
+class ClientWindow;
 
 class ClientWindow : public GuiWindow
 {
@@ -31,6 +32,7 @@ public:
 	void addRemoteFile(SongName);
 
 private:
+	static ClientWindow * curClientWindow;
 	static void onClickPlay(void*);
 	static void onClickStop(void*);
 	static bool onClickMic(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval);
