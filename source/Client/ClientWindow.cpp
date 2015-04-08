@@ -25,6 +25,8 @@
 #include "MusicBuffer.h"
 #include "ClientControlThread.h"
 
+ClientWindow* ClientWindow::curClientWindow = 0;
+
 ClientWindow::ClientWindow(HINSTANCE hInst)
 	: GuiWindow(hInst)
 {
@@ -49,6 +51,8 @@ ClientWindow::ClientWindow(HINSTANCE hInst)
 	recording = false;
 	requestingRecorderStop = false;
 	micMQueue = new MessageQueue(1000,AUDIO_BUFFER_LENGTH);
+
+	curClientWindow = this;
 }
 
 DWORD WINAPI ClientWindow::MicThread(LPVOID lpParameter)
@@ -252,7 +256,7 @@ void ClientWindow::onCreate()
 	MessageQueue* q2 = new MessageQueue(100,AUDIO_BUFFER_LENGTH);
 	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
 	MusicReader* mreader = new MusicReader(q2, musicfile);
-	musicPlayer = new PlayWave(15000,q2);
+	musicPlayer = new PlayWave(200,q2);
 
 	musicPlayer->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
 
@@ -262,12 +266,13 @@ void ClientWindow::onCreate()
 
 void ClientWindow::onClickPlay(void*)
 {
-	//GETINSTANCE->musicfile->resumeEnqueue();
+	curClientWindow->musicfile->resumeEnqueue();
+	//curClientWindow->musicPlayer->resumePlaying();
 }
-
 void ClientWindow::onClickStop(void*)
 {
-	//GETINSTANCE->musicfile->stopEnqueue();
+	curClientWindow->musicfile->stopEnqueue();
+	curClientWindow->musicPlayer->stopPlaying();
 }
 
 bool ClientWindow::onClickMic(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
