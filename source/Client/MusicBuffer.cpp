@@ -24,6 +24,7 @@
 
 #include "MusicBuffer.h"
 #include "../Client/PlaybackTrackerPanel.h"
+#include "../Client/PlayWave.h"
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: MusicBuffer
@@ -44,8 +45,9 @@
 --  This is the constructor for the Music Reader it will allocate memory for the buffer and will instatiate the semaphore
 --	and mutex.
 ----------------------------------------------------------------------------------------------------------------------*/
-MusicBuffer::MusicBuffer(PlaybackTrackerPanel* TrackerP)
+MusicBuffer::MusicBuffer(PlaybackTrackerPanel* TrackerP, MusicPlayer* musicplaya)
 {
+	musicplayer = musicplaya;
 	TrackerPanel = TrackerP;
 	buffer = (char*)malloc(sizeof(char) * SUPERSIZEBUF);
 	writeindex = 0;
@@ -211,12 +213,14 @@ void MusicBuffer::seekBuf(double percentage)
 	int index = percentage * currentsong_size;
 	index = song_startindex + index;
 
-	/*if (index < writeindex)
+	musicplayer->stopPlaying();
+
+	if (index < writeindex)
 	{
 		readindex = index;
-	}*/
+	}
 
-    readindex = index;
+	musicplayer->resumePlaying();
 
 	ReleaseMutex(mutexx);
 }

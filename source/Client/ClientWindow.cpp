@@ -252,7 +252,7 @@ void ClientWindow::onCreate()
 	ClientControlThread * cct = ClientControlThread::getInstance();
 	cct->setClientWindow( this );
 
-	musicfile = new MusicBuffer(trackerPanel);
+	musicfile = new MusicBuffer(trackerPanel, musicPlayer);
 	MessageQueue* q2 = new MessageQueue(100,AUDIO_BUFFER_LENGTH);
 	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
 	MusicReader* mreader = new MusicReader(q2, musicfile);
@@ -267,7 +267,7 @@ void ClientWindow::onCreate()
 void ClientWindow::onClickPlay(void*)
 {
 	curClientWindow->musicfile->resumeEnqueue();
-	//curClientWindow->musicPlayer->resumePlaying();
+	curClientWindow->musicPlayer->resumePlaying();
 }
 void ClientWindow::onClickStop(void*)
 {
