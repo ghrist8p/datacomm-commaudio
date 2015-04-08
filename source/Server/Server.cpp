@@ -41,7 +41,9 @@ bool Server::startTCP()
     {
         wchar_t errorStr[256] = {0};
         swprintf_s( errorStr, 256, L"ERROR: creating listen socket: %d", WSAGetLastError() );
-        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
+        #ifdef DEBUG
+        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR));
+        #endif
         return false;
     }
     
@@ -60,7 +62,9 @@ bool Server::startTCP()
     {
         wchar_t errorStr[256] = {0};
         swprintf( errorStr, 256, L"ERROR: binding listen socket: %d", WSAGetLastError() );
-        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
+        #ifdef DEBUG
+        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR));
+        #endif
         return false;
     }
     
@@ -69,7 +73,9 @@ bool Server::startTCP()
     {
         wchar_t errorStr[256] = {0};
         swprintf( errorStr, 256, L"listen() failed: %d", WSAGetLastError() );
-        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
+        #ifdef DEBUG
+        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR));
+        #endif
         return false;
     }
     
@@ -110,7 +116,9 @@ DWORD WINAPI Server::AcceptThread( LPVOID lpParam )
         {
             wchar_t errorStr[256] = {0};
             swprintf( errorStr, 256, L"WSASetEvent() failed: %d", WSAGetLastError() );
-            MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
+            #ifdef DEBUG
+            MessageBox(NULL, errorStr, L"Error", MB_ICONERROR));
+            #endif
             return -1;
         }
     }
@@ -140,7 +148,9 @@ DWORD WINAPI Server::WorkerThread( LPVOID lpParam )
         {
             wchar_t errorStr[256] = {0};
             swprintf( errorStr, 256, L"WSAWaitForMultipleEvents() failed: %d", WSAGetLastError() );
-            MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
+            #ifdef DEBUG
+            MessageBox(NULL, errorStr, L"Error", MB_ICONERROR));
+            #endif
             return FALSE;
         }
 
@@ -151,7 +161,9 @@ DWORD WINAPI Server::WorkerThread( LPVOID lpParam )
             {
                 wchar_t errorStr[256] = {0};
                 swprintf( errorStr, 256, L"WSAResetEvent() failed: %d", WSAGetLastError() );
-                MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
+                #ifdef DEBUG
+                MessageBox(NULL, errorStr, L"Error", MB_ICONERROR));
+                #endif
             }
             // TCPConnections[ numTCPConnections ].sock;
             ++server->numTCPConnections;
@@ -183,7 +195,9 @@ bool Server::startUDP()
     {
         wchar_t errorStr[256] = {0};
         swprintf( errorStr, 256, L"WSASocket() failed: %d", WSAGetLastError() );
-        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
+        #ifdef DEBUG
+        MessageBox(NULL, errorStr, L"Error", MB_ICONERROR));
+        #endif
 		return false;
     }
 
