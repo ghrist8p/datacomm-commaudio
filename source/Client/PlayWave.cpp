@@ -69,6 +69,7 @@ PlayWave::PlayWave(int capacity, MessageQueue* msgq)
 	this->playThread = INVALID_HANDLE_VALUE;
 	this->cleanupThread = INVALID_HANDLE_VALUE;
 	this->playThreadStopEv = CreateEvent(NULL,TRUE,FALSE,NULL);
+	this->cleanupThreadEv = CreateEvent(NULL,TRUE,FALSE,NULL);
 	this->lastAudioPacket = 0;
 	this->lastAudioPacketAccess = CreateMutex(NULL, FALSE, NULL);
 	this->canEnqueue = CreateSemaphore(NULL,capacity,capacity,NULL);
@@ -138,7 +139,8 @@ int PlayWave::stopPlaying()
 	printf("PlayWave::stopPlaying called\n");
 	#endif
 	stopRoutine(&playThread,playThreadStopEv);
-	stopRoutine(&cleanupThread,0);
+    waveOutReset(speakers);
+	stopRoutine(&cleanupThread,cleanupThreadEv);
 
 	#ifdef DEBUG
 	printf("PlayWave::stopPlaying returns\n");
@@ -358,7 +360,7 @@ void PlayWave::startCleanupRoutine(PlayWave* dis, WAVEHDR* audioPacket)
 	params->audioPacket = audioPacket;
 
 	// start the thread
-	startRoutine(&dis->cleanupThread,0,cleanupRoutine,params);
+	startRoutine(&dis->cleanupThread,dis->cleanupThreadEv,cleanupRoutine,params);
 }
 
 DWORD WINAPI PlayWave::cleanupRoutine(void* params)
@@ -379,6 +381,10 @@ DWORD WINAPI PlayWave::cleanupRoutine(void* params)
 			#ifdef DEBUG
 			OutputDebugString(L"cleanup thread waiting\n");
 			#endif
+            //if(WaitForSingleObject(p->dis->cleanupThreadEv,CHECK_FOR_FREEING_INTERVAL) == WAIT_OBJECT_0)
+            //{
+            //    break;
+            //}
 			Sleep(CHECK_FOR_FREEING_INTERVAL);
 		}
 

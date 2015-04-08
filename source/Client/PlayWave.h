@@ -62,14 +62,18 @@ private:
 	HANDLE cleanupThread;
 
 	/**
+	 * handle to event, that when set, stops the cleanup thread.
+	 */
+	HANDLE cleanupThreadEv;
+
+	/**
 	 * handle to thread used to dequeue audio from the message queue, and add
 	 *   them to Window's play buffer to be played.
 	 */
 	HANDLE playThread;
 
 	/**
-	 * handle to thread used to dequeue audio from the message queue, and add
-	 *   them to Window's play buffer to be played.
+	 * handle to event, that when signalled, stops the play thread.
 	 */
 	HANDLE playThreadStopEv;
 
