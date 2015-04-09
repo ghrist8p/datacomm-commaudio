@@ -1,5 +1,7 @@
 #include "ServerControlThread.h"
 #include "../Client/FileTransferer.h"
+#include "../GuiLibrary/GuiWindow.h"
+#include "../GuiLibrary/GuiListBox.h"
 
 /*
  * message queue constructor parameters
@@ -133,7 +135,7 @@ DWORD WINAPI ServerControlThread::_threadRoutine( void * params )
             switch( type )
             {
             case CHANGE_STREAM:
-				thiz->_handleMsgChangeStream( &packet.requestPacket );
+				thiz->_handleMsgChangeStream( &packet.requestPacket, sock );
                 break;
             case REQUEST_DOWNLOAD:
                 thiz->_handleMsgRequestDownload( &packet.requestPacket, sock);
@@ -164,12 +166,31 @@ DWORD WINAPI ServerControlThread::_threadRoutine( void * params )
     return 0;
 }
 
-void ServerControlThread::_handleMsgChangeStream( RequestPacket * data )
+void ServerControlThread::_handleMsgChangeStream( RequestPacket * data, TCPSocket * sock )
 {
+	ServerControlThread * sct = ServerControlThread::getInstance();
     udpSocket->stopSong();
     WaitForSingleObject(_multicastThread,5000);
     DWORD useless;
-    _multicastThread = CreateThread( 0, 0, _multicastRoutine, playlist->getSong( data->index ), 0, &useless );
+	SongName * song = playlist->getSong( data->index );
+    _multicastThread = CreateThread( 0, 0, _multicastRoutine, song, 0, &useless );
+
+	sockaddr_in sockAddr;
+	int uusless = sizeof( sockaddr_in );
+	getpeername( sock->sd, (sockaddr *)&sockAddr, &uusless );
+	char * FAR ip = inet_ntoa( sockAddr.sin_addr );
+
+	wchar_t * out = new wchar_t[ strlen( ip ) + 2 + wcslen( song->filepath ) + 1 ];
+
+	size_t uuuseless;
+	mbstowcs_s( &uuuseless, out, strlen( ip ) + 1, ip, strlen( ip ) + 1 );
+
+	memcpy( out + strlen( ip ), L": ", 2 * sizeof( wchar_t ) );
+	memcpy( out + strlen( ip ) + 2, song->filepath, ( wcslen( song->filepath ) + 1 ) * sizeof( wchar_t ) );
+
+	sct->_window->connectedClients->addItem( out, -1 );
+
+	delete [] out;
 }
 
 void ServerControlThread::_handleMsgRequestDownload( RequestPacket * data, TCPSocket* socket )
@@ -270,4 +291,12 @@ int stopRoutine(HANDLE* thread, HANDLE stopEvent)
     // invalidate thread handle, so we know it's terminated
     *thread = INVALID_HANDLE_VALUE;
     return 0;
+}
+
+void ServerControlThread::setWindow( ServerWindow * window )
+{
+	if( window != NULL )
+	{
+		_window = window;
+	}
 }

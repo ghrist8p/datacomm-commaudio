@@ -37,6 +37,9 @@ ServerWindow::ServerWindow(HINSTANCE hInst)
 	pen = CreatePen(0, 2, RGB(0, 0, 255));
 	connected = false;
 
+	ServerControlThread * sct = ServerControlThread::getInstance();
+	sct->setWindow( this );
+
     // DWORD useless;
     // CreateThread(NULL, 0, MicThread, (void*)this, 0, &useless);
 }

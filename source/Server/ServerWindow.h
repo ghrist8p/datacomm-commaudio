@@ -17,6 +17,7 @@ struct TCPConnection;
 
 class ServerWindow : public GuiWindow
 {
+	friend class ServerControlThread;
 public:
 	ServerWindow(HINSTANCE hInst);
 	virtual ~ServerWindow();

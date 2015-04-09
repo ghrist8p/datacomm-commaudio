@@ -4,6 +4,7 @@
 #include "../Buffer/MessageQueue.h"
 #include "Playlist.h"
 #include "../protocol.h"
+#include "ServerWindow.h"
 
 class UDPSocket;
 class FileTransferer;
@@ -21,6 +22,7 @@ public:
     Playlist * getPlaylist();
     void sendPlaylistToAll( void );
     void setUDPSocket( UDPSocket * );
+	void setWindow( ServerWindow * );
 protected:
     ServerControlThread();
     ~ServerControlThread();
@@ -28,13 +30,14 @@ private:
     static DWORD WINAPI _threadRoutine( void * params );
     static DWORD WINAPI _multicastRoutine( void * params );
 	static DWORD WINAPI _sendFileToOne( void * params );
-    void _handleMsgChangeStream( RequestPacket * );
+    void _handleMsgChangeStream( RequestPacket *, TCPSocket * );
     void _handleMsgRequestDownload( RequestPacket *, TCPSocket* socket);
     void _handleMsgCancelDownload( RequestPacket * );
     void _handleMsgDisconnect( int clientIndex );
     static VOID CALLBACK _sendPlaylistToAllRoutine( ULONG_PTR );
     static VOID CALLBACK _sendPlaylistToOne( ULONG_PTR tcpSock );
     //static void _handleSockMsgqMsg(ServerControlThread* dis);
+	ServerWindow * _window;
     /**
      * pointer to the UDPSocket owned by the control thread.
      */
