@@ -48,6 +48,7 @@ public:
 
 class TCPSocket
 {
+friend class ServerControlThread;
 private:
 	SOCKET sd;
 	HANDLE mutex;
