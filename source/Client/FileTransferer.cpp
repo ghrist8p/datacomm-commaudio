@@ -138,7 +138,7 @@ void FileTransferer::recvFile(char *data)
 		if (ft_data->f_EOF)
 		{
 			fclose(file);
-			onDownloadComplete("", true);
+			//onDownloadComplete("", true);
 		}
 	}
 }
