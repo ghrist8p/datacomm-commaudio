@@ -74,6 +74,7 @@ PlayWave::PlayWave(int capacity, MessageQueue* msgq)
 	this->lastAudioPacketAccess = CreateMutex(NULL, FALSE, NULL);
 	this->canEnqueue = CreateSemaphore(NULL,capacity,capacity,NULL);
 	this->canDequeue = CreateSemaphore(NULL,0,capacity,NULL);
+	this->interfaceAccess = CreateMutex(NULL, FALSE, NULL);
 }
 
 /**
@@ -109,6 +110,8 @@ int PlayWave::startPlaying(
 	int bitsPerSample,
 	int numChannels)
 {
+	// acquire synchronization objects
+	WaitForSingleObject(interfaceAccess,INFINITE);
 	int ret = openDevice(samplesPerSecond,bitsPerSample,numChannels);
 	if(ret == MMSYSERR_NOERROR)
 	{
@@ -120,6 +123,10 @@ int PlayWave::startPlaying(
 		printf("failed to get the device: %d\n",GetLastError());
 		#endif
 	}
+
+	// release synchronization objects
+	ReleaseMutex(interfaceAccess);
+
 	return ret;
 }
 
@@ -140,6 +147,8 @@ int PlayWave::resumePlaying()
  */
 int PlayWave::stopPlaying()
 {
+	// acquire synchronization objects
+	WaitForSingleObject(interfaceAccess,INFINITE);
 	#ifdef DEBUG
 	printf("PlayWave::stopPlaying called\n");
 	#endif
@@ -150,6 +159,10 @@ int PlayWave::stopPlaying()
 	#ifdef DEBUG
 	printf("PlayWave::stopPlaying returns\n");
 	#endif
+
+	// release synchronization objects
+	ReleaseMutex(interfaceAccess);
+
 	return closeDevice();
 }
 

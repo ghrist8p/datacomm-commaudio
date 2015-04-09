@@ -27,6 +27,11 @@ private:
 	static DWORD WINAPI cleanupRoutine(void* params);
 
 	/**
+	 * handle to Mutex which protects the interface of the play wave.
+	 */
+	HANDLE interfaceAccess;
+
+	/**
 	 * pointer to the last enqueued audio packet if it exists; 0 otherwise.
 	 *
 	 * a pointer to the last packet is maintained, so when another packet is
