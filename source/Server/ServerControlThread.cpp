@@ -142,7 +142,7 @@ DWORD WINAPI ServerControlThread::_threadRoutine( void * params )
                 thiz->_handleMsgRequestDownload( &packet.requestPacket, sock);
                 break;
             case CANCEL_DOWNLOAD:
-                thiz->_handleMsgCancelDownload( &packet.requestPacket );
+                thiz->_handleMsgCancelDownload( &packet.requestPacket, sock );
                 break;
             case DISCONNECT:
                 thiz->_handleMsgDisconnect( handleNum - 1 );
@@ -180,9 +180,9 @@ void ServerControlThread::_handleMsgRequestDownload( RequestPacket * data, TCPSo
 	fileTransferer->sendFile(playlist->getSong( data->index ), socket);
 }
 
-void ServerControlThread::_handleMsgCancelDownload( RequestPacket * data )
+void ServerControlThread::_handleMsgCancelDownload( RequestPacket * data, TCPSocket* socket )
 {
-
+	fileTransferer->cancelTransfer(playlist->getSong( data->index )->id, socket);
 }
 
 void ServerControlThread::_handleMsgDisconnect( int client )
