@@ -1,3 +1,21 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: ConnectionWindow.cpp - This file provides a controller for the
+-- connection logic on the client side.
+--
+-- PUBLIC FUNCTIONS:
+-- ConnectionWindow(HINSTANCE hInst);
+-- virtual ~ConnectionWindow();
+-- virtual void onCreate();
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-----------------------------------------------------------------------------*/
+
 #include "ConnectionWindow.h"
 
 #include "ClientWindow.h"
@@ -6,6 +24,20 @@
 #include "../GuiLibrary/GuiTextBox.h"
 #include "../GuiLibrary/GuiLabel.h"
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: ConnectionWindow
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: ConnectionWindow(HINSTANCE hInstance)
+--		HINSTANCE hInstance : the instance of the application
+--
+-- NOTES: Creates a new ConnectionWindow
+-------------------------------------------------------------------------------------------------*/
 ConnectionWindow::ConnectionWindow(HINSTANCE hInst)
 	: GuiWindow(hInst) 
 {
@@ -18,6 +50,19 @@ ConnectionWindow::ConnectionWindow(HINSTANCE hInst)
 	addCommandListener(0, ConnectionWindow::connect, this);
 }
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: ~ConnectionWindow
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: ~ConnectionWindow()
+--
+-- NOTES: Free Resources
+-------------------------------------------------------------------------------------------------*/
 ConnectionWindow::~ConnectionWindow()
 {
 	delete hostLabel;
@@ -28,6 +73,19 @@ ConnectionWindow::~ConnectionWindow()
 	delete clientWindow;
 }
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: onCreate
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: void onCreate()
+--
+-- NOTES: This function is called from the GuiLibrary to initialize the GUI component.
+-------------------------------------------------------------------------------------------------*/
 void ConnectionWindow::onCreate()
 {
 	setTitle(L"Connection Settings");

@@ -1,3 +1,16 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: GuiLayoutComponent.cpp - This file provides an interface
+-- for components that are able to be resized and laid out in another.
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-----------------------------------------------------------------------------*/
+
 #include "GuiLayoutComponent.h"
 #include "GuiLayoutManager.h"
 

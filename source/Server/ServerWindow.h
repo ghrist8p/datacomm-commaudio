@@ -1,3 +1,23 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: ServerWindow.h - This file provides a controller for the
+-- server aspect of the ComAudio project.
+--
+-- PUBLIC FUNCTIONS:
+-- ServerWindow(HINSTANCE hInst);
+-- virtual ~ServerWindow();
+-- virtual void onCreate();
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-- This class implements a GuiWindow that is used as the controller for the
+-- server application.
+-----------------------------------------------------------------------------*/
+
 #ifndef _SERVER_WINDOW_H_
 #define _SERVER_WINDOW_H_
 
@@ -15,6 +35,12 @@ class TCPSocket;
 class UDPSocket;
 struct TCPConnection;
 
+/*-----------------------------------------------------------------------------
+-- CLASS: ServerWindow
+--
+-- DESCRIPTION: This class implements a GuiWindow that is used as the controller
+-- for the server application.
+-----------------------------------------------------------------------------*/
 class ServerWindow : public GuiWindow
 {
 	friend class ServerControlThread;
@@ -63,8 +89,6 @@ private:
                                 , DWORD cbTransferred
                                 , LPWSAOVERLAPPED lpOverlapped
                                 , DWORD dwFlags );
-    // static DWORD WINAPI MicThread(LPVOID lpParameter);
-    // DWORD ThreadStart(void);
 	static bool toggleConnection(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval);
     static void newConnHandler( TCPConnection * server, void * data );
 };

@@ -1,3 +1,16 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: GuiTextBox.h - This file provides a specialized GUI element
+-- that draws a Text Input Field.
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-----------------------------------------------------------------------------*/
+
 #ifndef _GUI_TEXT_BOX_H_
 #define _GUI_TEXT_BOX_H_
 

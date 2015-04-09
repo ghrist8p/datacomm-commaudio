@@ -1,3 +1,16 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: GuiWindow.h - This file provides a specialized GUI element
+-- that displays a Window.
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-----------------------------------------------------------------------------*/
+
 #ifndef _GUI_WINDOW_H_
 #define _GUI_WINDOW_H_
 

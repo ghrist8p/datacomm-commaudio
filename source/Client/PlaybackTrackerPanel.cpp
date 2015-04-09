@@ -1,9 +1,46 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: PlaybackTrackerPanel.cpp - This file provides a "tracker"
+-- panel that can display current seeked position as well as buffered positions.
+--
+-- PUBLIC FUNCTIONS:
+-- PlaybackTrackerPanel(HINSTANCE hInstance, GuiComponent *parent);
+-- virtual ~PlaybackTrackerPanel();
+-- void setPercentageBuffered(double percent);
+-- void setTrackerPercentage(double percent, bool hasPriority = false);
+--
+-- DATE: April 4, 2015
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-- This class draws a custom GuiPanel to present a media track bar.
+-----------------------------------------------------------------------------*/
+
 #include "PlaybackTrackerPanel.h"
 
 const int PlaybackTrackerPanel::LINE_WIDTH = 3;
 const int PlaybackTrackerPanel::TRACKER_RADIUS = 6;
 const int PlaybackTrackerPanel::TRACKER_OUTLINE = 3;
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: PlaybackTrackerPanel
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: PlaybackTrackerPanel(HINSTANCE hInstance, GuiComponent *parent)
+--		HINSTANCE hInstance : the instance of the application
+--      GuiComponent parent : the parent component of the panel  
+--
+-- NOTES: Creates a new PlaybackTrackerPanel
+-------------------------------------------------------------------------------------------------*/
 PlaybackTrackerPanel::PlaybackTrackerPanel(HINSTANCE hInstance, GuiComponent *parent)
 	: GuiPanel(hInstance, parent)
 {
@@ -36,7 +73,19 @@ PlaybackTrackerPanel::PlaybackTrackerPanel(HINSTANCE hInstance, GuiComponent *pa
 	CreateThread(NULL, NULL, PlaybackTrackerPanel::drawAgain, &this->hwnd, NULL, &id);
 }
 
-
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: ~PlaybackTrackerPanel
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: ~PlaybackTrackerPanel()
+--
+-- NOTES: Free resources
+-------------------------------------------------------------------------------------------------*/
 PlaybackTrackerPanel::~PlaybackTrackerPanel()
 {
 	DeleteObject(inactivePen);
@@ -49,6 +98,21 @@ PlaybackTrackerPanel::~PlaybackTrackerPanel()
 	DeleteObject(trackerInactivePen);
 }
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: setPercentageBuffered
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: setPercentageBuffered(double percent)
+--      double percent : The percentage of the media buffered (0-1).
+--
+-- NOTES: This function updates the buffer bar size, and also ensures the tracker bar does not
+-- exceed it after resizing.
+-------------------------------------------------------------------------------------------------*/
 void PlaybackTrackerPanel::setPercentageBuffered(double percent)
 {
 	// Constrain buffer bar to full width
@@ -63,6 +127,22 @@ void PlaybackTrackerPanel::setPercentageBuffered(double percent)
 	setTrackerPercentage(played, true);
 }
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: setTrackerPercentage
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: setTrackerPercentage(double percent, bool hasPriority)
+--      double percent   : The percentage of the media tracked (0-1).
+--      bool hasPriority : If false, events will not be able to disrupt mouse movement
+--
+-- NOTES: This function updates the tracker size, conforming to the buffer size. If hasPriority is
+-- true, it can take control from direct mouse input.
+-------------------------------------------------------------------------------------------------*/
 void PlaybackTrackerPanel::setTrackerPercentage(double percent, bool hasPriority)
 {
 	// Disallow wresting control from the moust action

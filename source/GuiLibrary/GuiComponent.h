@@ -1,3 +1,16 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: GuiComponent.h - This file provides a base Gui Element that
+-- all others can build on.
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-----------------------------------------------------------------------------*/
+
 #ifndef _GUI_COMPONENT_H_
 #define _GUI_COMPONENT_H_
 

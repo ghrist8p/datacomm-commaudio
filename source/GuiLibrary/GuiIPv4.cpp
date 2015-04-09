@@ -1,3 +1,16 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: GuiIPv4.cpp - This file provides a text input that accepts
+-- IPv4 addresses.
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-----------------------------------------------------------------------------*/
+
 #include "GuiIPv4.h"
 #include <CommCtrl.h>
 

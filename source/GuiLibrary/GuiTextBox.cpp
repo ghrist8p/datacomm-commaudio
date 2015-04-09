@@ -1,3 +1,16 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: GuiTextBox.cpp - This file provides a specialized GUI element
+-- that draws a Text Input Field.
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-----------------------------------------------------------------------------*/
+
 #include "GuiTextBox.h"
 
 GuiTextBox::~GuiTextBox()

@@ -1,3 +1,16 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: GuiLayoutManager.h - This file provides an interface
+-- for a generic object that arranges Windows in Windows.
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-----------------------------------------------------------------------------*/
+
 #ifndef _GUI_LAYOUT_MANAGER_H_
 #define _GUI_LAYOUT_MANAGER_H_
 

@@ -1,3 +1,16 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: GuiWindow.cpp - This file provides a specialized GUI element
+-- that displays a Window.
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-----------------------------------------------------------------------------*/
+
 #include "GuiWindow.h"
 
 const LPCWSTR GuiWindow::DEFAULT_WIN_CLASS = L"GUI_WINDOW_CPP";

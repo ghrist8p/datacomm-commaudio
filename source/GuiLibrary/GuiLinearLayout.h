@@ -1,3 +1,16 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: GuiLayoutManager.h - This file provides a layout manager
+-- that arranges all children in a line, horizontally or vertically.
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-----------------------------------------------------------------------------*/
+
 #ifndef _GUI_LINEAR_LAYOUT_H_
 #define _GUI_LINEAR_LAYOUT_H_
 

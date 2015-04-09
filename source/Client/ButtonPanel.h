@@ -1,3 +1,23 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: ButtonPanel.h - This file provides a specialized GUI element
+-- that draws images as button states and triggers callbacks when clicked.
+--
+-- PUBLIC FUNCTIONS:
+-- ButtonPanel(HINSTANCE hInstance, GuiComponent *parent, HBITMAP up, HBITMAP down);
+-- virtual ~ButtonPanel();
+-- void setClickListener(ButtonPanelListener listener);
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-- This class implements a GuiPanel from the GuiLibrary to render itself
+-- to screen.
+-----------------------------------------------------------------------------*/
+
 #ifndef _BUTTON_PANEL_H_
 #define _BUTTON_PANEL_H_
 

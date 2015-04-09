@@ -1,5 +1,17 @@
-#include "GuiLabel.h"
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: GuiLabel.cpp - This file provides a static window that displays
+-- text.
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-----------------------------------------------------------------------------*/
 
+#include "GuiLabel.h"
 
 const LPCWSTR GuiLabel::DEFAULT_WINDOW_CLASS = L"STATIC";
 
