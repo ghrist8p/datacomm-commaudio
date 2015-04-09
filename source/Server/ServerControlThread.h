@@ -65,6 +65,7 @@ private:
     HANDLE access;
 
     Playlist * playlist;
+	SongName* currentsong;
 };
 
 #endif

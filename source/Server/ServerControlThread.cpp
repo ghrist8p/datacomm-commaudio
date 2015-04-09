@@ -93,6 +93,9 @@ void ServerControlThread::addConnection( TCPSocket * connection )
     QueueUserAPC( _sendPlaylistToOne        // _In_  PAPCFUNC pfnAPC,
                 , _thread                   // _In_  HANDLE hThread,
                 , (ULONG_PTR) connection ); // _In_  ULONG_PTR dwData
+	RequestPacket packet;
+	packet.index = currentsong->id;
+	connection->Send(CHANGE_STREAM, &packet, sizeof(packet));
     ReleaseMutex(access);
 }
 
@@ -232,6 +235,7 @@ DWORD WINAPI ServerControlThread::_multicastRoutine( void * params )
 {
 
     ServerControlThread * thiz = ServerControlThread::getInstance();
+	thiz->currentsong = (SongName *) params;
     thiz->udpSocket->sendWave( *((SongName *) params), 60, thiz->_socks );
     return 0;
 }
