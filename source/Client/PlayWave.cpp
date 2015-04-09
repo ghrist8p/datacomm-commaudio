@@ -74,6 +74,7 @@ PlayWave::PlayWave(int capacity, MessageQueue* msgq)
 	this->lastAudioPacketAccess = CreateMutex(NULL, FALSE, NULL);
 	this->canEnqueue = CreateSemaphore(NULL,capacity,capacity,NULL);
 	this->canDequeue = CreateSemaphore(NULL,0,capacity,NULL);
+	this->interfaceAccess = CreateMutex(NULL, FALSE, NULL);
 	memset(&volume,0xFFFFFFFF,sizeof(volume));
 }
 
@@ -110,10 +111,14 @@ int PlayWave::startPlaying(
 	int bitsPerSample,
 	int numChannels)
 {
+	// acquire synchronization objects
+	WaitForSingleObject(interfaceAccess,INFINITE);
+
 	int ret = openDevice(samplesPerSecond,bitsPerSample,numChannels);
 	if(ret == MMSYSERR_NOERROR)
 	{
 		startRoutine(&playThread,playThreadStopEv,playRoutine,this);
+		msgq->clear();
 		setVolume(*(short*)&volume);
 	}
 	else
@@ -122,6 +127,10 @@ int PlayWave::startPlaying(
 		printf("failed to get the device: %d\n",GetLastError());
 		#endif
 	}
+
+	// release synchronization objects
+	ReleaseMutex(interfaceAccess);
+
 	return ret;
 }
 
@@ -137,7 +146,7 @@ void PlayWave::setVolume(char volume)
 	chrPtr[1] = volume;
 	if(speakers != 0)
 	{
-        waveOutSetVolume(speakers,this->volume);
+		waveOutSetVolume(speakers,this->volume);
 	}
 }
 
@@ -153,16 +162,23 @@ void PlayWave::setVolume(char volume)
  */
 int PlayWave::stopPlaying()
 {
+	// acquire synchronization objects
+	WaitForSingleObject(interfaceAccess,INFINITE);
+
 	#ifdef DEBUG
 	printf("PlayWave::stopPlaying called\n");
 	#endif
 	stopRoutine(&playThread,playThreadStopEv);
-    waveOutReset(speakers);
+	waveOutReset(speakers);
 	stopRoutine(&cleanupThread,cleanupThreadEv);
 
 	#ifdef DEBUG
 	printf("PlayWave::stopPlaying returns\n");
 	#endif
+
+	// release synchronization objects
+	ReleaseMutex(interfaceAccess);
+
 	return closeDevice();
 }
 

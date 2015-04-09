@@ -24,6 +24,9 @@
 
 #include <fstream>
 #include <string>
+#include <errno.h>
+
+#include "../protocol.h"
 
 /*-------------------------------------------------------------------------------------------------
 -- FUNCTION: FileTransferer
@@ -64,25 +67,33 @@ FileTransferer::FileTransferer(OnDownloadComplete downloadComplete)
 -- NOTES: Start sending a file to a client. Multiple file transfers can occur at once, both up
 -- and down, from the same instance.
 -------------------------------------------------------------------------------------------------*/
-void FileTransferer::sendFile(char *filename, TCPSocket *socket)
+void FileTransferer::sendFile(SongName *song, TCPSocket *socket)
 {
-	FileTransferInfo info = { 0 };
-	FileTransferData *data = new FileTransferData;
-	info.pThis = this;
-	info.socket = socket;
-	info.data = data;
+	int songId = song->id;
+	char *path = song->cFilepath;
+	char *filename = song->cFilename;
 
-	memcpy(data->filename, filename, strlen(filename));
-	memcpy(data->data, 0, FILE_PACKET_SIZE);
+	FileTransferInfo *info = new FileTransferInfo;
+	FileTransferData *data = new FileTransferData;
+	info->pThis = this;
+	info->socket = socket;
+	info->data = data;
+
+	memcpy(data->filename, filename, strlen(filename) + 1);
+	memset(data->data, 0, FILE_PACKET_SIZE);
 	data->f_SOF = true;
 	data->f_EOF = false;
 	data->dataLen = 0;
+	data->songId = songId;
 
-	if (filesOut.find(filename) != filesOut.end())
+	if (filesOut.find(songId) == filesOut.end())
 	{
-		filesOut[filename][socket] = fopen(filename, "rb");
-		transferring[filename][socket] = true;
-		CreateThread(NULL, 0, FileTransferer::TransferThread, &info, 0, NULL);
+		int i = errno;
+		filesOut[songId][socket] = fopen(path, "rb");
+		i = errno;
+		i = GetLastError();
+		transferring[songId][socket] = true;
+		CreateThread(NULL, 0, FileTransferer::TransferThread, info, 0, NULL);
 	}
 }
 
@@ -112,10 +123,10 @@ void FileTransferer::recvFile(char *data)
 	if (ft_data->f_SOF)
 	{
 		//CreateDirectory(DOWNLOAD_FOLDER, NULL);
-		filesIn[ft_data->filename] = fopen(ft_data->filename, "wb");
+		filesIn[ft_data->songId] = fopen(ft_data->filename, "w");
 	}
 
-	file = filesIn[ft_data->filename];
+	file = filesIn[ft_data->songId];
 
 	// If the file is open, add contents
 	if (file)
@@ -127,7 +138,7 @@ void FileTransferer::recvFile(char *data)
 		if (ft_data->f_EOF)
 		{
 			fclose(file);
-			onDownloadComplete(ft_data->filename, true);
+			onDownloadComplete("", true);
 		}
 	}
 }
@@ -149,10 +160,10 @@ void FileTransferer::recvFile(char *data)
 --
 -- NOTES: Stop a file Transfer to a given client.
 -------------------------------------------------------------------------------------------------*/
-void FileTransferer::cancelTransfer(char *filename, TCPSocket *socket)
+void FileTransferer::cancelTransfer(int songId, TCPSocket *socket)
 {
-	transferring[filename][socket] = false;
-	onDownloadComplete(filename, false);
+	transferring[songId][socket] = false;
+	onDownloadComplete("", false);
 }
 
 /*-------------------------------------------------------------------------------------------------
@@ -177,17 +188,21 @@ DWORD WINAPI FileTransferer::TransferThread(LPVOID transferInfo)
 	FileTransferInfo *info = (FileTransferInfo*) transferInfo;
 	FileTransferData *data = (FileTransferData*) info->data;
 
-	std::ifstream file(data->filename, std::ios::binary);
+	FILE *file = info->pThis->filesOut[data->songId][info->socket];
 
 	char buffer[FILE_PACKET_SIZE];
 	bool success = false;
+	int buffLen = 0;
 
-	// Transfer until cancelled or EOF is found.
-	while (info->pThis->transferring[data->filename][info->socket] && file.is_open() && file.read(buffer, FILE_PACKET_SIZE))
+	// Close if File is not opened
+	if (!file)
+		return 1;
+
+	// Transfer data until end of file.
+	while (info->pThis->transferring[data->songId][info->socket] && (buffLen = fread(buffer, 1, FILE_PACKET_SIZE, file)))
 	{
 		// Update the FileTransferInfo struct with new data
-		data->f_EOF = (file.eofbit) ? true : false;
-		data->dataLen = file.gcount();
+		data->dataLen = buffLen;
 		memcpy(data->data, buffer, data->dataLen);
 
 		// Send Data
@@ -201,9 +216,13 @@ DWORD WINAPI FileTransferer::TransferThread(LPVOID transferInfo)
 		}
 	}
 
+	// Send EOF packet
+	data->f_EOF = true;
+	info->socket->Send(DOWNLOAD, (void*)data, sizeof(FileTransferData));
+
 	// Close the File
-	file.close();
-	info->pThis->onDownloadComplete(data->filename, success);
+	fclose(file);
+	//info->pThis->onDownloadComplete(data->filename, success);
 
 	return 0;
 }

@@ -115,7 +115,7 @@ int getSongfileInfo(SongName* song, wchar_t* filepath, wchar_t* filename, int so
 	// set song id and filename
 	song->id = songId;
 	wsprintf(song->filepath,L"%s",filename);
-	sprintf_s(song->cFilepath,"%S",filename);
+	sprintf_s(song->cFilename,"%S",filename);
 
 	// allocate memory to hold the song file meta data.
 	char id[5];

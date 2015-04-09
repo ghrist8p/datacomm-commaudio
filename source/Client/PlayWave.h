@@ -17,7 +17,7 @@ public:
 	int startPlaying(int samplesPerSecond, int bitsPerSample, int numChannels);
 	int resumePlaying();
 	int stopPlaying();
-    void setVolume(char volume);
+	void setVolume(char volume);
 
 private:
 	int openDevice(int samplesPerSecond, int bitsPerSample, int numChannels);
@@ -31,6 +31,11 @@ private:
 	 * volume of the speakers
 	  */
 	DWORD volume;
+
+	/**
+	 * handle to Mutex which protects the interface of the play wave.
+	 */
+	HANDLE interfaceAccess;
 
 	/**
 	 * pointer to the last enqueued audio packet if it exists; 0 otherwise.
