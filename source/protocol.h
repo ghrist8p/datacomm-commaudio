@@ -26,6 +26,10 @@
 
 #define NUM_AUDIO_CHANNELS 1
 
+#define FILENAME_PACKET_LENGTH 128
+
+#define FILE_PACKET_SIZE 256
+
 /**
  * audio data packet, that has an {index}, describing in what order the packet is
  *   supposed to be played.
@@ -85,6 +89,7 @@ struct SongName
 	unsigned long size;
 	wchar_t filepath[STR_LEN];
 	char cFilepath[STR_LEN];
+	char cFilename[STR_LEN];
 };
 
 typedef struct SongName SongName;
@@ -100,13 +105,30 @@ struct SongStream
 
 typedef struct SongStream SongStream;
 
+struct FileTransferData
+{
+	char filename[FILENAME_PACKET_LENGTH];
+	char data[FILE_PACKET_SIZE];
+	int dataLen;
+	bool f_SOF;
+	bool f_EOF;
+	int songId;
+};
+
+typedef struct FileTransferData FileTransferData;
+
 union TCPPacket
 {
 	SongName songName;
 	RequestPacket requestPacket;
 	DataPacket dataPacket;
+	FileTransferData fileTransferData;
 };
 
 typedef union TCPPacket TCPPacket;
+
+/*
+	Data Sent/Received to communicate file data.
+ */
 
 #endif

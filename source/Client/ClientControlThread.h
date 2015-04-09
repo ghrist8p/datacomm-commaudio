@@ -6,6 +6,7 @@
 #include <map>
 
 class TCPSocket;
+class FileTransferer;
 
 #define IP_ADDR_LEN 16
 
@@ -22,7 +23,7 @@ public:
 protected:
     ClientControlThread();
     ~ClientControlThread();
-    void onDownloadPacket(RequestPacket packet);
+    void onDownloadPacket( FileTransferData packet );
     void onChangeStream(RequestPacket packet);
     void onNewSong(SongName song);
 private:
@@ -39,6 +40,8 @@ private:
      * reference to the one and only {ClientControlThread} instance.
      */
     static ClientControlThread* _instance;
+
+	FileTransferer* fileTransferer;
     /**
      * reference to the one and only {ClientControlThread} instance.
      */

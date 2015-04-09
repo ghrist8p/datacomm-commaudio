@@ -6,6 +6,7 @@
 #include "../protocol.h"
 
 class UDPSocket;
+class FileTransferer;
 
 #define IP_ADDR_LEN 16
 
@@ -26,8 +27,9 @@ protected:
 private:
     static DWORD WINAPI _threadRoutine( void * params );
     static DWORD WINAPI _multicastRoutine( void * params );
+	static DWORD WINAPI _sendFileToOne( void * params );
     void _handleMsgChangeStream( RequestPacket * );
-    void _handleMsgRequestDownload( RequestPacket * );
+    void _handleMsgRequestDownload( RequestPacket *, TCPSocket* socket);
     void _handleMsgCancelDownload( RequestPacket * );
     void _handleMsgDisconnect( int clientIndex );
     static VOID CALLBACK _sendPlaylistToAllRoutine( ULONG_PTR );
@@ -46,6 +48,7 @@ private:
      */
     std::vector< TCPSocket * > _socks;
     std::vector< HANDLE > _sockHandles;
+	FileTransferer* fileTransferer;
     /**
      * handle to the thread used to run {ServerControlThread::_threadRoutine}.
      */
