@@ -259,7 +259,9 @@ void MicReader::readIn()
 
 	if (result)
 	{
+		#ifdef DEBUG
 		MessageBox(NULL, L"Error opening microphone.", L"Error", MB_ICONERROR);
+		#endif
 		return;
 	}
 	else
@@ -272,7 +274,9 @@ void MicReader::readIn()
 
 		if (result)
 		{
+			#ifdef DEBUG
 			MessageBox(NULL, L"Error preparing WAV Buffer.", L"Error", MB_ICONERROR);
+			#endif
 			return;
 		}
 
@@ -281,7 +285,9 @@ void MicReader::readIn()
 
 		if (result)
 		{
+			#ifdef DEBUG
 			MessageBox(NULL, L"Error reading data from microphone.", L"Error", MB_ICONERROR);
+			#endif
 			return;
 		}
 	}

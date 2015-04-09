@@ -75,7 +75,9 @@ UDPSocket::UDPSocket(int port, MessageQueue* mqueue)
 
 	if (error != 0) //No usable DLL
 	{
+		#ifdef DEBUG
 		MessageBox(NULL, L"WSA error", L"ERROR", MB_ICONERROR);
+		#endif
 		return;
 	}
 
@@ -191,7 +193,9 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 		destination.sin_addr.s_addr = inet_addr(dest_ip);
 		if (destination.sin_addr.s_addr == INADDR_NONE)
 		{
+			#ifdef DEBUG
 			MessageBox(NULL, L"The target ip address entered must be a legal IPv4 address", L"ERROR", MB_ICONERROR);
+			#endif
 			return 0;
 		}
 
@@ -199,7 +203,9 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 
 		if (destination.sin_port == 0)
 		{
+			#ifdef DEBUG
 			MessageBox(NULL, L"The targetport must be a legal UDP port number", L"ERROR", MB_ICONERROR);
+			#endif
 			return 0;
 		}
 
@@ -209,7 +215,9 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 			if (WSAGetLastError() != WSA_IO_PENDING)
 			{
 				int err = GetLastError();
+				#ifdef DEBUG
 				MessageBox(NULL, L"WSASend() failed with error", L"ERROR", MB_ICONERROR);
+				#endif
 				return 0;
 			}
 		}
@@ -222,7 +230,9 @@ int UDPSocket::Send(char type, void* data, int length, char* dest_ip, int dest_p
 	}
 	else
 	{
+		#ifdef DEBUG
 		MessageBox(NULL, L"Error in the mutex", L"ERROR", MB_ICONERROR);
+		#endif
 		return 0;
 	}
 
@@ -299,7 +309,9 @@ DWORD UDPSocket::ThreadStart(void)
 			int err;
 			if ((err = WSAGetLastError()) != WSA_IO_PENDING)
 			{
+				#ifdef DEBUG
 				MessageBox(NULL, L"WSARecv() failed with error", L"ERROR", MB_ICONERROR);
+				#endif
 				return FALSE;
 			}
 		}
@@ -427,7 +439,9 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 			{
 				wchar_t errorStr[256] = {0};
 				swprintf_s( errorStr, 256, L"WSASend() failed with error: %d", err );
+				#ifdef DEBUG
 				MessageBox(NULL, errorStr, L"Error", MB_ICONERROR);
+				#endif
 				return 0;
 			}
 		}
@@ -440,7 +454,9 @@ int UDPSocket::sendtoGroup(char type, void* data, int length)
 	}
 	else
 	{
+		#ifdef DEBUG
 		MessageBox(NULL, L"Error in the mutex", L"ERROR", MB_ICONERROR);
+		#endif
 	}
 
 
