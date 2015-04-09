@@ -210,15 +210,17 @@ void MusicBuffer::seekBuf(double percentage)
 {
 	WaitForSingleObject(mutexx, INFINITE);
 
-	int index = percentage * currentsong_size;
+	unsigned long index = percentage * currentsong_size;
 	index = song_startindex + index;
 
+	index /= bpss;
+	index *= bpss;
+
 	musicplayer->stopPlaying();
-	int useful = song_startindex % bpss;
 	
 	if (index < writeindex)
 	{
-		readindex = index + useful;
+			readindex = index;		
 	}
 
 	musicplayer->resumePlaying();
