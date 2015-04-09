@@ -30,7 +30,7 @@ private:
 	static DWORD WINAPI _sendFileToOne( void * params );
     void _handleMsgChangeStream( RequestPacket * );
     void _handleMsgRequestDownload( RequestPacket *, TCPSocket* socket);
-    void _handleMsgCancelDownload( RequestPacket * );
+    void _handleMsgCancelDownload( RequestPacket *, TCPSocket* socket );
     void _handleMsgDisconnect( int clientIndex );
     static VOID CALLBACK _sendPlaylistToAllRoutine( ULONG_PTR );
     static VOID CALLBACK _sendPlaylistToOne( ULONG_PTR tcpSock );
