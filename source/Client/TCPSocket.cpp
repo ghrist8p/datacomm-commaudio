@@ -375,8 +375,10 @@ int TCPSocket::Send(char type, void* data, int length)
 			if (WSAGetLastError() != WSA_IO_PENDING)
 			{
 				MessageBox(NULL, L"WSASend() failed with error", L"ERROR", MB_ICONERROR);
+				ReleaseMutex(mutex);
 				return 0;
 			}
+			ReleaseMutex(mutex);
 		}
 		else
 		{
