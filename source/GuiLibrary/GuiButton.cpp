@@ -1,3 +1,16 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: GuiButton.cpp - This file provides a specialized GUI element
+-- that displays a Button.
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-----------------------------------------------------------------------------*/
+
 #include "GuiButton.h"
 
 GuiButton::GuiButton(HINSTANCE hInstance, GuiComponent *parent, UINT id)

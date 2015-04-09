@@ -1,3 +1,23 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: ServerWindow.cpp - This file provides a controller for the
+-- server aspect of the ComAudio project.
+--
+-- PUBLIC FUNCTIONS:
+-- ServerWindow(HINSTANCE hInst);
+-- virtual ~ServerWindow();
+-- virtual void onCreate();
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-- This class implements a GuiWindow that is used as the controller for the
+-- server application.
+-----------------------------------------------------------------------------*/
+
 #include "ServerWindow.h"
 
 #include "../GuiLibrary/GuiTextBox.h"
@@ -26,6 +46,23 @@ union MsgqElement
 #define MSGQ_CAPACITY 30
 #define MSGQ_ELEM_SIZE sizeof(MsgqElement)
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: ServerWindow
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: ServerWindow(HINSTANCE hInst)
+--      HINSTANCE hInst : the instance of the Windows application
+--
+-- RETURNS: N/A
+--
+-- NOTES:
+-- This constructs a new ServerWindow. GUI initialization is performed in onCreate.
+-------------------------------------------------------------------------------------------------*/
 ServerWindow::ServerWindow(HINSTANCE hInst)
 	: GuiWindow(hInst)
 {
@@ -39,49 +76,24 @@ ServerWindow::ServerWindow(HINSTANCE hInst)
 
 	ServerControlThread * sct = ServerControlThread::getInstance();
 	sct->setWindow( this );
-
-    // DWORD useless;
-    // CreateThread(NULL, 0, MicThread, (void*)this, 0, &useless);
 }
 
-// DWORD WINAPI ServerWindow::MicThread(LPVOID lpParameter)
-// {
-//     ServerWindow* This = (ServerWindow*)lpParameter;
-//     return This->ThreadStart();
-// }
-
-// DWORD ServerWindow::ThreadStart(void)
-// {
-//     int useless;
-//     int length;
-
-//     DataPacket voicePacket;
-
-//     udpSock = new UDPSocket(7392,new MessageQueue(10,10));
-//     udpSock->setGroup(MULTICAST_ADDR,0);
-
-//     voicePacket.index = 0;
-
-//     int count = 0;
-
-//     // continuously send voice data over the network when it becomes available
-//     char sound[DATA_LEN];
-//     FILE* fp = fopen("C:\\Users\\Eric\\Downloads\\Egoist_-_Extra_Terrestrial_Biological_Entities.wav","rb");
-//     while(fread(sound,1,DATA_LEN,fp))
-//     {
-//         ++(voicePacket.index);
-//         memcpy(voicePacket.data, sound, DATA_LEN);
-//         udpSock->sendtoGroup(MUSICSTREAM,&voicePacket,sizeof(voicePacket));
-//         if(count > 3)
-//         {
-//             count = 0;
-//             Sleep(1);
-//         }
-//     }
-
-//     return 0;
-// }
-
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: ~ServerWindow
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: ~ServerWindow()
+--
+-- RETURNS: N/A
+--
+-- NOTES:
+-- Clean up resources used by ServerWindow.
+-------------------------------------------------------------------------------------------------*/
 ServerWindow::~ServerWindow()
 {
 	DeleteObject(labelFont);
@@ -108,6 +120,23 @@ ServerWindow::~ServerWindow()
 	delete connectionButton;
 }
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: onCreate
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: void onCreate
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- onCreate is called by the GUI Library on WM_CREATE. The UI elements of the window are all
+-- initialized here.
+-------------------------------------------------------------------------------------------------*/
 void ServerWindow::onCreate()
 {
 	// Set Window Properties
@@ -263,6 +292,22 @@ void ServerWindow::onCreate()
 	layout->addComponent(connectionButton, &layoutProps);
 }
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: createLabelFont
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: void createLabelFont()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Creates and applies a new Font to the Labels.
+-------------------------------------------------------------------------------------------------*/
 void ServerWindow::createLabelFont()
 {
 	LOGFONT logFont;

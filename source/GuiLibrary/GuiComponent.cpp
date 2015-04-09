@@ -1,3 +1,16 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: GuiComponent.cpp - This file provides a base Gui Element that
+-- all others can build on.
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-----------------------------------------------------------------------------*/
+
 #include "GuiComponent.h"
 #include "GuiListener.h"
 #include "GuiLayoutManager.h"

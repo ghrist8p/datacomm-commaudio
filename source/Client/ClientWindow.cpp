@@ -1,3 +1,23 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: ClientWindow.cpp - This file provides a controller for the
+-- client logic.
+--
+-- PUBLIC FUNCTIONS:
+-- ClientWindow(HINSTANCE hInst);
+-- virtual ~ClientWindow();
+-- virtual void onCreate();
+-- void startConnection();
+-- void addRemoteFile(SongName);
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-----------------------------------------------------------------------------*/
+
 #include "ClientWindow.h"
 
 #include "resource.h"
@@ -27,6 +47,20 @@
 
 ClientWindow* ClientWindow::curClientWindow = 0;
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: ClientWindow
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: ClientWindow(HINSTANCE hInstance)
+--		HINSTANCE hInstance : the instance of the application
+--
+-- NOTES: Creates a new ClientWindow
+-------------------------------------------------------------------------------------------------*/
 ClientWindow::ClientWindow(HINSTANCE hInst)
 	: GuiWindow(hInst)
 {
@@ -77,6 +111,19 @@ DWORD ClientWindow::ThreadStart(void)
 	}
 }
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: ~ClientWindow
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: ~ClientWindow()
+--
+-- NOTES: Free Resources
+-------------------------------------------------------------------------------------------------*/
 ClientWindow::~ClientWindow()
 {
 	delete topPanel;
@@ -105,11 +152,38 @@ ClientWindow::~ClientWindow()
 	DeleteObject(borderPen);
 }
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: addRemoteFile
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: void addRemoteFile(SongName song)
+--      SongName song : the details of the song to add to the GUI
+--
+-- NOTES: This function adds a Song to the Client songlist.
+-------------------------------------------------------------------------------------------------*/
 void ClientWindow::addRemoteFile(SongName song)
 {
 	fileContainerPanel->addItem(new FileListItem(fileContainerPanel, this, hInst, song));
 }
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: onCreate
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: void onCreate()
+--
+-- NOTES: This function is called from the GuiLibrary to initialize the GUI component.
+-------------------------------------------------------------------------------------------------*/
 void ClientWindow::onCreate()
 {
 	setTitle(L"CommAudio Client");

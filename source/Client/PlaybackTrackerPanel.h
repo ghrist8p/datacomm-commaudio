@@ -1,3 +1,25 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: PlaybackTrackerPanel.h - This file provides a "tracker"
+-- panel that can display current seeked position as well as buffered positions.
+--
+-- PUBLIC FUNCTIONS:
+-- PlaybackTrackerPanel(HINSTANCE hInstance, GuiComponent *parent);
+-- virtual ~PlaybackTrackerPanel();
+-- void setPercentageBuffered(double percent);
+-- void setTrackerPercentage(double percent, bool hasPriority = false);
+--
+-- DATE: April 4, 2015
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-- This class draws a custom GuiPanel to present a media track bar.
+-----------------------------------------------------------------------------*/
+
 #ifndef _PLAYBACK_TRACKER_H_
 #define _PLAYBACK_TRACKER_H_
 

@@ -1,3 +1,21 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: ConnectionWindow.h - This file provides a controller for the
+-- connection logic on the client side.
+--
+-- PUBLIC FUNCTIONS:
+-- ConnectionWindow(HINSTANCE hInst);
+-- virtual ~ConnectionWindow();
+-- virtual void onCreate();
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-----------------------------------------------------------------------------*/
+
 #ifndef _CONNECTION_WINDOW_H_
 #define _CONNECTION_WINDOW_H_
 

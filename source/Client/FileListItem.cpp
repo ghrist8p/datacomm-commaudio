@@ -1,7 +1,49 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: FileListItem.cpp - This file provides a renderable elements to
+-- be drawn in a GuiScrollList view for a file list.
+--
+-- PUBLIC FUNCTIONS:
+-- FileListItem(GuiScrollList *list, ClientWindow *clientWindow, HINSTANCE hInst, SongName filename);
+-- virtual ~FileListItem();
+-- void setColours(HBRUSH bg, HPEN brdr, COLORREF fnt);
+-- virtual void paint(HDC hdc, LPRECT drawingArea);
+-- virtual void onClick(int x, int y);
+-- virtual void onMouseMove(int x, int y);
+-- void markAsDownloading();
+-- void markAsDownloadingStopped();
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-- This file provides a renderable elements to
+-- be drawn in a GuiScrollList view for a file list.
+-----------------------------------------------------------------------------*/
+
 #include "FileListItem.h"
 #include "ClientControlThread.h"
 #include "../GuiLibrary/GuiScrollList.h"
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: FileListItem
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: FileListItem(GuiScrollList *list, ClientWindow *clientWindow, HINSTANCE hInst, SongName song)
+--      GuiScrollList *list        : The List that the item belongs to.
+--      ClientWindow *clientWindow : The executing window
+--      HINSTANCE hInst            : The instance of the application
+--      SongName song              : Song information to be displayed on the list item
+--
+-- NOTES: Creates a new FileListItem
+-------------------------------------------------------------------------------------------------*/
 FileListItem::FileListItem(GuiScrollList *list, ClientWindow *clientWindow, HINSTANCE hInst, SongName song)
 	: GuiScrollListItem(list)
 {
@@ -20,11 +62,40 @@ FileListItem::FileListItem(GuiScrollList *list, ClientWindow *clientWindow, HINS
 	height = 0;
 }
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: ~FileListItem
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: ~FileListItem()
+--
+-- NOTES: Free Resources
+-------------------------------------------------------------------------------------------------*/
 FileListItem::~FileListItem()
 {
 	DeleteObject(background);
 }
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: setColours
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: setColours(HBRUSH bg, HPEN brdr, COLORREF fnt)
+--      HBRUSH bg     : The background colour
+--      HPEN brdr     : The colour of the border
+--      COLORREF fnt  : The colour of the font.
+--
+-- NOTES: Changes the colours of the item
+-------------------------------------------------------------------------------------------------*/
 void FileListItem::setColours(HBRUSH bg, HPEN brdr, COLORREF fnt)
 {
 	background = bg;
@@ -32,6 +103,21 @@ void FileListItem::setColours(HBRUSH bg, HPEN brdr, COLORREF fnt)
 	font = fnt;
 }
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: paint
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: paint(HDC hdc, LPRECT drawingArea)
+--      HDC hdc            : The device context to draw to
+--      LPRECT drawingArea : The are to draw into.
+--
+-- NOTES: Renders the custom list item.
+-------------------------------------------------------------------------------------------------*/
 void FileListItem::paint(HDC hdc, LPRECT drawingArea)
 {
 	HDC buffer;
@@ -79,6 +165,19 @@ void FileListItem::paint(HDC hdc, LPRECT drawingArea)
 	DeleteDC(buffer);
 }
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: onClick
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: onClick(int x, int y)
+--
+-- NOTES:
+-------------------------------------------------------------------------------------------------*/
 void FileListItem::onClick(int x, int y)
 {
 	// allocate c style filename string converted from wide char string
@@ -115,6 +214,19 @@ void FileListItem::onClick(int x, int y)
 	free(cFilename);
 }
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: onMouseMove
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: onMouseMove(int x, int y)
+--
+-- NOTES:
+-------------------------------------------------------------------------------------------------*/
 void FileListItem::onMouseMove(int x, int y)
 {
 	if (pointInPlayButton(x, y) || pointInSaveButton(x, y))
@@ -127,18 +239,57 @@ void FileListItem::onMouseMove(int x, int y)
 	}
 }
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: markAsDownloading
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: markAsDownloading()
+--
+-- NOTES:
+-------------------------------------------------------------------------------------------------*/
 void FileListItem::markAsDownloading()
 {
 	downloading = true;
 	InvalidateRect(list->getHWND(), NULL, false);
 }
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: markAsDownloadingStopped
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: markAsDownloadingStopped()
+--
+-- NOTES:
+-------------------------------------------------------------------------------------------------*/
 void FileListItem::markAsDownloadingStopped()
 {
 	downloading = false;
 	InvalidateRect(list->getHWND(), NULL, false);
 }
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: pointInSaveButton
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: pointInSaveButton(int x, int y)
+--
+-- NOTES:
+-------------------------------------------------------------------------------------------------*/
 bool FileListItem::pointInSaveButton(int x, int y)
 {
 	if (x > width - 56 && x < width - 56 + 36 && y > 14 && y < 50)
@@ -149,6 +300,19 @@ bool FileListItem::pointInSaveButton(int x, int y)
 	return false;
 }
 
+/*-------------------------------------------------------------------------------------------------
+-- FUNCTION: pointInPlayButton
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- INTERFACE: pointInPlayButton(int x, int y)
+--
+-- NOTES:
+-------------------------------------------------------------------------------------------------*/
 bool FileListItem::pointInPlayButton(int x, int y)
 {
 	if (x > width - 100 && x < width - 100 + 36 && y > 14 && y < 50)

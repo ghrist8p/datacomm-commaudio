@@ -1,3 +1,23 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: ClientWindow.h - This file provides a controller for the
+-- client logic.
+--
+-- PUBLIC FUNCTIONS:
+-- ClientWindow(HINSTANCE hInst);
+-- virtual ~ClientWindow();
+-- virtual void onCreate();
+-- void startConnection();
+-- void addRemoteFile(SongName);
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-----------------------------------------------------------------------------*/
+
 #ifndef _CLIENT_WINDOW_H_
 #define _CLIENT_WINDOW_H_
 
@@ -29,7 +49,6 @@ public:
 	virtual ~ClientWindow();
 	virtual void onCreate();
 	void startConnection();
-
 	void addRemoteFile(SongName);
 
 private:

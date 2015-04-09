@@ -1,3 +1,16 @@
+/*-----------------------------------------------------------------------------
+-- SOURCE FILE: GuiDialog.cpp - This file provides a modal window that acts
+-- as a dialog box.
+--
+-- REVISIONS:
+--
+-- DESIGNER: Calvin Rempel
+--
+-- PROGRAMMER: Calvin Rempel
+--
+-- NOTES:
+-----------------------------------------------------------------------------*/
+
 #include "GuiDialog.h"
 
 const LPCWSTR GuiDialog::DEFAULT_WIN_CLASS = L"GUI_WINDOW_CPP";
