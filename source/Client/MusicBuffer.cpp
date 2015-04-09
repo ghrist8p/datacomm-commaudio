@@ -214,10 +214,11 @@ void MusicBuffer::seekBuf(double percentage)
 	index = song_startindex + index;
 
 	musicplayer->stopPlaying();
-
+	int useful = song_startindex % bpss;
+	
 	if (index < writeindex)
 	{
-		readindex = index;
+		readindex = index + useful;
 	}
 
 	musicplayer->resumePlaying();
@@ -244,13 +245,14 @@ void MusicBuffer::seekBuf(double percentage)
 --  This function will set the current read index to match the write index. This means a new song has started
 --  and it should stop reading data form the old one.
 ----------------------------------------------------------------------------------------------------------------------*/
-void MusicBuffer::newSong(unsigned long song_size)
+void MusicBuffer::newSong(unsigned long song_size, int bps)
 {
 	WaitForSingleObject(mutexx, INFINITE);
 
 	currentsong_size = song_size;
 	song_startindex = writeindex;
 	readindex = writeindex;
+	bpss = bps / 8;
 
 	ReleaseMutex(mutexx);
 }
