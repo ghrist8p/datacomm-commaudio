@@ -28,6 +28,7 @@ public:
 	ClientWindow(HINSTANCE hInst);
 	virtual ~ClientWindow();
 	virtual void onCreate();
+	void startConnection();
 
 	void addRemoteFile(SongName);
 
@@ -78,6 +79,8 @@ private:
 	GuiPanel *bottomSpacer;
 	ButtonPanel *playButton;
 	ButtonPanel *stopButton;
+
+	MessageQueue* q1;
 
 	UDPSocket* udpSock;
 };
