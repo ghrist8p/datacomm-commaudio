@@ -114,6 +114,7 @@ int PlayWave::startPlaying(
 	if(ret == MMSYSERR_NOERROR)
 	{
 		startRoutine(&playThread,playThreadStopEv,playRoutine,this);
+		msgq->clear();
 		setVolume(*(short*)&volume);
 	}
 	else
