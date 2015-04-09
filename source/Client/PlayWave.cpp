@@ -74,7 +74,7 @@ PlayWave::PlayWave(int capacity, MessageQueue* msgq)
 	this->lastAudioPacketAccess = CreateMutex(NULL, FALSE, NULL);
 	this->canEnqueue = CreateSemaphore(NULL,capacity,capacity,NULL);
 	this->canDequeue = CreateSemaphore(NULL,0,capacity,NULL);
-	this->volume = 0xFFFF;
+	memset(&volume,0xFFFFFFFF,sizeof(volume));
 }
 
 /**
