@@ -7,7 +7,7 @@
 #include "../GuiLibrary/GuiLabel.h"
 
 ConnectionWindow::ConnectionWindow(HINSTANCE hInst)
-	: GuiWindow(hInst)
+	: GuiWindow(hInst) 
 {
 	setup(windowClass, NULL, windowStyles);
 	setExitOnClose(true);
@@ -95,6 +95,7 @@ bool ConnectionWindow::connect(GuiComponent *pThis, UINT command, UINT id, WPARA
     ClientControlThread * cct = ClientControlThread::getInstance();
     cct->connect( host, _wtoi( window->portInput->getText() ) );
 
+	window->clientWindow->startConnection();
 	window->clientWindow->setVisible(true);
 	window->setVisible(false);
 

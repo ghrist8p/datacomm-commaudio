@@ -241,13 +241,12 @@ void ClientWindow::onCreate()
 	layout->addComponent(buttonSpacer2);
 
     // create all the buffers and stuff
-	MessageQueue* q1 = new MessageQueue(100,sizeof(LocalDataPacket));
 	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,AUDIO_BUFFER_LENGTH,50,0);
-	udpSock = new UDPSocket(MULTICAST_PORT,q1);
+	
+	q1 = new MessageQueue(100,sizeof(LocalDataPacket));
 	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q1);
-
-	udpSock->setGroup(MULTICAST_ADDR,1);
 	recvThread->start();
+	
 
 	ClientControlThread * cct = ClientControlThread::getInstance();
 	cct->setClientWindow( this );
@@ -263,6 +262,14 @@ void ClientWindow::onCreate()
 
     DWORD useless;
 	CreateThread(NULL, 0, MicThread, (void*)this, 0, &useless);
+	
+}
+
+void ClientWindow::startConnection()
+{
+	
+	udpSock = new UDPSocket(MULTICAST_PORT,q1);
+	udpSock->setGroup(MULTICAST_ADDR,1);	
 }
 
 void ClientWindow::onClickPlay(void*)
