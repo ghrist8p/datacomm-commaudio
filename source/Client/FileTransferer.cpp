@@ -163,7 +163,7 @@ void FileTransferer::recvFile(char *data)
 void FileTransferer::cancelTransfer(int songId, TCPSocket *socket)
 {
 	transferring[songId][socket] = false;
-	onDownloadComplete("", false);
+	//onDownloadComplete("", false);
 }
 
 /*-------------------------------------------------------------------------------------------------
