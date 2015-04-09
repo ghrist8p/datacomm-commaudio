@@ -8,7 +8,7 @@ FileListItem::FileListItem(GuiScrollList *list, ClientWindow *clientWindow, HINS
 	this->clientWindow = clientWindow;
 	this->setHeight(64);
 	this->song = song;
-	this->downloading = true;
+	this->downloading = false;
 	background = (HBRUSH)CreateSolidBrush(RGB(20, 20, 20));
 
 	save = LoadBitmap(hInst, L"IMG_SAVE");
@@ -67,9 +67,9 @@ void FileListItem::paint(HDC hdc, LPRECT drawingArea)
 
 	// Draw Save Button
 	if (downloading)
-		oldBitmap = SelectObject(buffer, save);
-	else
 		oldBitmap = SelectObject(buffer, cancelSave);
+	else
+		oldBitmap = SelectObject(buffer, save);
 
 	GetObject(stream, sizeof(bitmap), &bitmap);
 	BitBlt(hdc, drawingArea->right - 56, drawingArea->top + 14, bitmap.bmWidth, bitmap.bmHeight, buffer, 0, 0, SRCCOPY);
