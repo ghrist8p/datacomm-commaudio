@@ -1,4 +1,5 @@
 #include "ServerControlThread.h"
+#include "../Client/FileTransferer.h"
 
 /*
  * message queue constructor parameters
@@ -46,6 +47,7 @@ ServerControlThread::ServerControlThread()
     // initialize instance variables
     _threadStopEv = CreateEvent(NULL,TRUE,FALSE,NULL);
     _thread       = INVALID_HANDLE_VALUE;
+	fileTransferer = new FileTransferer(NULL);
 
     _sockHandles.emplace_back( _threadStopEv );
 }
@@ -134,7 +136,7 @@ DWORD WINAPI ServerControlThread::_threadRoutine( void * params )
 				thiz->_handleMsgChangeStream( &packet.requestPacket );
                 break;
             case REQUEST_DOWNLOAD:
-                thiz->_handleMsgRequestDownload( &packet.requestPacket );
+                thiz->_handleMsgRequestDownload( &packet.requestPacket, sock);
                 break;
             case CANCEL_DOWNLOAD:
                 thiz->_handleMsgCancelDownload( &packet.requestPacket );
@@ -170,9 +172,9 @@ void ServerControlThread::_handleMsgChangeStream( RequestPacket * data )
     _multicastThread = CreateThread( 0, 0, _multicastRoutine, playlist->getSong( data->index ), 0, &useless );
 }
 
-void ServerControlThread::_handleMsgRequestDownload( RequestPacket * data )
+void ServerControlThread::_handleMsgRequestDownload( RequestPacket * data, TCPSocket* socket )
 {
-
+	fileTransferer->sendFile((char *)playlist->getSong( data->index )->filepath, socket);
 }
 
 void ServerControlThread::_handleMsgCancelDownload( RequestPacket * data )
@@ -218,6 +220,13 @@ VOID CALLBACK ServerControlThread::_sendPlaylistToOne( ULONG_PTR data )
         sock->Send( NEW_SONG, &(*songit), sizeof( SongName ) );
     }
 }
+//
+//DWORD WINAPI ServerControlThread::_sendFileToOne( void * params )
+//{
+//    ServerControlThread * thiz = ServerControlThread::getInstance();
+//    thiz->udpSocket->sendWave( *((SongName *) params), 60, thiz->_socks );
+//    return 0;
+//}
 
 DWORD WINAPI ServerControlThread::_multicastRoutine( void * params )
 {
@@ -226,7 +235,6 @@ DWORD WINAPI ServerControlThread::_multicastRoutine( void * params )
     thiz->udpSocket->sendWave( *((SongName *) params), 60, thiz->_socks );
     return 0;
 }
-
 /////////////////////////////////////
 // static function implementations //
 /////////////////////////////////////

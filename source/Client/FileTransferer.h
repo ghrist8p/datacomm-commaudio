@@ -36,17 +36,6 @@ class FileTransferer;
 */
 typedef void(*OnDownloadComplete)(char *filename, bool success);
 
-/*
-	Data Sent/Received to communicate file data.
- */
-struct FileTransferData
-{
-	char filename[FILENAME_PACKET_LENGTH];
-	char data[FILE_PACKET_SIZE];
-	int dataLen;
-	bool f_SOF;
-	bool f_EOF;
-};
 
 /*
 	Information used internally to utilize threads.
