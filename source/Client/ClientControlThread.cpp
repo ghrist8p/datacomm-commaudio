@@ -179,7 +179,8 @@ void ClientControlThread::onChangeStream( RequestPacket packet )
 
     // set the speaker settings and stuff according to the song parameters 
     _window->musicPlayer->stopPlaying();
-	_window->musicfile->newSong(song.size);
+	_window->musicfile->newSong(song.size, song.bps);
+	_window->setTitle(song.filepath);
     _window->musicPlayer->startPlaying(song.sample_rate,song.bps,song.channels);
 }
 

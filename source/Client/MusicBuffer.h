@@ -14,6 +14,7 @@ private:
 	unsigned long currentsong_size;
 	unsigned long song_startindex;
 	int playing;
+	int bpss;
 
 	PlaybackTrackerPanel* TrackerPanel;
 	PlayWave* musicplayer;
@@ -26,7 +27,7 @@ public:
 	void writeBuf(char* data, int len);
 	int readBuf(char* data, int len);
 	void seekBuf(double percentage);
-	void newSong(unsigned long song_size);
+	void newSong(unsigned long song_size, int bps);
 	void stopEnqueue();
 	void resumeEnqueue();
 };
