@@ -53,6 +53,7 @@ ServerControlThread::ServerControlThread()
 	currentsong = NULL;
 
     _sockHandles.emplace_back( _threadStopEv );
+	currentsong = NULL;
 }
 
 ServerControlThread::~ServerControlThread()
@@ -95,7 +96,17 @@ void ServerControlThread::addConnection( TCPSocket * connection )
     _sockHandles.emplace_back( connection->getMessageQueue()->hasMessage );
     QueueUserAPC( _sendPlaylistToOne        // _In_  PAPCFUNC pfnAPC,
                 , _thread                   // _In_  HANDLE hThread,
+<<<<<<< HEAD
                 , (ULONG_PTR) connection ); // _In_  ULONG_PTR dwData		
+=======
+                , (ULONG_PTR) connection ); // _In_  ULONG_PTR dwData
+	RequestPacket packet;
+	if(currentsong)
+	{
+		packet.index = currentsong->id;
+		connection->Send(CHANGE_STREAM, &packet, sizeof(packet));
+	}
+>>>>>>> 6a607bcadd54bf03353700b3c48cb6eb92883c80
     ReleaseMutex(access);
 }
 

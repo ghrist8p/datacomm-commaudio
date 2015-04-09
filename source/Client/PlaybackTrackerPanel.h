@@ -18,6 +18,7 @@ private:
 	static const int LINE_WIDTH;
 	static const int TRACKER_RADIUS;
 	static const int TRACKER_OUTLINE;
+	static DWORD WINAPI drawAgain(LPVOID HWND);
 	static bool overrideEraseBckgnd(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval);
 	static bool paint(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval);
 	static bool onClick(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval);

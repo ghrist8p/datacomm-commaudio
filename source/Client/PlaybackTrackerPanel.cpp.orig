@@ -144,6 +144,7 @@ bool PlaybackTrackerPanel::onMouseLeave(GuiComponent *pThis, UINT command, UINT 
 
 bool PlaybackTrackerPanel::overrideEraseBckgnd(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
 {
+	*retval = 1;
 	return true;
 }
 

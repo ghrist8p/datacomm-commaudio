@@ -34,6 +34,7 @@ void ButtonPanel::setClickListener(ButtonPanelListener listener)
 
 bool ButtonPanel::overrideEraseBckgnd(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
 {
+	*retval = 1;
 	return true;
 }
 
@@ -49,19 +50,30 @@ bool ButtonPanel::paint(GuiComponent *pThis, UINT command, UINT id, WPARAM wPara
 	HGDIOBJ oldBitmap;
 
 	hdc = BeginPaint(pThis->getHWND(), &ps);
+	HDC backbuffDC = CreateCompatibleDC(hdc);
+
+	HBITMAP backbuffer = CreateCompatibleBitmap( hdc, button->getWidth(), button->getHeight());
+    int savedDC = SaveDC(backbuffDC);
+    SelectObject( backbuffDC, backbuffer );
 
 	// Draw Button Image
-	buffer = CreateCompatibleDC(hdc);
+	buffer = CreateCompatibleDC(backbuffDC);
 	oldBitmap = SelectObject(buffer, (HGDIOBJ) activeState);
 	DWORD error = GetLastError();
 
 	GetObject(activeState, sizeof(bitmap), &bitmap);
-	TransparentBlt(hdc, 0, 0, bitmap.bmWidth, bitmap.bmHeight,
+	TransparentBlt(backbuffDC, 0, 0, bitmap.bmWidth, bitmap.bmHeight,
 				   buffer, 0, 0, bitmap.bmWidth, bitmap.bmHeight,
 				   TRANSPARENT_COLOR);
 
 	SelectObject(buffer, oldBitmap);
+
+	BitBlt(hdc,0,0,button->getWidth(),button->getHeight(),backbuffDC,0,0,SRCCOPY);
+    RestoreDC(backbuffDC,savedDC);
+
 	DeleteDC(buffer);
+	DeleteObject(backbuffer);
+    DeleteDC(backbuffDC);
 
 	EndPaint(pThis->getHWND(), &ps);
 

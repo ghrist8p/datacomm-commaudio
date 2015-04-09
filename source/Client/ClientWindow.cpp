@@ -92,7 +92,7 @@ ClientWindow::~ClientWindow()
 	delete playButton;
 	delete stopButton;
 	delete voiceTargetInput;
-	delete voiceTargetLabel;
+	//delete voiceTargetLabel;
 
 	DeleteObject(playButtonUp);
 	DeleteObject(playButtonDown);
@@ -122,7 +122,7 @@ void ClientWindow::onCreate()
 	topPanelStretch = new GuiPanel(hInst, topPanel);
 	fileContainerPanel = new GuiScrollList(hInst, this);
 	seekPanel = new GuiPanel(hInst, this);
-	voiceTargetLabel = new GuiLabel(hInst, topPanel);
+	//voiceTargetLabel = new GuiLabel(hInst, topPanel);
 	voiceTargetInput = new GuiTextBox(hInst, topPanel, false);
 	micTargetButton = new GuiButton(hInst, topPanel, IDB_MIC_TOGGLE);
 	statusBar = new GuiStatusBar(hInst, this);
@@ -186,18 +186,21 @@ void ClientWindow::onCreate()
 	layout = (GuiLinearLayout*)topPanel->getLayoutManager();
 	layout->setHorizontal(true);
 	topPanelStretch->init();
-	topPanelStretch->setPreferredSize(150, 0);
+	topPanelStretch->setPreferredSize(300, 0);
+	topPanelStretch->enableCustomDrawing(true);
+	topPanelStretch->setBackgroundBrush(darkBackground);
+	topPanelStretch->setBorderPen(nullPen);
 	layout->addComponent(topPanelStretch);
 
 	// Add Microphone Label
-	voiceTargetLabel->init();
-	voiceTargetLabel->setText(L"Target");
-	layout->addComponent(voiceTargetLabel);
+	//voiceTargetLabel->init();
+	//voiceTargetLabel->setText(L"Target");
+	//layout->addComponent(voiceTargetLabel);
 
 	// Add Microphone Textbox
 	voiceTargetInput->init();
 	voiceTargetInput->enableCustomDrawing(false);
-	voiceTargetInput->setPreferredSize(184, 32);
+	voiceTargetInput->setPreferredSize(200, 28);
 	layout->addComponent(voiceTargetInput);
 
 	// Add Microphone Button
@@ -212,6 +215,7 @@ void ClientWindow::onCreate()
 	playButton->setPreferredSize(64, 64);
 	playButton->enableCustomDrawing(true);
 	playButton->setBackgroundBrush(darkBackground);
+	playButton->setBorderPen(nullPen);
 
 	// Create Stop Button
 	stopButton->init();
@@ -219,6 +223,7 @@ void ClientWindow::onCreate()
 	stopButton->setPreferredSize(64, 64);
 	stopButton->enableCustomDrawing(true);
 	stopButton->setBackgroundBrush(darkBackground);
+	stopButton->setBorderPen(nullPen);
 
 	// Create Button Spacers
 	buttonSpacer1->init();
@@ -244,6 +249,8 @@ void ClientWindow::onCreate()
 	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,AUDIO_BUFFER_LENGTH,50,0);
 	
 	q1 = new MessageQueue(100,sizeof(LocalDataPacket));
+	udpSock = new UDPSocket(MULTICAST_PORT,q1);
+	udpSock->setGroup(MULTICAST_ADDR,1);
 	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q1);
 	recvThread->start();
 	
@@ -257,19 +264,17 @@ void ClientWindow::onCreate()
 	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
 	MusicReader* mreader = new MusicReader(q2, musicfile);
 	
-
+	musicPlayer->setVolume(0);
 	musicPlayer->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
 
-    DWORD useless;
+     DWORD useless;
 	CreateThread(NULL, 0, MicThread, (void*)this, 0, &useless);
 	
 }
 
 void ClientWindow::startConnection()
 {
-	
-	udpSock = new UDPSocket(MULTICAST_PORT,q1);
-	udpSock->setGroup(MULTICAST_ADDR,1);	
+	musicPlayer->setVolume(0xFFFF);
 }
 
 void ClientWindow::onClickPlay(void*)

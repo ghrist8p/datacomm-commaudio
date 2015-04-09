@@ -11,8 +11,8 @@ FileListItem::FileListItem(GuiScrollList *list, ClientWindow *clientWindow, HINS
 	this->downloading = false;
 	background = (HBRUSH)CreateSolidBrush(RGB(20, 20, 20));
 
-	save = LoadBitmap(hInst, L"IMG_CANCEL_SAVE");
-	cancelSave = LoadBitmap(hInst, L"IMG_SAVE");
+	save = LoadBitmap(hInst, L"IMG_SAVE");
+	cancelSave = LoadBitmap(hInst, L"IMG_CANCEL_SAVE");
 	stream = LoadBitmap(hInst, L"IMG_STREAM");
 	this->hoverCursor = LoadCursor(NULL, IDC_HAND);
 	this->arrowCursor = LoadCursor(NULL, IDC_ARROW);
