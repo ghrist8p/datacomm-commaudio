@@ -244,6 +244,8 @@ void ClientWindow::onCreate()
 	JitterBuffer* musicJitBuf = new JitterBuffer(5000,100,AUDIO_BUFFER_LENGTH,50,0);
 	
 	q1 = new MessageQueue(100,sizeof(LocalDataPacket));
+	udpSock = new UDPSocket(MULTICAST_PORT,q1);
+	udpSock->setGroup(MULTICAST_ADDR,1);
 	ReceiveThread* recvThread = new ReceiveThread(musicJitBuf,q1);
 	recvThread->start();
 	
@@ -257,19 +259,17 @@ void ClientWindow::onCreate()
 	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
 	MusicReader* mreader = new MusicReader(q2, musicfile);
 	
-
+	musicPlayer->setVolume(0);
 	musicPlayer->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
 
-    DWORD useless;
+     DWORD useless;
 	CreateThread(NULL, 0, MicThread, (void*)this, 0, &useless);
 	
 }
 
 void ClientWindow::startConnection()
 {
-	
-	udpSock = new UDPSocket(MULTICAST_PORT,q1);
-	udpSock->setGroup(MULTICAST_ADDR,1);	
+	musicPlayer->setVolume(0xFFFF);
 }
 
 void ClientWindow::onClickPlay(void*)

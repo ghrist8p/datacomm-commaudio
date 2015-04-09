@@ -52,6 +52,7 @@ ServerControlThread::ServerControlThread()
 	fileTransferer = new FileTransferer(NULL);
 
     _sockHandles.emplace_back( _threadStopEv );
+	currentsong = NULL;
 }
 
 ServerControlThread::~ServerControlThread()
@@ -96,8 +97,11 @@ void ServerControlThread::addConnection( TCPSocket * connection )
                 , _thread                   // _In_  HANDLE hThread,
                 , (ULONG_PTR) connection ); // _In_  ULONG_PTR dwData
 	RequestPacket packet;
-	packet.index = currentsong->id;
-	connection->Send(CHANGE_STREAM, &packet, sizeof(packet));
+	if(currentsong)
+	{
+		packet.index = currentsong->id;
+		connection->Send(CHANGE_STREAM, &packet, sizeof(packet));
+	}
     ReleaseMutex(access);
 }
 

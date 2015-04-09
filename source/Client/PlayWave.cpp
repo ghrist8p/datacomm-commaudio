@@ -124,7 +124,7 @@ int PlayWave::startPlaying(
 	else
 	{
 		#ifdef DEBUG
-		printf("failed to get the device: %d\n",GetLastError());
+		int err = GetLastError();
 		#endif
 	}
 
