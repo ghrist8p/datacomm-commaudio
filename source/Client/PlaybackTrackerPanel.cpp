@@ -31,6 +31,9 @@ PlaybackTrackerPanel::PlaybackTrackerPanel(HINSTANCE hInstance, GuiComponent *pa
 	this->addMessageListener(WM_LBUTTONUP, PlaybackTrackerPanel::onClickUp, this);
 	this->addMessageListener(WM_MOUSEMOVE, PlaybackTrackerPanel::onMouseMove, this);
 	this->addMessageListener(WM_MOUSELEAVE, PlaybackTrackerPanel::onMouseLeave, this);
+
+	DWORD id;
+	CreateThread(NULL, NULL, PlaybackTrackerPanel::drawAgain, &this->hwnd, NULL, &id);
 }
 
 
@@ -76,7 +79,7 @@ void PlaybackTrackerPanel::setTrackerPercentage(double percent, bool hasPriority
 
 	RECT rect;
 	GetClientRect(getHWND(), &rect);
-	InvalidateRect(getHWND(), &rect, FALSE);
+	RedrawWindow(getHWND(), &rect, NULL, RDW_ERASENOW);
 }
 
 bool PlaybackTrackerPanel::onClick(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
@@ -91,7 +94,7 @@ bool PlaybackTrackerPanel::onClick(GuiComponent *pThis, UINT command, UINT id, W
 
 	RECT rect;
 	GetClientRect(tracker->getHWND(), &rect);
-	InvalidateRect(tracker->getHWND(), &rect, FALSE);
+	RedrawWindow(tracker->getHWND(), &rect, NULL, RDW_ERASENOW);
 
 	tracker->mouseDown = true;
 
@@ -107,7 +110,7 @@ bool PlaybackTrackerPanel::onClickUp(GuiComponent *pThis, UINT command, UINT id,
 
 	RECT rect;
 	GetClientRect(tracker->getHWND(), &rect);
-	InvalidateRect(tracker->getHWND(), &rect, FALSE);
+	RedrawWindow(tracker->getHWND(), &rect, NULL, RDW_ERASENOW);
 	SendMessage(tracker->getHWND(), WM_SEEK, (WPARAM)(tracker->played * 1000), 0);
 	return true;
 }
@@ -127,7 +130,7 @@ bool PlaybackTrackerPanel::onMouseMove(GuiComponent *pThis, UINT command, UINT i
 		tracker->setTrackerPercentage(percent, true);
 		RECT rect;
 		GetClientRect(tracker->getHWND(), &rect);
-		InvalidateRect(tracker->getHWND(), &rect, FALSE);
+		RedrawWindow(tracker->getHWND(), &rect, NULL, RDW_ERASENOW);
 	}
 
 	return false;
@@ -144,7 +147,7 @@ bool PlaybackTrackerPanel::onMouseLeave(GuiComponent *pThis, UINT command, UINT 
 		tracker->trackerPen = tracker->trackerInactivePen;
 		RECT rect;
 		GetClientRect(tracker->getHWND(), &rect);
-		InvalidateRect(tracker->getHWND(), &rect, FALSE);
+		RedrawWindow(tracker->getHWND(), &rect, NULL, RDW_ERASENOW);
 	}
 
 	return false;
@@ -198,4 +201,15 @@ bool PlaybackTrackerPanel::paint(GuiComponent *pThis, UINT command, UINT id, WPA
 	EndPaint(pThis->getHWND(), &ps);
 
 	return true;
+}
+
+DWORD WINAPI PlaybackTrackerPanel::drawAgain(LPVOID hwnd)
+{
+	while (true)
+	{
+		Sleep(100);
+		InvalidateRect(*((HWND*)hwnd), NULL, false);
+	}
+
+	return 0;
 }
