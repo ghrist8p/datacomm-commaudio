@@ -47,6 +47,8 @@ struct FileTransferInfo
 	FileTransferData *data;
 };
 
+struct SongName;
+
 /*-----------------------------------------------------------------------------
 -- CLASS: FileTransferer
 --
@@ -65,18 +67,18 @@ class FileTransferer
 		~FileTransferer(){};
 
 		/* PUBLIC MEMBER METHODS */
-		void sendFile(char *filename, TCPSocket *socket);
+		void sendFile(SongName *song, TCPSocket *socket);
 		void recvFile(char *data);
-		void cancelTransfer(char *filename, TCPSocket *socket);
+		void cancelTransfer(int songId, TCPSocket *socket);
 
 	private:
 		/* PRIVATE STATIC MEMBER METHODS */
 		static DWORD WINAPI TransferThread(LPVOID transferInfo);
 
 		/* PRIVATE MEMBER DATA */
-		std::map<char*, std::map<TCPSocket*, FILE*>> filesOut;
-		std::map<char*, FILE*> filesIn;
-		std::map<char*, std::map<TCPSocket*, bool>> transferring;
+		std::map<int, std::map<TCPSocket*, FILE*>> filesOut;
+		std::map<int, FILE*> filesIn;
+		std::map<int, std::map<TCPSocket*, bool>> transferring;
 		OnDownloadComplete onDownloadComplete;
 };
 

@@ -393,8 +393,10 @@ int TCPSocket::Send(char type, void* data, int length)
 				#ifdef DEBUG
 				MessageBox(NULL, L"WSASend() failed with error", L"ERROR", MB_ICONERROR);
 				#endif
+				ReleaseMutex(mutex);
 				return 0;
 			}
+			ReleaseMutex(mutex);
 		}
 		else
 		{

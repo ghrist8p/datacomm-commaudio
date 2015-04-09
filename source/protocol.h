@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <vector>
 
-#define MULTICAST_ADDR "239.255.0.240"
+#define MULTICAST_ADDR "239.255.0.241"
 
 #define MULTICAST_PORT 7778
 
@@ -89,6 +89,7 @@ struct SongName
 	unsigned long size;
 	wchar_t filepath[STR_LEN];
 	char cFilepath[STR_LEN];
+	char cFilename[STR_LEN];
 };
 
 typedef struct SongName SongName;
@@ -111,6 +112,7 @@ struct FileTransferData
 	int dataLen;
 	bool f_SOF;
 	bool f_EOF;
+	int songId;
 };
 
 typedef struct FileTransferData FileTransferData;

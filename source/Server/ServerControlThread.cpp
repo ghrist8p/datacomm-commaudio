@@ -174,7 +174,7 @@ void ServerControlThread::_handleMsgChangeStream( RequestPacket * data )
 
 void ServerControlThread::_handleMsgRequestDownload( RequestPacket * data, TCPSocket* socket )
 {
-	fileTransferer->sendFile((char *)playlist->getSong( data->index )->filepath, socket);
+	fileTransferer->sendFile(playlist->getSong( data->index ), socket);
 }
 
 void ServerControlThread::_handleMsgCancelDownload( RequestPacket * data )

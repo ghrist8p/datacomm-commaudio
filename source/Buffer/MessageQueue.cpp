@@ -215,3 +215,14 @@ int MessageQueue::size()
 {
     return messages.size();
 }
+
+void MessageQueue::clear()
+{
+    WaitForSingleObject( access, INFINITE );
+    while( WaitForSingleObject( canDequeue, 10 ) != WAIT_TIMEOUT )
+	{
+		messages.pop_back();
+		ReleaseSemaphore( canEnqueue, 1, NULL );
+	}
+    ReleaseMutex(access);
+}
