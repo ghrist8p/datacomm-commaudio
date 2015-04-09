@@ -131,6 +131,7 @@ bool GuiScrollListPane::onMouseMove(GuiComponent *pThis, UINT command, UINT id, 
 
 bool GuiScrollListPane::overrideEraseBckgnd(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
 {
+	*retval = 1;
 	return true;
 }
 
