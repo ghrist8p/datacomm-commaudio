@@ -56,7 +56,9 @@ MusicBufferer::MusicBufferer(JitterBuffer* musicJB, MusicBuffer* mbuffer) : musi
 
 	if ((ThreadHandle = CreateThread(NULL, 0, fileThread, (void*)this, 0, &ThreadId)) == NULL)
 	{
+		#ifdef DEBUG
 		MessageBox(NULL, L"CreateThread failed with error", L"ERROR", MB_ICONERROR);
+		#endif
 		return;
 	}
 }

@@ -104,7 +104,7 @@ void MessageQueue::enqueue(int type, void* src, int len)
     WaitForSingleObject(access,INFINITE);
 
     // put the node into the queue
-    messages.push_back(n);
+	messages.insert( messages.begin(), n );
 
     // now that the element is enqueued, it can be dequeued;
     // set the hasMessage event
@@ -186,11 +186,10 @@ void MessageQueue::dequeue(int* type, void* dest, int* len)
     // obtain synchronization objects
     WaitForSingleObject(canDequeue,INFINITE);
     WaitForSingleObject(access,INFINITE);
-
+	
     // remove the element from the queue
-    auto it = messages.begin();
-    Node* n = *it;
-    messages.erase(it);
+	Node * n = *--messages.end();
+	messages.pop_back();
 
     // if the queue is empty, reset hasMessage
     if(messages.size() == 0)
