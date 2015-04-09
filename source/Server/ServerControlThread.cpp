@@ -50,6 +50,7 @@ ServerControlThread::ServerControlThread()
     _threadStopEv = CreateEvent(NULL,TRUE,FALSE,NULL);
     _thread       = INVALID_HANDLE_VALUE;
 	fileTransferer = new FileTransferer(NULL);
+	currentsong = NULL;
 
     _sockHandles.emplace_back( _threadStopEv );
 }
@@ -94,10 +95,7 @@ void ServerControlThread::addConnection( TCPSocket * connection )
     _sockHandles.emplace_back( connection->getMessageQueue()->hasMessage );
     QueueUserAPC( _sendPlaylistToOne        // _In_  PAPCFUNC pfnAPC,
                 , _thread                   // _In_  HANDLE hThread,
-                , (ULONG_PTR) connection ); // _In_  ULONG_PTR dwData
-	RequestPacket packet;
-	packet.index = currentsong->id;
-	connection->Send(CHANGE_STREAM, &packet, sizeof(packet));
+                , (ULONG_PTR) connection ); // _In_  ULONG_PTR dwData		
     ReleaseMutex(access);
 }
 
@@ -230,6 +228,7 @@ VOID CALLBACK ServerControlThread::_sendPlaylistToAllRoutine( ULONG_PTR )
     {
         _sendPlaylistToOne( (ULONG_PTR) *sockit );
     }
+	
 }
 
 VOID CALLBACK ServerControlThread::_sendPlaylistToOne( ULONG_PTR data )
@@ -243,6 +242,13 @@ VOID CALLBACK ServerControlThread::_sendPlaylistToOne( ULONG_PTR data )
     {
         sock->Send( NEW_SONG, &(*songit), sizeof( SongName ) );
     }
+
+	RequestPacket packet;
+	if(thiz->currentsong)
+	{
+		packet.index = thiz->currentsong->id;
+		sock->Send(CHANGE_STREAM, &packet, sizeof(packet));	
+	}
 }
 //
 //DWORD WINAPI ServerControlThread::_sendFileToOne( void * params )
