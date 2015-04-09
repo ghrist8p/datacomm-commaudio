@@ -80,7 +80,9 @@ int CALLBACK WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int 
 
 	if ((error = WSAStartup(WSA_VERSION, &wsaData)) != 0)
 	{
+		#ifdef DEBUG
 		MessageBox(NULL, L"WSAStartup Error", L"Fatal Error", MB_ICONERROR);
+		#endif
 		WSACleanup();
 		return 1;
 	}
@@ -95,7 +97,9 @@ int CALLBACK WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int 
 	// Ensure the Window was successfully created
 	if (!window)
 	{
+		#ifdef DEBUG
 		MessageBox(NULL, L"Failed to Initialize Window", L"Fatal Error", MB_ICONERROR);
+		#endif
 		return 1;
 	}
 

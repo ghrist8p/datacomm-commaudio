@@ -76,7 +76,7 @@ void PlaybackTrackerPanel::setTrackerPercentage(double percent, bool hasPriority
 
 	RECT rect;
 	GetClientRect(getHWND(), &rect);
-	InvalidateRect(getHWND(), &rect, TRUE);
+	InvalidateRect(getHWND(), &rect, FALSE);
 }
 
 bool PlaybackTrackerPanel::onClick(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
@@ -91,7 +91,7 @@ bool PlaybackTrackerPanel::onClick(GuiComponent *pThis, UINT command, UINT id, W
 
 	RECT rect;
 	GetClientRect(tracker->getHWND(), &rect);
-	InvalidateRect(tracker->getHWND(), &rect, TRUE);
+	InvalidateRect(tracker->getHWND(), &rect, FALSE);
 
 	tracker->mouseDown = true;
 
@@ -107,7 +107,7 @@ bool PlaybackTrackerPanel::onClickUp(GuiComponent *pThis, UINT command, UINT id,
 
 	RECT rect;
 	GetClientRect(tracker->getHWND(), &rect);
-	InvalidateRect(tracker->getHWND(), &rect, TRUE);
+	InvalidateRect(tracker->getHWND(), &rect, FALSE);
 	SendMessage(tracker->getHWND(), WM_SEEK, (WPARAM)(tracker->played * 1000), 0);
 	return true;
 }
@@ -127,7 +127,7 @@ bool PlaybackTrackerPanel::onMouseMove(GuiComponent *pThis, UINT command, UINT i
 		tracker->setTrackerPercentage(percent, true);
 		RECT rect;
 		GetClientRect(tracker->getHWND(), &rect);
-		InvalidateRect(tracker->getHWND(), &rect, TRUE);
+		InvalidateRect(tracker->getHWND(), &rect, FALSE);
 	}
 
 	return false;
@@ -144,7 +144,7 @@ bool PlaybackTrackerPanel::onMouseLeave(GuiComponent *pThis, UINT command, UINT 
 		tracker->trackerPen = tracker->trackerInactivePen;
 		RECT rect;
 		GetClientRect(tracker->getHWND(), &rect);
-		InvalidateRect(tracker->getHWND(), &rect, TRUE);
+		InvalidateRect(tracker->getHWND(), &rect, FALSE);
 	}
 
 	return false;
@@ -152,6 +152,7 @@ bool PlaybackTrackerPanel::onMouseLeave(GuiComponent *pThis, UINT command, UINT 
 
 bool PlaybackTrackerPanel::overrideEraseBckgnd(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
 {
+	*retval = 1;
 	return true;
 }
 

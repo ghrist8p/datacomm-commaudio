@@ -161,6 +161,8 @@ void ClientControlThread::disconnect()
 void ClientControlThread::setClientWindow( ClientWindow * theWindow )
 {
     _window = theWindow;
+	// WM_CLOSE
+	_window->addMessageListener(WM_CLOSE, ClientControlThread::onClose, _window);
 }
 
 void ClientControlThread::onDownloadPacket( RequestPacket packet )
@@ -335,6 +337,19 @@ void ClientControlThread::_handleSockMsgqMsg(ClientControlThread* dis)
     }
 
 	free(element);
+}
+
+bool ClientControlThread::onClose(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
+{
+	//if connected
+	ClientControlThread * cct = ClientControlThread::getInstance();
+	void * blah = malloc( 1 );
+    cct->tcpSock->Send( DISCONNECT, blah, 0 );
+	free( blah );
+
+	PostQuitMessage(0);
+
+	return true;
 }
 
 /*

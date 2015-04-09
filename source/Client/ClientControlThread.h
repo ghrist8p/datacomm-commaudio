@@ -26,6 +26,9 @@ protected:
     void onChangeStream(RequestPacket packet);
     void onNewSong(SongName song);
 private:
+	static bool onClose(GuiComponent *_pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval);
+
+
     int _startRoutine(HANDLE* thread, HANDLE stopEvent,
         LPTHREAD_START_ROUTINE routine, void* params);
     int _stopRoutine(HANDLE* thread, HANDLE stopEvent);

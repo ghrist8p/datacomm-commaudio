@@ -17,6 +17,7 @@ public:
 	int startPlaying(int samplesPerSecond, int bitsPerSample, int numChannels);
 	int resumePlaying();
 	int stopPlaying();
+	void setVolume(char volume);
 
 private:
 	int openDevice(int samplesPerSecond, int bitsPerSample, int numChannels);
@@ -25,6 +26,11 @@ private:
 	void handleMsgqMsg();
 	static void startCleanupRoutine(PlayWave* dis, WAVEHDR* audioPacket);
 	static DWORD WINAPI cleanupRoutine(void* params);
+
+	/**
+	 * volume of the speakers
+	  */
+	DWORD volume;
 
 	/**
 	 * handle to Mutex which protects the interface of the play wave.

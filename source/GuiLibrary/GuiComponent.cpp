@@ -34,7 +34,9 @@ void GuiComponent::setup(LPCWSTR winClass, LPCWSTR menuClass, DWORD winStyle)
 {
 	if (initialized)
 	{
+		#ifdef DEBUG
 		MessageBox(NULL, L"Component already initialized.", L"Internal Error", MB_ICONERROR);
+		#endif
 		return;
 	}
 
@@ -50,7 +52,9 @@ void GuiComponent::setStyles(DWORD winStyles)
 {
 	if (initialized)
 	{
+		#ifdef DEBUG
 		MessageBox(NULL, L"Component already initialized.", L"Internal Error", MB_ICONERROR);
+		#endif
 		return;
 	}
 
@@ -363,7 +367,6 @@ LRESULT CALLBACK GuiComponent::WndProc(HWND hwnd, UINT message, WPARAM wParam, L
 					}
 					return 0;
 				}
-
 			case WM_SIZE:
 			case WM_SIZING:
 				pThis->resize();
@@ -420,5 +423,6 @@ bool GuiComponent::drawBackground(GuiComponent *pThis, UINT command, UINT id, WP
 
 bool GuiComponent::returnOne(GuiComponent *pThis, UINT command, UINT id, WPARAM wParam, LPARAM lParam, INT_PTR *retval)
 {
+	*retval = 1;
 	return true;
 }

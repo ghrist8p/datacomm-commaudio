@@ -252,11 +252,12 @@ void ClientWindow::onCreate()
 	ClientControlThread * cct = ClientControlThread::getInstance();
 	cct->setClientWindow( this );
 
-	musicfile = new MusicBuffer(trackerPanel);
 	MessageQueue* q2 = new MessageQueue(100,AUDIO_BUFFER_LENGTH);
+	musicPlayer = new PlayWave(200,q2);
+	musicfile = new MusicBuffer(trackerPanel, musicPlayer);	
 	MusicBufferer* musicbuf = new MusicBufferer(musicJitBuf, musicfile);
 	MusicReader* mreader = new MusicReader(q2, musicfile);
-	musicPlayer = new PlayWave(200,q2);
+	
 
 	musicPlayer->startPlaying(AUDIO_SAMPLE_RATE, AUDIO_BITS_PER_SAMPLE, NUM_AUDIO_CHANNELS);
 
@@ -267,7 +268,7 @@ void ClientWindow::onCreate()
 void ClientWindow::onClickPlay(void*)
 {
 	curClientWindow->musicfile->resumeEnqueue();
-	//curClientWindow->musicPlayer->resumePlaying();
+	curClientWindow->musicPlayer->resumePlaying();
 }
 void ClientWindow::onClickStop(void*)
 {
@@ -296,7 +297,9 @@ bool ClientWindow::onClickMic(GuiComponent *_pThis, UINT command, UINT id, WPARA
 			destination.sin_addr.s_addr = inet_addr(pThis->voiceTargetAddress);
 			if (destination.sin_addr.s_addr == INADDR_NONE)
 			{
+				#ifdef DEBUG
 				MessageBox(NULL, L"The target ip address entered must be a legal IPv4 address", L"ERROR", MB_ICONERROR);
+				#endif
 				return true;
 			}
 

@@ -75,6 +75,7 @@ PlayWave::PlayWave(int capacity, MessageQueue* msgq)
 	this->canEnqueue = CreateSemaphore(NULL,capacity,capacity,NULL);
 	this->canDequeue = CreateSemaphore(NULL,0,capacity,NULL);
 	this->interfaceAccess = CreateMutex(NULL, FALSE, NULL);
+	memset(&volume,0xFFFFFFFF,sizeof(volume));
 }
 
 /**
@@ -112,10 +113,13 @@ int PlayWave::startPlaying(
 {
 	// acquire synchronization objects
 	WaitForSingleObject(interfaceAccess,INFINITE);
+
 	int ret = openDevice(samplesPerSecond,bitsPerSample,numChannels);
 	if(ret == MMSYSERR_NOERROR)
 	{
 		startRoutine(&playThread,playThreadStopEv,playRoutine,this);
+		msgq->clear();
+		setVolume(*(short*)&volume);
 	}
 	else
 	{
@@ -135,6 +139,17 @@ int PlayWave::resumePlaying()
 	return startPlaying(wfx.nSamplesPerSec,wfx.wBitsPerSample,wfx.nChannels);
 }
 
+void PlayWave::setVolume(char volume)
+{
+	char* chrPtr = (char*) &this->volume;
+	chrPtr[0] = volume;
+	chrPtr[1] = volume;
+	if(speakers != 0)
+	{
+		waveOutSetVolume(speakers,this->volume);
+	}
+}
+
 /**
  * stops the playing thread, then waits for the cleanup thread to stop as well,
  *   before closing the device and returning.
@@ -149,11 +164,12 @@ int PlayWave::stopPlaying()
 {
 	// acquire synchronization objects
 	WaitForSingleObject(interfaceAccess,INFINITE);
+
 	#ifdef DEBUG
 	printf("PlayWave::stopPlaying called\n");
 	#endif
 	stopRoutine(&playThread,playThreadStopEv);
-    waveOutReset(speakers);
+	waveOutReset(speakers);
 	stopRoutine(&cleanupThread,cleanupThreadEv);
 
 	#ifdef DEBUG
